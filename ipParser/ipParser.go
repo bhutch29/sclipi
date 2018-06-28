@@ -26,7 +26,9 @@ func ParseIpv4(ips []net.IP) IpNode {
 			}
 		} else {
 			head.Children = append(head.Children, IpNode{Content: parts[0]})
-			head.Children[len(head.Children) - 1].Children = append(head.Children[len(head.Children) - 1].Children, IpNode{Content: parts[1]})
+			if len(parts) > 1 {
+				head.Children[len(head.Children) - 1].Children = append(head.Children[len(head.Children) - 1].Children, IpNode{Content: parts[1]})
+			}
 		}
 	}
 	return head

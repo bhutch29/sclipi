@@ -21,7 +21,3 @@ func TestParseIpv4(t *testing.T) {
 		t.Error("Wrong element found in second level second node second child", result.Children[1].Children)
 	}
 }
-
-func TestNodeExists(t *testing.T) {
-	//TODO
-}

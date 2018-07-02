@@ -11,22 +11,47 @@ func nullCompleter(d prompt.Document) []prompt.Suggest {
 	return []prompt.Suggest{}
 }
 
+var scpiProvider ScpiProvider
+
 func scpiCompleter(d prompt.Document) []prompt.Suggest {
 	if d.TextBeforeCursor() == "" {
 		return []prompt.Suggest{}
 	}
+
+	tree := scpiProvider.GetTree()
 	inputs := strings.Split(d.TextBeforeCursor(), ":")
-	tree := scpiParser.Parse(inputs)
 
+	current := tree
+	for _, item := range inputs {
+		if success, node := getScpiNodeChildByContent(current, item); success{
+			current = node
+		}
+	}
 
-	var s []prompt.Suggest
-	return prompt.FilterHasPrefix(s, d.GetWordBeforeCursorUntilSeparator(":"), true)
+	return prompt.FilterHasPrefix(buildSuggestsFromScpiNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
 }
 
-func ipCompleter(d prompt.Document) []prompt.Suggest {
-	p := IpProvider{}
+func buildSuggestsFromScpiNode(node scpiParser.ScpiNode) []prompt.Suggest {
+	var s []prompt.Suggest
+	for _, item := range node.Children{
+		s = append(s, prompt.Suggest{Text: item.Content})
+	}
+	return s
+}
 
-	tree := ipParser.ParseIpv4(p.getIpAddresses(p.filterIpv4))
+func getScpiNodeChildByContent(parent scpiParser.ScpiNode, item string) (bool, scpiParser.ScpiNode) {
+	for _, node := range parent.Children{
+		if node.Content == item {
+			return true, node
+		}
+	}
+	return false, scpiParser.ScpiNode{}
+}
+
+var ipProvider IpProvider
+
+func ipCompleter(d prompt.Document) []prompt.Suggest {
+	tree := ipParser.ParseIpv4(ipProvider.getIpAddresses(ipProvider.filterIpv4))
 	inputs := strings.Split(d.TextBeforeCursor(), ".")
 
 	current := tree

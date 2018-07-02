@@ -2,19 +2,17 @@ package scpiParser
 
 import (
 	"testing"
-	"os"
-	"bufio"
 )
 
 func BenchmarkMxgScpi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		lines, _ := readLines("MXGSCPI.txt")
+		lines, _ := ReadLines("MXGSCPI.txt")
 		splitScpiCommands(lines)
 	}
 }
 
 func TestGenerateTree(t *testing.T) {
-	lines, _ := readLines("MXGSCPI.txt")
+	lines, _ := ReadLines("MXGSCPI.txt")
 
 	Parse(lines) //TODO: Generate real tests
 }
@@ -143,19 +141,4 @@ func TestBranchSuffixes(t *testing.T) {
 	if len(result) != 12 {
 		t.Error(":Hello{1:2}:World{1:3}:Again{1:2} not parsed to 12 results", result)
 	}
-}
-
-func readLines(path string) ([]string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-	return lines, scanner.Err()
 }

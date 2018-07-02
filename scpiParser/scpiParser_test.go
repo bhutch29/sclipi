@@ -55,8 +55,8 @@ func TestScpiParserOptionals(t *testing.T) {
 	if len(commands[0]) != 2 {
 		t.Error(":ABORt[:SWEep] not parsed properly:", commands[0])
 	}
-	if len(commands[1]) != 1 {
-		t.Error(":ABORt[:SWEep] not parsed properly:", commands[1])
+	if len(commands[2]) != 1 {
+		t.Error(":ABORt[:SWEep] not parsed properly:", commands[2])
 	}
 }
 

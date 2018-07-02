@@ -9796,4 +9796,4 @@
 *STB?/qonly/
 *TRG/nquery/
 *TST?/qonly/
-*WAI/nquery/«x00»
+*WAI/nquery/

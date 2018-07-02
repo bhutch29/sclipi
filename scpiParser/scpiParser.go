@@ -14,7 +14,7 @@ func splitScpiCommands(lines []string) [][]string {
 
 		for _, item := range suffixed {
 			split := strings.Split(item, ":")
-			withOptionals := generateOptionalCommands(split, getOptionalIndexes(split))
+			withOptionals := generateOptionalCommands(removeSquareBraces(split), getOptionalIndexes(split))
 			withQueries := generateQueryCommands(withOptionals)
 
 			for _, command := range withQueries {
@@ -68,24 +68,37 @@ func branchSuffixes(s string) []string {
 }
 
 func generateOptionalCommands(command []string, optionalIndexes []int) [][]string {
-	commands := [][]string{removeSquareBraces(command)}
+	commands := [][]string{command}
 	for i, index := range optionalIndexes {
-		shortened := deleteIndexFromSliceRetainingQueryInfo(command, index) //TODO: if last element is optional, deletes query information
-		remaining := optionalIndexes[i+1:]
+		shortened := deleteIndexFromSliceRetainingQueryInfo(command, index)
+		remaining := RemoveIndexAndDecrement(optionalIndexes, i)
 		commands = append(commands, generateOptionalCommands(shortened, remaining)...)
 	}
 	return commands
 }
 
-func deleteIndexFromSliceRetainingQueryInfo(command []string, index int) []string {
-	if index == len(command)-1 && strings.Contains(command[index], "/"){
-		if strings.Contains(command[index], "/nquery/"){
-			command[index - 1] = command[index - 1] + "/nquery/"
-		} else if strings.Contains(command[index], "?/qonly/"){
-			command[index - 1] = command[index - 1] + "?/qonly/"
+func RemoveIndexAndDecrement(indexes []int, i int) []int {
+	newIndexes := make([]int, len(indexes)) //TODO: Understand better why this is necessary
+	copy(newIndexes, indexes)
+	for j := range newIndexes{
+		if j > i {
+			newIndexes[j]--
 		}
 	}
-	return append(command[:index], command[index+1:]...)
+	return newIndexes[i+1:]
+}
+
+func deleteIndexFromSliceRetainingQueryInfo(command []string, index int) []string {
+	newCommand := make([]string, len(command))
+	copy(newCommand, command)
+	if index == len(newCommand)-1 && strings.Contains(newCommand[index], "/"){
+		if strings.Contains(newCommand[index], "/nquery/"){
+			newCommand[index - 1] = newCommand[index - 1] + "/nquery/"
+		} else if strings.Contains(command[index], "?/qonly/"){
+			newCommand[index - 1] = newCommand[index - 1] + "?/qonly/"
+		}
+	}
+	return append(newCommand[:index], newCommand[index+1:]...)
 }
 
 func getOptionalIndexes(words []string) []int {

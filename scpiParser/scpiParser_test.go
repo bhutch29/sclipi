@@ -6,6 +6,40 @@ import (
 	"bufio"
 )
 
+func BenchmarkMxgScpi(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		lines, _ := readLines("MXGSCPI.txt")
+		splitScpiCommands(lines)
+	}
+}
+
+func TestScpiParserTwoOptionals(t *testing.T) {
+	lines := []string{":DIAGnostic[:CPU]:BLOCk:ABUS:LIST[:SINGle]"}
+	commands := splitScpiCommands(lines)
+	if len(commands) != 8 {
+		t.Error(":DIAGnostic[:CPU]:BLOCk:ABUS:LIST[:SINGle] not parsed properly:", commands)
+		return
+	}
+}
+
+func TestScpiParserThreeOptionals(t *testing.T) {
+	lines := []string{"[:SOURce]:AMPLitude[:LEVel]:STEP[:INCRement]"}
+	commands := splitScpiCommands(lines)
+	if len(commands) != 16 {
+		t.Error("[:SOURce]:AMPLitude[:LEVel]:STEP[:INCRement] not parsed properly:", commands)
+		return
+	}
+}
+
+func TestScpiParserFourOptionals(t *testing.T) {
+	lines := []string{"[:SOURce]:FREQuency[:CW][:FIXed][:FIXed]"}
+	commands := splitScpiCommands(lines)
+	if len(commands) != 32 {
+		t.Error("[:SOURce]:FREQuency[:CW][:FIXed][:FIXed] not parsed properly:", commands)
+		return
+	}
+}
+
 func TestScpiParserSuffix(t *testing.T) {
 	lines := []string{":Example{1:2}:Afterward"}
 	commands := splitScpiCommands(lines)
@@ -17,6 +51,16 @@ func TestScpiParserSuffix(t *testing.T) {
 		t.Error(":Example{1:2}:Afterward not parsed properly:", commands[0])
 	}
 }
+
+func TestScpiParserFirstOptional(t *testing.T) {
+	lines := []string{"[:SOURce]:FREQuency:SPAN"}
+	commands := splitScpiCommands(lines)
+	if len(commands) != 4 {
+		t.Error("[:SOURce]:FREQuency:SPAN not parsed properly:", commands)
+		return
+	}
+}
+
 func TestScpiParserNoQuery(t *testing.T) {
 
 	lines := []string{":ABORt/nquery/"}

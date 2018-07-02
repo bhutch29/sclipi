@@ -5,6 +5,51 @@ import (
 	"regexp"
 )
 
+type ScpiNode struct {
+	Content  string
+	Children []ScpiNode
+}
+
+func Parse(lines []string) ScpiNode {
+	head := ScpiNode{}
+	commands := splitScpiCommands(lines)
+
+	for _, command := range commands {
+		createScpiTreeBranch(command, &head)
+	}
+
+	return head
+}
+
+func createScpiTreeBranch(command []string, head *ScpiNode) {
+	if len(command) == 0 {
+		return
+	}
+	if exists, index := NodeExists(head.Children, command[0]); exists {
+		if len(command) == 1 {
+			return
+		} else {
+			createScpiTreeBranch(command[1:], &head.Children[index])
+		}
+	} else {
+		head.Children = append(head.Children, ScpiNode{Content: command[0]})
+		if len(command) > 1 {
+			createScpiTreeBranch(command[1:], &head.Children[len(head.Children) - 1])
+		}
+	}
+	return
+}
+
+func NodeExists(nodes []ScpiNode, word string) (bool, int) {
+	for i, node := range nodes{
+		if node.Content == word {
+			return true, i
+		}
+	}
+
+	return false, -1
+}
+
 func splitScpiCommands(lines []string) [][]string {
 	var commands [][]string
 	for _, line := range lines {
@@ -26,13 +71,13 @@ func splitScpiCommands(lines []string) [][]string {
 }
 func generateQueryCommands(commands [][]string) [][]string {
 	var result [][]string
-	for _, command := range commands{
+	for _, command := range commands {
 		last := len(command) - 1
-		if strings.Contains(command[last], "?/qonly/"){
-			command[last] = strings.Replace(command[last],"?/qonly/", "?", -1)
+		if strings.Contains(command[last], "?/qonly/") {
+			command[last] = strings.Replace(command[last], "?/qonly/", "?", -1)
 			result = append(result, command)
-		} else if strings.Contains(command[last], "/nquery/"){
-			command[last] = strings.Replace(command[last],"/nquery/", "", -1)
+		} else if strings.Contains(command[last], "/nquery/") {
+			command[last] = strings.Replace(command[last], "/nquery/", "", -1)
 			result = append(result, command)
 		} else {
 			result = append(result, command)
@@ -59,8 +104,8 @@ func branchSuffixes(s string) []string {
 
 	for i := startSuffix; i <= stopSuffix; i++ {
 		temp := []byte(s)
-		cut := append(temp[:startCut], s[stopCut - 1:]...) //Cut suffix portion out, leave one element for value
-		cut[startCut] = byte(i) //Insert value into spare element
+		cut := append(temp[:startCut], s[stopCut-1:]...) //Cut suffix portion out, leave one element for value
+		cut[startCut] = byte(i)                          //Insert value into spare element
 		suffixes = append(suffixes, branchSuffixes(string(cut))...)
 	}
 
@@ -71,16 +116,16 @@ func generateOptionalCommands(command []string, optionalIndexes []int) [][]strin
 	commands := [][]string{command}
 	for i, index := range optionalIndexes {
 		shortened := deleteIndexFromSliceRetainingQueryInfo(command, index)
-		remaining := RemoveIndexAndDecrement(optionalIndexes, i)
+		remaining := removeIndexAndDecrement(optionalIndexes, i)
 		commands = append(commands, generateOptionalCommands(shortened, remaining)...)
 	}
 	return commands
 }
 
-func RemoveIndexAndDecrement(indexes []int, i int) []int {
+func removeIndexAndDecrement(indexes []int, i int) []int {
 	newIndexes := make([]int, len(indexes)) //TODO: Understand better why this is necessary
 	copy(newIndexes, indexes)
-	for j := range newIndexes{
+	for j := range newIndexes {
 		if j > i {
 			newIndexes[j]--
 		}
@@ -91,11 +136,11 @@ func RemoveIndexAndDecrement(indexes []int, i int) []int {
 func deleteIndexFromSliceRetainingQueryInfo(command []string, index int) []string {
 	newCommand := make([]string, len(command))
 	copy(newCommand, command)
-	if index == len(newCommand)-1 && strings.Contains(newCommand[index], "/"){
-		if strings.Contains(newCommand[index], "/nquery/"){
-			newCommand[index - 1] = newCommand[index - 1] + "/nquery/"
-		} else if strings.Contains(command[index], "?/qonly/"){
-			newCommand[index - 1] = newCommand[index - 1] + "?/qonly/"
+	if index == len(newCommand)-1 && strings.Contains(newCommand[index], "/") {
+		if strings.Contains(newCommand[index], "/nquery/") {
+			newCommand[index-1] = newCommand[index-1] + "/nquery/"
+		} else if strings.Contains(command[index], "?/qonly/") {
+			newCommand[index-1] = newCommand[index-1] + "?/qonly/"
 		}
 	}
 	return append(newCommand[:index], newCommand[index+1:]...)

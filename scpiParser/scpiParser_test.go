@@ -13,6 +13,12 @@ func BenchmarkMxgScpi(b *testing.B) {
 	}
 }
 
+func TestGenerateTree(t *testing.T) {
+	lines, _ := readLines("MXGSCPI.txt")
+
+	Parse(lines) //TODO: Generate real tests
+}
+
 func TestScpiParserTwoOptionals(t *testing.T) {
 	lines := []string{":DIAGnostic[:CPU]:BLOCk:ABUS:LIST[:SINGle]"}
 	commands := splitScpiCommands(lines)

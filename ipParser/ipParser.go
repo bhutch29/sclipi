@@ -14,6 +14,7 @@ type IpNode struct {
 }
 
 // Only parses the first 2 sections for now
+//TODO: Refactor
 func ParseIpv4(ips []net.IP) IpNode {
 	head := IpNode{}
 	for _, address := range ips {

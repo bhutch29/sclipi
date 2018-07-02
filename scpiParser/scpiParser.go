@@ -3,8 +3,6 @@ package scpiParser
 import (
 	"strings"
 	"regexp"
-	"strconv"
-	"fmt"
 )
 
 func splitScpiCommands(lines []string) [][]string {
@@ -12,65 +10,44 @@ func splitScpiCommands(lines []string) [][]string {
 	for _, line := range lines {
 		line = strings.Replace(line, "[", "", -1)
 		trimmed := strings.TrimLeft(line, ":")
-		split := strings.Split(trimmed, ":")
-		withOptionals := generateOptionalCommands(split, getOptionalIndexes(split))
+		suffixed := branchSuffixes(trimmed)
 
-		var withSuffixes [][]string
-		for _, command := range withOptionals {
-			withSuffixes = append(withSuffixes, generateSuffixedCommands(command)...)
-		}
+		for _, item := range suffixed {
+			split := strings.Split(item, ":")
+			withOptionals := generateOptionalCommands(split, getOptionalIndexes(split))
 
-		for _, command := range withSuffixes {
-			commands = append(commands, command)
+			for _, command := range withOptionals {
+				commands = append(commands, command)
+			}
 		}
 	}
 	return commands
 }
-func generateSuffixedCommands(command []string) [][]string {
-	var commands [][]string
-	suffixed := false
-	for i, word := range command{
-		if isSuffixed(word) {
-			suffixed = true
-			for _, suffix := range branchSuffixes(word){
-				temp := command
-				temp[i] = suffix
-				generateSuffixedCommands(temp)
-			}
-		}
-	}
 
-	if suffixed {
-		return [][]string{}
-	} else {
-		return commands
-	}
-
-}
-func branchSuffixes(s string) []string{
+func branchSuffixes(s string) []string {
 	var suffixes []string
-	r, _ := regexp.Compile("([^{]*){([0-9]):([0-9])}")
-	result := r.FindStringSubmatch(s)
-	prefix := result[1]
-	start, err := strconv.Atoi(result[2])
-	if err != nil {
-		fmt.Println("Error parsing start value of suffix, e.g. {1:2}. Error = " + err.Error())
-		return []string{}
+	r, _ := regexp.Compile("{([0-9]):([0-9])}")
+	match := r.FindStringSubmatchIndex(s)
+	if match == nil {
+		return []string{s}
 	}
-	stop, err := strconv.Atoi(result[3])
-	if err != nil {
-		fmt.Println("Error parsing stop value of suffix, e.g. {1:2}. Error = " + err.Error())
-		return []string{}
-	}
+	startSuffix := s[match[2]]
+	stopSuffix := s[match[4]]
+	startCut := match[0]
+	stopCut := match[1]
 
-	for i := start; i <= stop; i++  {
-		suffixes = append(suffixes, prefix + strconv.Itoa(i))
+	for i := startSuffix; i <= stopSuffix; i++ {
+		temp := []byte(s)
+		cut := append(temp[:startCut], s[stopCut - 1:]...)
+		cut[startCut] = byte(i)
+		//result := string(cut) + string(i)
+		suffixes = append(suffixes, branchSuffixes(string(cut))...)
 	}
 
 	return suffixes
 }
 
-func isSuffixed(s string) bool{
+func isSuffixed(s string) bool {
 	return strings.Contains(s, "{")
 }
 

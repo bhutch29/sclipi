@@ -10,7 +10,7 @@ func TestScpiParser(t *testing.T) {
 	lines := []string {":Example{1:2}:Afterward"}
 	commands := splitScpiCommands(lines)
 	if len(commands) != 4 {
-		t.Error(":Example{1:2}:Afterward not parsed properly:", commands[0])
+		t.Error(":Example{1:2}:Afterward not parsed properly:", commands)
 		return
 	}
 	if len(commands[0]) != 2 {
@@ -66,6 +66,11 @@ func TestBranchSuffixes(t *testing.T) {
 	}
 	if result[0] != "Example1"{
 		t.Error("Example{1:3} first element not Example1", result)
+	}
+
+	result = branchSuffixes(":Hello{1:2}:World{1:3}:Again{1:2}")
+	if len(result) != 12 {
+		t.Error(":Hello{1:2}:World{1:3}:Again{1:2} not parsed to 12 results", result)
 	}
 }
 

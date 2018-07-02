@@ -6,8 +6,8 @@ import (
 	"bufio"
 )
 
-func TestScpiParser(t *testing.T) {
-	lines := []string {":Example{1:2}:Afterward"}
+func TestScpiParserSuffix(t *testing.T) {
+	lines := []string{":Example{1:2}:Afterward"}
 	commands := splitScpiCommands(lines)
 	if len(commands) != 4 {
 		t.Error(":Example{1:2}:Afterward not parsed properly:", commands)
@@ -16,9 +16,11 @@ func TestScpiParser(t *testing.T) {
 	if len(commands[0]) != 2 {
 		t.Error(":Example{1:2}:Afterward not parsed properly:", commands[0])
 	}
+}
+func TestScpiParserNoQuery(t *testing.T) {
 
-	lines = []string {":ABORt/nquery/"}
-	commands = splitScpiCommands(lines)
+	lines := []string{":ABORt/nquery/"}
+	commands := splitScpiCommands(lines)
 	if len(commands) != 1 {
 		t.Error(":ABORt/nquery/ not parsed properly:", commands[0])
 		return
@@ -26,22 +28,41 @@ func TestScpiParser(t *testing.T) {
 	if len(commands[0]) != 1 {
 		t.Error(":ABORt/nquery/ not parsed properly:", commands[0])
 	}
+}
 
-	lines = []string {":ABORt[:SWEep]/nquery/"}
-	commands = splitScpiCommands(lines)
+func TestScpiParserOptionalsNoQuery(t *testing.T) {
+	lines := []string{":ABORt[:SWEep]/nquery/"}
+	commands := splitScpiCommands(lines)
 	if len(commands) != 2 {
 		t.Error(":ABORt[:SWEep]/nquery/ not parsed properly:", commands)
 		return
 	}
-	if len(commands[0]) != 2  {
+	if len(commands[0]) != 2 {
 		t.Error(":ABORt[:SWEep]/nquery/ not parsed properly:", commands[0])
 	}
 	if len(commands[1]) != 1 {
 		t.Error(":ABORt[:SWEep]/nquery/ not parsed properly:", commands[1])
 	}
+}
 
-	lines = []string {":CALibration:BBG:CHANnel:OFFSet"}
-	commands = splitScpiCommands(lines)
+func TestScpiParserOptionals(t *testing.T) {
+	lines := []string{":ABORt[:SWEep]"}
+	commands := splitScpiCommands(lines)
+	if len(commands) != 4 {
+		t.Error(":ABORt[:SWEep] not parsed properly:", commands)
+		return
+	}
+	if len(commands[0]) != 2 {
+		t.Error(":ABORt[:SWEep] not parsed properly:", commands[0])
+	}
+	if len(commands[1]) != 1 {
+		t.Error(":ABORt[:SWEep] not parsed properly:", commands[1])
+	}
+}
+
+func TestScpiParserBasic(t *testing.T) {
+	lines := []string {":CALibration:BBG:CHANnel:OFFSet"}
+	commands := splitScpiCommands(lines)
 	if len(commands) != 2 {
 		t.Error(":CALibration:BBG:CHANnel:OFFSet not parsed properly:", commands)
 		return

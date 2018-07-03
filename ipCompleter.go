@@ -17,7 +17,10 @@ func (ic *ipCompleter) completer(d prompt.Document) []prompt.Suggest {
 	ipSuggests := ic.suggestsFromNode(ic.getCurrentNode(tree, inputs))
 	ipSuggests = prompt.FilterHasPrefix(ipSuggests, d.GetWordBeforeCursorUntilSeparator("."), true)
 
-	otherSuggests := []prompt.Suggest{{Text: "localhost", Description: "Connect to local machine"}}
+	otherSuggests := []prompt.Suggest{
+		{Text: "localhost", Description: "Connect to local machine"},
+		{Text: "simulated", Description: "Connect to simulated Keysight MXG"},
+	}
 	otherSuggests = prompt.FilterHasPrefix(otherSuggests, d.GetWordBeforeCursor(), false)
 
 	suggests := append(ipSuggests, otherSuggests...)

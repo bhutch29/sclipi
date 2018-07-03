@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/c-bata/go-prompt"
 	"github.com/schollz/progressbar"
-	"time"
+	"log"
 )
 
 func main() {
@@ -13,15 +13,27 @@ func main() {
 	defer fmt.Println("Bye!")
 
 	ic := ipCompleter{}
-	sc := scpiCompleter{} //TODO: Pass in instrument
 
 	address := prompt.Input(
 		"IP Address: ",
 		ic.completer,
 		prompt.OptionCompletionWordSeparator("."))
 
-	ConnectToInstrument(address)
-	sc.prepareScpiCompleter()
+	bar := progressbar.New(100)
+	bar.Add(25)
+
+	inst, err := buildAndConnectInstrument(address)
+	if err != nil {
+		fmt.Println()
+		fmt.Println(err)
+		log.Fatal()
+	}
+
+	bar.Add(25)
+	sc := newScpiCompleter(inst)
+	bar.Add(50)
+
+	fmt.Println()
 
 	p := prompt.New(
 		simpleExecutor,
@@ -33,12 +45,16 @@ func main() {
 	p.Run()
 }
 
-func ConnectToInstrument(address string) { //TODO: return instrument?
-	bar := progressbar.New(1000)
-	for i := 0; i < 1000; i++ {
-		bar.Add(1)
-		time.Sleep(1 * time.Millisecond)
+func buildAndConnectInstrument(address string) (iInstrument, error) {
+	var inst iInstrument
+	if address == "sim" || address == "simulate" || address == "simulated" {
+		inst = simInstrument{}
+	} else {
+		inst = instrument{}
 	}
-	fmt.Println()
-	fmt.Println("You selected " + address)
+	err := inst.Connect(address + ":5025")
+	if err != nil {
+		return inst, err
+	}
+	return inst, nil
 }

@@ -7,10 +7,18 @@ import (
 
 type scpiCompleter struct {
 	provider ScpiProvider
+	inst iInstrument
+}
+
+func newScpiCompleter(i iInstrument) scpiCompleter {
+	sc := scpiCompleter{}
+	sc.inst = i
+	sc.prepareScpiCompleter()
+	return sc
 }
 
 func (sc *scpiCompleter) prepareScpiCompleter(){
-	sc.provider.getTree()
+	sc.provider.getTree(sc.inst)
 }
 
 func (sc *scpiCompleter) completer(d prompt.Document) []prompt.Suggest {
@@ -18,7 +26,7 @@ func (sc *scpiCompleter) completer(d prompt.Document) []prompt.Suggest {
 		return []prompt.Suggest{}
 	}
 
-	tree := sc.provider.getTree()
+	tree := sc.provider.getTree(sc.inst)
 	inputs := strings.Split(d.TextBeforeCursor(), ":")
 	current := sc.getCurrentNode(tree, inputs)
 

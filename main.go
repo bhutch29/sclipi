@@ -30,14 +30,14 @@ func main() {
 	}
 
 	bar.Add(25)
-	sc := newScpiCompleter(inst)
+	sm := newScpiManager(inst)
 	bar.Add(50)
 
 	fmt.Println()
 
 	p := prompt.New(
-		simpleExecutor,
-		sc.completer,
+		sm.executor,
+		sm.completer,
 		prompt.OptionTitle("SCPI CLI (SCliPI)"),
 		prompt.OptionInputTextColor(prompt.Yellow),
 		prompt.OptionCompletionWordSeparator(":"))

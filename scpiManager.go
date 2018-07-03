@@ -3,25 +3,34 @@ package main
 import (
 	"github.com/c-bata/go-prompt"
 	"strings"
+	"fmt"
 )
 
-type scpiCompleter struct {
+type scpiManager struct {
 	provider ScpiProvider
 	inst iInstrument
 }
 
-func newScpiCompleter(i iInstrument) scpiCompleter {
-	sc := scpiCompleter{}
-	sc.inst = i
-	sc.prepareScpiCompleter()
-	return sc
+func newScpiManager(i iInstrument) scpiManager {
+	sm := scpiManager{}
+	sm.inst = i
+	sm.prepareScpiCompleter()
+	return sm
 }
 
-func (sc *scpiCompleter) prepareScpiCompleter(){
-	sc.provider.getTree(sc.inst)
+func (sc *scpiManager) executor(s string) {
+	if strings.Contains(s, "?") {
+		r, err := sc.inst.Query(s)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(r)
+	} else {
+		sc.inst.Command(s)
+	}
 }
 
-func (sc *scpiCompleter) completer(d prompt.Document) []prompt.Suggest {
+func (sc *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	if d.TextBeforeCursor() == "" {
 		return []prompt.Suggest{}
 	}
@@ -33,7 +42,11 @@ func (sc *scpiCompleter) completer(d prompt.Document) []prompt.Suggest {
 	return prompt.FilterHasPrefix(sc.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
 }
 
-func (sc *scpiCompleter) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
+func (sc *scpiManager) prepareScpiCompleter(){
+	sc.provider.getTree(sc.inst)
+}
+
+func (sc *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
 	current := tree
 	for _, item := range inputs {
 		if success, node := sc.getNodeChildByContent(current, item); success {
@@ -43,7 +56,7 @@ func (sc *scpiCompleter) getCurrentNode(tree scpiNode, inputs []string) scpiNode
 	return current
 }
 
-func (sc *scpiCompleter) suggestsFromNode(node scpiNode) []prompt.Suggest {
+func (sc *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
 	var s []prompt.Suggest
 	for _, item := range node.Children{
 		s = append(s, prompt.Suggest{Text: item.Content})
@@ -51,7 +64,7 @@ func (sc *scpiCompleter) suggestsFromNode(node scpiNode) []prompt.Suggest {
 	return s
 }
 
-func (sc *scpiCompleter) getNodeChildByContent(parent scpiNode, item string) (bool, scpiNode) {
+func (sc *scpiManager) getNodeChildByContent(parent scpiNode, item string) (bool, scpiNode) {
 	for _, node := range parent.Children{
 		if node.Content == item {
 			return true, node

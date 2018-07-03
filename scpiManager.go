@@ -35,11 +35,17 @@ func (sc *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 		return []prompt.Suggest{}
 	}
 
-	tree := sc.provider.getTree(sc.inst)
-	inputs := strings.Split(d.TextBeforeCursor(), ":")
-	current := sc.getCurrentNode(tree, inputs)
+	//if string(d.Text[0]) == ":" {
+		tree := sc.provider.getTree(sc.inst)
+		inputs := strings.Split(d.TextBeforeCursor(), ":")
+		current := sc.getCurrentNode(tree, inputs)
 
-	return prompt.FilterHasPrefix(sc.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
+		return prompt.FilterHasPrefix(sc.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
+	//}
+
+	//return []prompt.Suggest{
+	//	{Text: "history"},
+	//}
 }
 
 func (sc *scpiManager) prepareScpiCompleter() {

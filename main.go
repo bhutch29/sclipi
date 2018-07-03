@@ -52,9 +52,10 @@ func buildAndConnectInstrument(address string) (instrument, error) {
 	} else {
 		inst = scpiInstrument{}
 	}
-	err := inst.Connect(address + ":5025")
-	if err != nil {
+
+	if err := inst.Connect(address + ":5025"); err != nil {
 		return inst, err
 	}
+
 	return inst, nil
 }

@@ -15,6 +15,8 @@ func main() {
 	address := prompt.Input("IP Address: ", ipCompleter, prompt.OptionCompletionWordSeparator("."))
 	ConnectToInstrument(address)
 
+	prepareScpiCompleter() //TODO: refactor. This should speed up first SCPI command though
+
 	p := prompt.New(
 		simpleExecutor,
 		scpiCompleter,

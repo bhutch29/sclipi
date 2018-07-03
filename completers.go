@@ -13,6 +13,10 @@ func nullCompleter(d prompt.Document) []prompt.Suggest {
 
 var scpiProvider ScpiProvider
 
+func prepareScpiCompleter(){
+	scpiProvider.GetTree()
+}
+
 func scpiCompleter(d prompt.Document) []prompt.Suggest {
 	if d.TextBeforeCursor() == "" {
 		return []prompt.Suggest{}

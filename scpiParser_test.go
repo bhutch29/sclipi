@@ -1,4 +1,4 @@
-package scpiParser
+package main
 
 import (
 	"testing"
@@ -6,15 +6,15 @@ import (
 
 func BenchmarkMxgScpi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		lines, _ := ReadLines("MXGSCPI.txt")
+		lines, _ := readLines("MXGSCPI.txt")
 		splitScpiCommands(lines)
 	}
 }
 
 func TestGenerateTree(t *testing.T) {
-	lines, _ := ReadLines("MXGSCPI.txt")
+	lines, _ := readLines("MXGSCPI.txt")
 
-	Parse(lines) //TODO: Generate real tests
+	parse(lines) //TODO: Generate real tests
 }
 
 func TestScpiParserTwoOptionals(t *testing.T) {

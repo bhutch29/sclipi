@@ -1,4 +1,4 @@
-package ipParser
+package main
 
 import (
 	"testing"

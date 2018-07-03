@@ -9,7 +9,7 @@ type IpProvider struct{
 	 addresses []net.IP
 }
 
-func (p IpProvider) getIpAddresses(filter func([]net.IP)([]net.IP)) []net.IP {
+func (p *IpProvider) getIpAddresses(filter func([]net.IP)([]net.IP)) []net.IP {
 	if len(p.addresses) == 0 {
 		var ips [] net.IP
 		interfaces, _ := net.Interfaces()
@@ -29,7 +29,7 @@ func (p IpProvider) getIpAddresses(filter func([]net.IP)([]net.IP)) []net.IP {
 	return filter(p.addresses)
 }
 
-func (p IpProvider) filterIpv4(ips []net.IP) []net.IP {
+func (p *IpProvider) filterIpv4(ips []net.IP) []net.IP {
 	var filtered []net.IP
 	for _, ip := range ips {
 		if !strings.Contains(ip.String(), ":") {

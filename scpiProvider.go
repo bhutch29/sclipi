@@ -1,25 +1,24 @@
 package main
 
 import (
-	"SCliPI/scpiParser"
 	"fmt"
 )
 
 type ScpiProvider struct {
-	tree scpiParser.ScpiNode
+	tree scpiNode
 }
 
 func (p *ScpiProvider) getCommands() []string {
-	lines, err := scpiParser.ReadLines("scpiParser/MXGSCPI.txt")
+	lines, err := readLines("MXGSCPI.txt")
 	if err != nil {
 		fmt.Println(err)
 	}
 	return lines
 }
 
-func (p *ScpiProvider) GetTree() scpiParser.ScpiNode {
+func (p *ScpiProvider) getTree() scpiNode {
 	if len(p.tree.Children) == 0{
-		p.tree = scpiParser.Parse(p.getCommands())
+		p.tree = parseScpi(p.getCommands())
 	}
 	return p.tree
 }

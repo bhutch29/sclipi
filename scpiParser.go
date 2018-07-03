@@ -1,4 +1,4 @@
-package scpiParser
+package main
 
 import (
 	"strings"
@@ -7,13 +7,13 @@ import (
 	"bufio"
 )
 
-type ScpiNode struct {
+type scpiNode struct {
 	Content  string
-	Children []ScpiNode
+	Children []scpiNode
 }
 
-func Parse(lines []string) ScpiNode {
-	head := ScpiNode{}
+func parseScpi(lines []string) scpiNode {
+	head := scpiNode{}
 	commands := splitScpiCommands(lines)
 
 	for _, command := range commands {
@@ -23,18 +23,18 @@ func Parse(lines []string) ScpiNode {
 	return head
 }
 
-func createScpiTreeBranch(command []string, head *ScpiNode) {
+func createScpiTreeBranch(command []string, head *scpiNode) {
 	if len(command) == 0 {
 		return
 	}
-	if exists, index := NodeExists(head.Children, command[0]); exists {
+	if exists, index := scpiNodeExists(head.Children, command[0]); exists {
 		if len(command) == 1 {
 			return
 		} else {
 			createScpiTreeBranch(command[1:], &head.Children[index])
 		}
 	} else {
-		head.Children = append(head.Children, ScpiNode{Content: command[0]})
+		head.Children = append(head.Children, scpiNode{Content: command[0]})
 		if len(command) > 1 {
 			createScpiTreeBranch(command[1:], &head.Children[len(head.Children) - 1])
 		}
@@ -42,7 +42,7 @@ func createScpiTreeBranch(command []string, head *ScpiNode) {
 	return
 }
 
-func NodeExists(nodes []ScpiNode, word string) (bool, int) {
+func scpiNodeExists(nodes []scpiNode, word string) (bool, int) {
 	for i, node := range nodes{
 		if node.Content == word {
 			return true, i
@@ -166,7 +166,7 @@ func removeSquareBraces(words []string) []string {
 	return result
 }
 
-func ReadLines(path string) ([]string, error) {
+func readLines(path string) ([]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err

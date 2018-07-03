@@ -12,21 +12,28 @@ func main() {
 	fmt.Println("Please use `CTRL-D` to exit this program..")
 	defer fmt.Println("Bye!")
 
-	address := prompt.Input("IP Address: ", ipCompleter, prompt.OptionCompletionWordSeparator("."))
-	ConnectToInstrument(address)
+	ic := ipCompleter{}
+	sc := scpiCompleter{} //TODO: Pass in instrument
 
-	prepareScpiCompleter() //TODO: refactor. This should speed up first SCPI command though
+	address := prompt.Input(
+		"IP Address: ",
+		ic.completer,
+		prompt.OptionCompletionWordSeparator("."))
+
+	ConnectToInstrument(address)
+	sc.prepareScpiCompleter()
 
 	p := prompt.New(
 		simpleExecutor,
-		scpiCompleter,
+		sc.completer,
 		prompt.OptionTitle("SCPI CLI (SCliPI)"),
 		prompt.OptionInputTextColor(prompt.Yellow),
 		prompt.OptionCompletionWordSeparator(":"))
+
 	p.Run()
 }
 
-func ConnectToInstrument(address string) {
+func ConnectToInstrument(address string) { //TODO: return instrument?
 	bar := progressbar.New(1000)
 	for i := 0; i < 1000; i++ {
 		bar.Add(1)

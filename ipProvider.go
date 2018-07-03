@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-type IpProvider struct{
-	 addresses []net.IP
+type IpProvider struct {
+	addresses []net.IP
 }
 
-func (p *IpProvider) getIpAddresses(filter func([]net.IP)([]net.IP)) []net.IP {
+func (p *IpProvider) getIpAddresses(filter func([]net.IP) []net.IP) []net.IP {
 	if len(p.addresses) == 0 {
-		var ips [] net.IP
+		var ips []net.IP
 		interfaces, _ := net.Interfaces()
 		for _, i := range interfaces {
 			addresses, _ := i.Addrs()

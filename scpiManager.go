@@ -1,17 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"github.com/c-bata/go-prompt"
 	"strings"
-	"fmt"
 )
 
 type scpiManager struct {
 	provider ScpiProvider
-	inst iInstrument
+	inst     instrument
 }
 
-func newScpiManager(i iInstrument) scpiManager {
+func newScpiManager(i instrument) scpiManager {
 	sm := scpiManager{}
 	sm.inst = i
 	sm.prepareScpiCompleter()
@@ -42,7 +42,7 @@ func (sc *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	return prompt.FilterHasPrefix(sc.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
 }
 
-func (sc *scpiManager) prepareScpiCompleter(){
+func (sc *scpiManager) prepareScpiCompleter() {
 	sc.provider.getTree(sc.inst)
 }
 
@@ -58,14 +58,14 @@ func (sc *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
 
 func (sc *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
 	var s []prompt.Suggest
-	for _, item := range node.Children{
+	for _, item := range node.Children {
 		s = append(s, prompt.Suggest{Text: item.Content})
 	}
 	return s
 }
 
 func (sc *scpiManager) getNodeChildByContent(parent scpiNode, item string) (bool, scpiNode) {
-	for _, node := range parent.Children{
+	for _, node := range parent.Children {
 		if node.Content == item {
 			return true, node
 		}

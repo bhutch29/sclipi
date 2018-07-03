@@ -45,12 +45,12 @@ func main() {
 	p.Run()
 }
 
-func buildAndConnectInstrument(address string) (iInstrument, error) {
-	var inst iInstrument
-	if address == "sim" || address == "simulate" || address == "simulated" {
+func buildAndConnectInstrument(address string) (instrument, error) {
+	var inst instrument
+	if address == "simulated" {
 		inst = simInstrument{}
 	} else {
-		inst = instrument{}
+		inst = scpiInstrument{}
 	}
 	err := inst.Connect(address + ":5025")
 	if err != nil {

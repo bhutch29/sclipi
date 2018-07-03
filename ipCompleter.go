@@ -5,8 +5,7 @@ import (
 	"strings"
 )
 
-
-type ipCompleter struct{
+type ipCompleter struct {
 	provider IpProvider
 }
 

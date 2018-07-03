@@ -7,14 +7,13 @@ import (
 func BenchmarkMxgScpi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		lines, _ := readLines("MXGSCPI.txt")
-		splitScpiCommands(lines)
+		parseScpi(lines)
 	}
 }
 
 func TestGenerateTree(t *testing.T) {
 	lines, _ := readLines("MXGSCPI.txt")
-
-	parse(lines) //TODO: Generate real tests
+	parseScpi(lines) //TODO: Generate real tests
 }
 
 func TestScpiParserTwoOptionals(t *testing.T) {
@@ -109,7 +108,7 @@ func TestScpiParserOptionals(t *testing.T) {
 }
 
 func TestScpiParserBasic(t *testing.T) {
-	lines := []string {":CALibration:BBG:CHANnel:OFFSet"}
+	lines := []string{":CALibration:BBG:CHANnel:OFFSet"}
 	commands := splitScpiCommands(lines)
 	if len(commands) != 2 {
 		t.Error(":CALibration:BBG:CHANnel:OFFSet not parsed properly:", commands)
@@ -133,7 +132,7 @@ func TestBranchSuffixes(t *testing.T) {
 	if len(result) != 3 {
 		t.Error("Example{1:3} not parsed to 3 results", result)
 	}
-	if result[0] != "Example1"{
+	if result[0] != "Example1" {
 		t.Error("Example{1:3} first element not Example1", result)
 	}
 

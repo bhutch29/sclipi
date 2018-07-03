@@ -1,10 +1,10 @@
 package main
 
 import (
-	"strings"
-	"regexp"
-	"os"
 	"bufio"
+	"os"
+	"regexp"
+	"strings"
 )
 
 type scpiNode struct {
@@ -36,14 +36,14 @@ func createScpiTreeBranch(command []string, head *scpiNode) {
 	} else {
 		head.Children = append(head.Children, scpiNode{Content: command[0]})
 		if len(command) > 1 {
-			createScpiTreeBranch(command[1:], &head.Children[len(head.Children) - 1])
+			createScpiTreeBranch(command[1:], &head.Children[len(head.Children)-1])
 		}
 	}
 	return
 }
 
 func scpiNodeExists(nodes []scpiNode, word string) (bool, int) {
-	for i, node := range nodes{
+	for i, node := range nodes {
 		if node.Content == word {
 			return true, i
 		}
@@ -71,6 +71,7 @@ func splitScpiCommands(lines []string) [][]string {
 	}
 	return commands
 }
+
 func generateQueryCommands(commands [][]string) [][]string {
 	var result [][]string
 	for _, command := range commands {

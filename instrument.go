@@ -1,40 +1,40 @@
 package main
 
 import (
-	"net"
 	"bufio"
 	"fmt"
+	"net"
 	"strings"
 )
 
-type iInstrument interface {
+type instrument interface {
 	Connect(string) error
 	Command(string)
 	Query(string) (string, error)
 	getSupportedCommands() ([]string, error)
 }
 
-type instrument struct {
+type scpiInstrument struct {
 	address    string
 	connection net.Conn
 }
 
-func (i instrument) Connect(address string) error {
+func (i scpiInstrument) Connect(address string) error {
 	i.address = address
 	connection, err := net.Dial("tcp", i.address)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Successfully connected to instrument at address " + i.address)
+	fmt.Println("Successfully connected to scpiInstrument at address " + i.address)
 	i.connection = connection
 	return nil
 }
 
-func (i instrument) Command(command string) {
+func (i scpiInstrument) Command(command string) {
 	fmt.Fprintf(i.connection, command+"\n")
 }
 
-func (i instrument) Query(query string) (string, error) {
+func (i scpiInstrument) Query(query string) (string, error) {
 	fmt.Fprintf(i.connection, query+"\n")
 	message, err := bufio.NewReader(i.connection).ReadString('\n')
 	if err != nil {
@@ -43,7 +43,7 @@ func (i instrument) Query(query string) (string, error) {
 	return message, nil
 }
 
-func (i instrument) getSupportedCommands()  ([]string, error){
+func (i scpiInstrument) getSupportedCommands() ([]string, error) {
 	result, err := i.Query("SYST:HELP:HEAD?")
 	if err != nil {
 		return []string{}, err
@@ -51,9 +51,7 @@ func (i instrument) getSupportedCommands()  ([]string, error){
 	return strings.Split(result, "\n"), nil
 }
 
-
-type simInstrument struct{
-	
+type simInstrument struct {
 }
 
 func (i simInstrument) Connect(address string) error {
@@ -67,7 +65,7 @@ func (i simInstrument) Query(query string) (string, error) {
 	return query, nil
 }
 
-func (i simInstrument) getSupportedCommands()  ([]string, error){
+func (i simInstrument) getSupportedCommands() ([]string, error) {
 	lines, err := readLines("MXGSCPI.txt")
 	if err != nil {
 		return []string{}, err

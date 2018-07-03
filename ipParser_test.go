@@ -1,13 +1,13 @@
 package main
 
 import (
-	"testing"
 	"net"
+	"testing"
 )
 
 func TestParseIpv4(t *testing.T) {
 	testData := []net.IP{net.ParseIP("1.2.3.4"), net.ParseIP("1.2.99.99"), net.ParseIP("5.11.99.99"), net.ParseIP("5.12.99.99")}
-	result := ParseIpv4(testData)
+	result := parseIpv4(testData)
 	if len(result.Children) != 2 {
 		t.Error("Wrong number of first level children", result.Children)
 	}

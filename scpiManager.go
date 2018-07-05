@@ -11,6 +11,7 @@ import (
 type scpiManager struct {
 	provider ScpiProvider
 	inst     instrument
+	history History
 }
 
 func newScpiManager(i instrument) scpiManager {
@@ -20,7 +21,7 @@ func newScpiManager(i instrument) scpiManager {
 	return sm
 }
 
-func (sc *scpiManager) executor(s string) {
+func (sm *scpiManager) executor(s string) {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return
@@ -29,15 +30,17 @@ func (sc *scpiManager) executor(s string) {
 		os.Exit(0)
 	}
 
+	sm.history.addEntry(s)
+
 	if string(s[0]) == ":" {
-		handleScpi(s, sc.inst)
+		sm.handleScpi(s, sm.inst)
 	} else if string(s[0]) == "-"{
-		handleOptions(s)
+		sm.handleOptions(s)
 	} else {
-		handlePassThrough(s)
+		sm.handlePassThrough(s)
 	}
 }
-func handlePassThrough(s string) {
+func (sm *scpiManager) handlePassThrough(s string) {
 	cmd := exec.Command("sh", "-c", s)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -47,17 +50,26 @@ func handlePassThrough(s string) {
 	}
 }
 
-func handleOptions(s string) {
+func (sm *scpiManager) handleOptions(s string) {
 	switch s {
 	case "-history":
-		printHistory()
+		sm.printHistory()
+	case "-copy":
+		sm.copyPreviousToClipboard()
 	}
 }
-func printHistory() {
-	//TODO: Store my own history outside of the prompt library
+func (sm *scpiManager) copyPreviousToClipboard() {
+	//TODO
+}
+func (sm *scpiManager) printHistory() {
+	for _, entry := range sm.history.entries{
+		if entry != "-history" {
+			fmt.Println(entry)
+		}
+	}
 }
 
-func handleScpi(s string, inst instrument) {
+func (sm *scpiManager) handleScpi(s string, inst instrument) {
 	if strings.Contains(s, "?") {
 		r, err := inst.Query(s)
 		if err != nil {
@@ -69,17 +81,17 @@ func handleScpi(s string, inst instrument) {
 	}
 }
 
-func (sc *scpiManager) completer(d prompt.Document) []prompt.Suggest {
+func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	if d.TextBeforeCursor() == "" {
 		return []prompt.Suggest{}
 	}
 
 	if string(d.Text[0]) == ":" {
-		tree := sc.provider.getTree(sc.inst)
+		tree := sm.provider.getTree(sm.inst)
 		inputs := strings.Split(d.TextBeforeCursor(), ":")
-		current := sc.getCurrentNode(tree, inputs)
+		current := sm.getCurrentNode(tree, inputs)
 
-		return prompt.FilterHasPrefix(sc.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
+		return prompt.FilterHasPrefix(sm.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
 	}
 
 	suggests := []prompt.Suggest{
@@ -91,21 +103,21 @@ func (sc *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	return prompt.FilterHasPrefix(suggests, d.GetWordBeforeCursor(), true)
 }
 
-func (sc *scpiManager) prepareScpiCompleter() {
-	sc.provider.getTree(sc.inst)
+func (sm *scpiManager) prepareScpiCompleter() {
+	sm.provider.getTree(sm.inst)
 }
 
-func (sc *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
+func (sm *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
 	current := tree
 	for _, item := range inputs {
-		if success, node := sc.getNodeChildByContent(current, item); success {
+		if success, node := sm.getNodeChildByContent(current, item); success {
 			current = node
 		}
 	}
 	return current
 }
 
-func (sc *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
+func (sm *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
 	var s []prompt.Suggest
 	for _, item := range node.Children {
 		s = append(s, prompt.Suggest{Text: item.Content})
@@ -113,7 +125,7 @@ func (sc *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
 	return s
 }
 
-func (sc *scpiManager) getNodeChildByContent(parent scpiNode, item string) (bool, scpiNode) {
+func (sm *scpiManager) getNodeChildByContent(parent scpiNode, item string) (bool, scpiNode) {
 	for _, node := range parent.Children {
 		if node.Content == item {
 			return true, node

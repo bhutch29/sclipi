@@ -123,12 +123,12 @@ func TestScpiParserBasic(t *testing.T) {
 }
 
 func TestBranchSuffixes(t *testing.T) {
-	result := branchSuffixes("Example{1:1}")
+	result := handleSuffixes("Example{1:1}")
 	if len(result) != 1 {
 		t.Error("Example{1:1} not parsed to 1 result", result)
 	}
 
-	result = branchSuffixes("Example{1:3}")
+	result = handleSuffixes("Example{1:3}")
 	if len(result) != 3 {
 		t.Error("Example{1:3} not parsed to 3 results", result)
 	}
@@ -136,8 +136,13 @@ func TestBranchSuffixes(t *testing.T) {
 		t.Error("Example{1:3} first element not Example1", result)
 	}
 
-	result = branchSuffixes(":Hello{1:2}:World{1:3}:Again{1:2}")
+	result = handleSuffixes(":Hello{1:2}:World{1:3}:Again{1:2}")
 	if len(result) != 12 {
 		t.Error(":Hello{1:2}:World{1:3}:Again{1:2} not parsed to 12 results", result)
+	}
+
+	result = handleSuffixes("	[:SOURce]:FSIMulator{1:1}:CORRelation:FADer{1:1}:FADer{1:1}:PATH{1:24}")
+	if len(result) != 24 {
+		t.Error("	[:SOURce]:FSIMulator{1:1}:CORRelation:FADer{1:1}:FADer{1:1}:PATH{1:24} not parsed to 24 results", len(result), result)
 	}
 }

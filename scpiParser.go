@@ -5,6 +5,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"strconv"
 )
 
 type scpiNode struct {
@@ -57,12 +58,12 @@ func splitScpiCommands(lines []string) [][]string {
 	for _, line := range lines {
 		line = strings.Replace(line, "[", "", -1)
 		trimmed := strings.TrimLeft(line, ":")
-		suffixed := branchSuffixes(trimmed)
+		suffixed := handleSuffixes(trimmed)
 
 		for _, item := range suffixed {
 			split := strings.Split(item, ":")
-			withOptionals := generateOptionalCommands(removeSquareBraces(split), getOptionalIndexes(split))
-			withQueries := generateQueryCommands(withOptionals)
+			withOptionals := handleOptionals(removeSquareBraces(split), getOptionalIndexes(split))
+			withQueries := handleQueries(withOptionals)
 
 			for _, command := range withQueries {
 				commands = append(commands, command)
@@ -72,7 +73,7 @@ func splitScpiCommands(lines []string) [][]string {
 	return commands
 }
 
-func generateQueryCommands(commands [][]string) [][]string {
+func handleQueries(commands [][]string) [][]string {
 	var result [][]string
 	for _, command := range commands {
 		last := len(command) - 1
@@ -93,34 +94,56 @@ func generateQueryCommands(commands [][]string) [][]string {
 	return result
 }
 
-func branchSuffixes(s string) []string {
+func handleSuffixes(s string) []string {
 	var suffixes []string
-	r, _ := regexp.Compile("{([0-9]):([0-9])}")
+	r, _ := regexp.Compile("{([0-9]):([0-9][0-9]?)}")
 	match := r.FindStringSubmatchIndex(s)
 	if match == nil {
 		return []string{s}
 	}
-	startSuffix := s[match[2]]
-	stopSuffix := s[match[4]]
+	startSuffix, _ := strconv.Atoi(string(s[match[2]]))
+	stopSuffix := calculateStopSuffix(s, match)
 	startCut := match[0]
 	stopCut := match[1]
 
 	for i := startSuffix; i <= stopSuffix; i++ {
+		var cut []byte
 		temp := []byte(s)
-		cut := append(temp[:startCut], s[stopCut-1:]...) //Cut suffix portion out, leave one element for value
-		cut[startCut] = byte(i)                          //Insert value into spare element
-		suffixes = append(suffixes, branchSuffixes(string(cut))...)
+		if i < 10 {
+			cut = append(temp[:startCut], s[stopCut-1:]...) //Cut suffix portion out, leave one element for value
+			cut[startCut] = strconv.Itoa(i)[0] //Insert value into spare element
+		} else {
+			cut = append(temp[:startCut], s[stopCut-2:]...) //Cut suffix portion out, leave two elements for value
+			cut[startCut] = strconv.Itoa(i)[0] //Insert values into spare elements
+			test := strconv.Itoa(i)
+			cut[startCut + 1] = test[1]
+		}
+		suffixes = append(suffixes, handleSuffixes(string(cut))...)
 	}
 
 	return suffixes
 }
 
-func generateOptionalCommands(command []string, optionalIndexes []int) [][]string {
+//Determines whether the stop value of the suffix is double digit or not, then generates the correct value
+func calculateStopSuffix(s string, match []int) int {
+	if match[5] - match[4] == 1 {
+		result, _ := strconv.Atoi(string(s[match[4]]))
+		return result
+	} else {
+		digit1 := string(s[match[4]])
+		digit2 := string(s[match[4] + 1])
+		result, _ := strconv.Atoi(digit1 + digit2)
+		return result
+	}
+
+}
+
+func handleOptionals(command []string, optionalIndexes []int) [][]string {
 	commands := [][]string{command}
 	for i, index := range optionalIndexes {
 		shortened := deleteIndexFromSliceRetainingQueryInfo(command, index)
 		remaining := removeIndexAndDecrement(optionalIndexes, i)
-		commands = append(commands, generateOptionalCommands(shortened, remaining)...)
+		commands = append(commands, handleOptionals(shortened, remaining)...)
 	}
 	return commands
 }

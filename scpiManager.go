@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/c-bata/go-prompt"
 	"strings"
+	"os/exec"
+	"os"
 )
 
 type scpiManager struct {
@@ -19,14 +21,51 @@ func newScpiManager(i instrument) scpiManager {
 }
 
 func (sc *scpiManager) executor(s string) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return
+	} else if s == "quit" || s == "exit" {
+		fmt.Println("Bye!")
+		os.Exit(0)
+	}
+
+	if string(s[0]) == ":" {
+		handleScpi(s, sc.inst)
+	} else if string(s[0]) == "-"{
+		handleOptions(s)
+	} else {
+		handlePassThrough(s)
+	}
+}
+func handlePassThrough(s string) {
+	cmd := exec.Command("sh", "-c", s)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Got error: %s\n", err.Error())
+	}
+}
+
+func handleOptions(s string) {
+	switch s {
+	case "-history":
+		printHistory()
+	}
+}
+func printHistory() {
+	//TODO: Store my own history outside of the prompt library
+}
+
+func handleScpi(s string, inst instrument) {
 	if strings.Contains(s, "?") {
-		r, err := sc.inst.Query(s)
+		r, err := inst.Query(s)
 		if err != nil {
 			fmt.Println(err)
 		}
 		fmt.Println(r)
 	} else {
-		sc.inst.Command(s)
+		inst.Command(s)
 	}
 }
 
@@ -35,17 +74,21 @@ func (sc *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 		return []prompt.Suggest{}
 	}
 
-	//if string(d.Text[0]) == ":" {
+	if string(d.Text[0]) == ":" {
 		tree := sc.provider.getTree(sc.inst)
 		inputs := strings.Split(d.TextBeforeCursor(), ":")
 		current := sc.getCurrentNode(tree, inputs)
 
 		return prompt.FilterHasPrefix(sc.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
-	//}
+	}
 
-	//return []prompt.Suggest{
-	//	{Text: "history"},
-	//}
+	suggests := []prompt.Suggest{
+		{Text: "-history", Description: "Not Supported: Show all commands sent this session"},
+		{Text: "-copy", Description: "Not Supported: Copy most recent output to clipboard"},
+		{Text: "quit", Description: "Exit SCliPI"},
+	}
+
+	return prompt.FilterHasPrefix(suggests, d.GetWordBeforeCursor(), true)
 }
 
 func (sc *scpiManager) prepareScpiCompleter() {

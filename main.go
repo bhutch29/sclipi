@@ -9,7 +9,7 @@ import (
 
 func main() {
 	fmt.Println("Welcome to the SCPI CLI!")
-	fmt.Println("Please use `CTRL-D` to exit this program..")
+	fmt.Println("Please use `CTRL-D` or `quit` to exit this program..")
 	defer fmt.Println("Bye!")
 
 	ic := ipCompleter{}

@@ -6,13 +6,13 @@ import (
 
 func BenchmarkMxgScpi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		lines, _ := readLines("MXGSCPI.txt")
+		lines, _ := readLines("SCPI.txt")
 		parseScpi(lines)
 	}
 }
 
 func TestGenerateTree(t *testing.T) {
-	lines, _ := readLines("MXGSCPI.txt")
+	lines, _ := readLines("SCPI.txt")
 	parseScpi(lines) //TODO: Generate real tests
 }
 

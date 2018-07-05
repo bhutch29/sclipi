@@ -66,7 +66,7 @@ func (i simInstrument) Query(query string) (string, error) {
 }
 
 func (i simInstrument) getSupportedCommands() ([]string, error) {
-	lines, err := readLines("MXGSCPI.txt")
+	lines, err := readLines("SCPI.txt")
 	if err != nil {
 		return []string{}, err
 	}

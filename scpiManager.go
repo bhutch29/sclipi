@@ -33,7 +33,7 @@ func (sm *scpiManager) executor(s string) {
 
 	sm.history.addEntry(s)
 
-	if string(s[0]) == ":" {
+	if string(s[0]) == ":" || string(s[0]) == "*"{
 		sm.handleScpi(s, sm.inst)
 	} else if string(s[0]) == "-"{
 		sm.handleOptions(s)
@@ -57,6 +57,8 @@ func (sm *scpiManager) handleOptions(s string) {
 		sm.printHistory()
 	case "-copy":
 		sm.copyPreviousToClipboard()
+	default:
+		fmt.Println(s + ": No command found")
 	}
 }
 func (sm *scpiManager) copyPreviousToClipboard() {
@@ -66,8 +68,8 @@ func (sm *scpiManager) copyPreviousToClipboard() {
 }
 
 func (sm *scpiManager) printHistory() {
-	for _, entry := range sm.history.entries{
-		if entry != "-history" {
+	for i, entry := range sm.history.entries{
+		if i != len(sm.history.entries) {
 			fmt.Println(entry)
 		}
 	}
@@ -90,7 +92,7 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 		return []prompt.Suggest{}
 	}
 
-	if string(d.Text[0]) == ":" {
+	if string(d.Text[0]) == ":" || string(d.Text[0]) == "*" {
 		tree := sm.provider.getTree(sm.inst)
 		inputs := strings.Split(d.TextBeforeCursor(), ":")
 		current := sm.getCurrentNode(tree, inputs)
@@ -99,8 +101,8 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	}
 
 	suggests := []prompt.Suggest{
-		{Text: "-history", Description: "Not Supported: Show all commands sent this session"},
-		{Text: "-copy", Description: "Not Supported: Copy most recent output to clipboard"},
+		{Text: "-history", Description: "Show all commands sent this session"},
+		{Text: "-copy", Description: "Copy most recent output to clipboard"},
 		{Text: "quit", Description: "Exit SCliPI"},
 	}
 

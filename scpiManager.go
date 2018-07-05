@@ -6,6 +6,7 @@ import (
 	"strings"
 	"os/exec"
 	"os"
+	"github.com/atotto/clipboard"
 )
 
 type scpiManager struct {
@@ -59,8 +60,11 @@ func (sm *scpiManager) handleOptions(s string) {
 	}
 }
 func (sm *scpiManager) copyPreviousToClipboard() {
-	//TODO
+	if err := clipboard.WriteAll(sm.history.latest()); err != nil {
+		fmt.Println("Copy to clipboard failed: " + err.Error())
+	}
 }
+
 func (sm *scpiManager) printHistory() {
 	for _, entry := range sm.history.entries{
 		if entry != "-history" {

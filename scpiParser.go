@@ -149,7 +149,7 @@ func handleOptionals(command []string, optionalIndexes []int) [][]string {
 }
 
 func removeIndexAndDecrement(indexes []int, i int) []int {
-	newIndexes := make([]int, len(indexes)) //TODO: Understand better why this is necessary
+	newIndexes := make([]int, len(indexes))
 	copy(newIndexes, indexes)
 	for j := range newIndexes {
 		if j > i {

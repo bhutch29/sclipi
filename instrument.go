@@ -19,7 +19,7 @@ type scpiInstrument struct {
 	connection net.Conn
 }
 
-func (i scpiInstrument) Connect(address string) error {
+func (i *scpiInstrument) Connect(address string) error {
 	i.address = address
 	connection, err := net.Dial("tcp", i.address)
 	if err != nil {
@@ -30,11 +30,11 @@ func (i scpiInstrument) Connect(address string) error {
 	return nil
 }
 
-func (i scpiInstrument) Command(command string) {
+func (i *scpiInstrument) Command(command string) {
 	fmt.Fprintf(i.connection, command+"\n")
 }
 
-func (i scpiInstrument) Query(query string) (string, error) {
+func (i *scpiInstrument) Query(query string) (string, error) {
 	fmt.Fprintf(i.connection, query+"\n")
 	message, err := bufio.NewReader(i.connection).ReadString('\n')
 	if err != nil {
@@ -43,7 +43,7 @@ func (i scpiInstrument) Query(query string) (string, error) {
 	return message, nil
 }
 
-func (i scpiInstrument) getSupportedCommands() ([]string, error) {
+func (i *scpiInstrument) getSupportedCommands() ([]string, error) {
 	result, err := i.Query("SYST:HELP:HEAD?")
 	if err != nil {
 		return []string{}, err
@@ -54,18 +54,18 @@ func (i scpiInstrument) getSupportedCommands() ([]string, error) {
 type simInstrument struct {
 }
 
-func (i simInstrument) Connect(address string) error {
+func (i *simInstrument) Connect(address string) error {
 	return nil
 }
 
-func (i simInstrument) Command(command string) {
+func (i *simInstrument) Command(command string) {
 }
 
-func (i simInstrument) Query(query string) (string, error) {
+func (i *simInstrument) Query(query string) (string, error) {
 	return query, nil
 }
 
-func (i simInstrument) getSupportedCommands() ([]string, error) {
+func (i *simInstrument) getSupportedCommands() ([]string, error) {
 	lines, err := readLines("SCPI.txt")
 	if err != nil {
 		return []string{}, err

@@ -48,9 +48,9 @@ func main() {
 func buildAndConnectInstrument(address string) (instrument, error) {
 	var inst instrument
 	if address == "simulated" {
-		inst = simInstrument{}
+		inst = &simInstrument{}
 	} else {
-		inst = scpiInstrument{}
+		inst = &scpiInstrument{}
 	}
 
 	if err := inst.Connect(address + ":5025"); err != nil {

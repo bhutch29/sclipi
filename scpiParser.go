@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"os"
 	"regexp"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type scpiNode struct {
@@ -63,7 +63,8 @@ func splitScpiCommands(lines []string) [][]string {
 		for _, item := range suffixed {
 			split := strings.Split(item, ":")
 			withOptionals := handleOptionals(removeSquareBraces(split), getOptionalIndexes(split))
-			withQueries := handleQueries(withOptionals)
+			withoutBars := handleBars(withOptionals)
+			withQueries := handleQueries(withoutBars)
 
 			for _, command := range withQueries {
 				commands = append(commands, command)
@@ -71,6 +72,40 @@ func splitScpiCommands(lines []string) [][]string {
 		}
 	}
 	return commands
+}
+
+func handleBars(commands [][]string) [][]string {
+	var result [][]string
+	for _, command := range commands {
+		barIndexes := getBarIndexes(command)
+		result = append(result, handleBarsInSingleCommand(command, barIndexes)...)
+	}
+	return result
+}
+
+func handleBarsInSingleCommand(command []string, barIndexes []int) [][]string {
+	var result [][]string
+	for i, index := range barIndexes {
+		options := strings.Split(command[index], "|")
+		remaining := removeIndexAndDecrement(barIndexes, i)
+		var first = command
+		first[index] = options[0]
+		result = append(result, handleBarsInSingleCommand(first, remaining)...)
+		var second = command
+		second[index] = options[1]
+		result = append(result, handleBarsInSingleCommand(second, remaining)...)
+	}
+	return result
+}
+
+func getBarIndexes(command []string) []int {
+	var indexes []int
+	for i, text := range command {
+		if strings.Contains(text, "|") {
+			indexes = append(indexes, i)
+		}
+	}
+	return indexes
 }
 
 func handleQueries(commands [][]string) [][]string {
@@ -111,12 +146,12 @@ func handleSuffixes(s string) []string {
 		temp := []byte(s)
 		if i < 10 {
 			cut = append(temp[:startCut], s[stopCut-1:]...) //Cut suffix portion out, leave one element for value
-			cut[startCut] = strconv.Itoa(i)[0] //Insert value into spare element
+			cut[startCut] = strconv.Itoa(i)[0]              //Insert value into spare element
 		} else {
 			cut = append(temp[:startCut], s[stopCut-2:]...) //Cut suffix portion out, leave two elements for value
-			cut[startCut] = strconv.Itoa(i)[0] //Insert values into spare elements
+			cut[startCut] = strconv.Itoa(i)[0]              //Insert values into spare elements
 			test := strconv.Itoa(i)
-			cut[startCut + 1] = test[1]
+			cut[startCut+1] = test[1]
 		}
 		suffixes = append(suffixes, handleSuffixes(string(cut))...)
 	}
@@ -126,12 +161,12 @@ func handleSuffixes(s string) []string {
 
 //Determines whether the stop value of the suffix is double digit or not, then generates the correct value
 func calculateStopSuffix(s string, match []int) int {
-	if match[5] - match[4] == 1 {
+	if match[5]-match[4] == 1 {
 		result, _ := strconv.Atoi(string(s[match[4]]))
 		return result
 	} else {
 		digit1 := string(s[match[4]])
-		digit2 := string(s[match[4] + 1])
+		digit2 := string(s[match[4]+1])
 		result, _ := strconv.Atoi(digit1 + digit2)
 		return result
 	}

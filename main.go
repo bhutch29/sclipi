@@ -11,7 +11,7 @@ import (
 func main() {
 	fmt.Println("Welcome to the SCPI CLI!")
 	fmt.Println("Please use `CTRL-D` or `quit` to exit this program..")
-	defer fmt.Println("Bye!")
+	defer fmt.Println("Goodbye!")
 
 	ic := ipCompleter{}
 
@@ -29,12 +29,13 @@ func main() {
 		fmt.Println(err)
 		log.Fatal()
 	}
+	defer inst.Close()
 
 	_ = bar.Add(25)
 	sm := newScpiManager(inst)
 	_ = bar.Add(50)
 
-	fmt.Println()
+	fmt.Println("Connected!")
 
 	p := prompt.New(
 		sm.executor,

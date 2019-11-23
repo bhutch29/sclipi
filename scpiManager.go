@@ -95,21 +95,24 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	}
 
 	if string(d.Text[0]) == ":" || string(d.Text[0]) == "*" {
-		sm.getTree(sm.inst)
 		inputs := strings.Split(d.TextBeforeCursor(), ":")
+		inputs = inputs[1:] // First input is empty string
 		current := sm.getCurrentNode(sm.tree, inputs)
-		//println("\ncurrent: " + current.Content + "\n")
 
 		return prompt.FilterHasPrefix(sm.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
 	}
 
-	suggests := []prompt.Suggest{
-		{Text: "-history", Description: "Show all commands sent this session"},
-		{Text: "-copy", Description: "Copy most recent output to clipboard"},
-		{Text: "quit", Description: "Exit SCliPI"},
+	if string(d.Text[0]) == "-" || string(d.Text[0]) == "q" {
+		suggests := []prompt.Suggest{
+			{Text: "-history", Description: "Show all commands sent this session"},
+			{Text: "-copy", Description: "Copy most recent output to clipboard"},
+			{Text: "quit", Description: "Exit SCliPI"},
+		}
+
+		return prompt.FilterHasPrefix(suggests, d.GetWordBeforeCursor(), true)
 	}
 
-	return prompt.FilterHasPrefix(suggests, d.GetWordBeforeCursor(), true)
+	return []prompt.Suggest{}
 }
 
 func (sm *scpiManager) getTree(i instrument) {
@@ -123,10 +126,20 @@ func (sm *scpiManager) getTree(i instrument) {
 }
 
 func (sm *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
+	//Only entered a ':'
+	if len(inputs) == 1 {
+		return tree
+	}
+
 	current := tree
-	for _, item := range inputs {
+	for i, item := range inputs {
 		if success, node := sm.getNodeChildByContent(current, item); success {
 			current = node
+			continue
+		} else if i < len(inputs) - 1 {
+			return scpiNode{}
+		} else {
+			break
 		}
 	}
 	return current

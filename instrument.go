@@ -110,7 +110,6 @@ func (i *scpiInstrument) bulkExec(cmds ...string) error {
 	return i.exec(cmd)
 }
 
-//TODO: Utilize this
 func (i *scpiInstrument) Close() error {
 	return i.connection.Close()
 }

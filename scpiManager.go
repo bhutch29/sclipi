@@ -76,7 +76,7 @@ func (sm *scpiManager) printHistory() {
 }
 
 func (sm *scpiManager) handleScpi(s string, inst instrument) {
-	if strings.Contains(s, "?") {
+	if strings.HasSuffix(s, "?") {
 		r, err := inst.Query(s)
 		if err != nil {
 			fmt.Println(err)
@@ -96,7 +96,7 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 
 	if string(d.Text[0]) == ":" || string(d.Text[0]) == "*" {
 		inputs := strings.Split(d.TextBeforeCursor(), ":")
-		inputs = inputs[1:] // First input is empty string
+		inputs = inputs[1:] // Discard first input, is empty string
 		current := sm.getCurrentNode(sm.tree, inputs)
 
 		return prompt.FilterHasPrefix(sm.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)

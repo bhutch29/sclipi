@@ -16,6 +16,9 @@ func (p *IpProvider) getIpAddresses(filter func([]net.IP) []net.IP) []net.IP {
 		for _, i := range interfaces {
 			addresses, _ := i.Addrs()
 			for _, addr := range addresses {
+				if strings.HasPrefix(addr.String(), "127") {
+					continue
+				}
 				switch v := addr.(type) {
 				case *net.IPNet:
 					ips = append(ips, v.IP)

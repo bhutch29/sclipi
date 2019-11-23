@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/akamensky/argparse v0.0.0-20191006154803-1427fe674291
 	github.com/atotto/clipboard v0.1.2
 	github.com/c-bata/go-prompt v0.2.3
 	github.com/go-ole/go-ole v1.2.4 // indirect

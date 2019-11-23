@@ -10,15 +10,15 @@ import (
 )
 
 type scpiManager struct {
-	provider ScpiProvider
 	inst     instrument
 	history History
+	tree scpiNode
 }
 
 func newScpiManager(i instrument) scpiManager {
 	sm := scpiManager{}
 	sm.inst = i
-	sm.prepareScpiCompleter()
+	sm.getTree(i)
 	return sm
 }
 
@@ -83,7 +83,9 @@ func (sm *scpiManager) handleScpi(s string, inst instrument) {
 		}
 		fmt.Println(r)
 	} else {
-		inst.Command(s)
+		err := inst.Command(s); if err != nil {
+			fmt.Println(err)
+		}
 	}
 }
 
@@ -93,9 +95,10 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	}
 
 	if string(d.Text[0]) == ":" || string(d.Text[0]) == "*" {
-		tree := sm.provider.getTree(sm.inst)
+		sm.getTree(sm.inst)
 		inputs := strings.Split(d.TextBeforeCursor(), ":")
-		current := sm.getCurrentNode(tree, inputs)
+		current := sm.getCurrentNode(sm.tree, inputs)
+		//println("\ncurrent: " + current.Content + "\n")
 
 		return prompt.FilterHasPrefix(sm.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
 	}
@@ -109,8 +112,14 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	return prompt.FilterHasPrefix(suggests, d.GetWordBeforeCursor(), true)
 }
 
-func (sm *scpiManager) prepareScpiCompleter() {
-	sm.provider.getTree(sm.inst)
+func (sm *scpiManager) getTree(i instrument) {
+	if len(sm.tree.Children) == 0 {
+		lines, err := i.getSupportedCommands(); if err != nil {
+			fmt.Println(err)
+		} else {
+			sm.tree = parseScpi(lines)
+		}
+	}
 }
 
 func (sm *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {

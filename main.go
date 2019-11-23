@@ -5,6 +5,7 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/schollz/progressbar"
 	"log"
+	"time"
 )
 
 func main() {
@@ -53,7 +54,7 @@ func buildAndConnectInstrument(address string) (instrument, error) {
 		inst = &scpiInstrument{}
 	}
 
-	if err := inst.Connect(address + ":5025"); err != nil {
+	if err := inst.Connect(5 * time.Second, address + ":5025"); err != nil {
 		return inst, err
 	}
 

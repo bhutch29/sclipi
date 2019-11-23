@@ -20,7 +20,7 @@ func main() {
 		prompt.OptionCompletionWordSeparator("."))
 
 	bar := progressbar.New(100)
-	bar.Add(25)
+	_ = bar.Add(25)
 
 	inst, err := buildAndConnectInstrument(address)
 	if err != nil {
@@ -29,9 +29,9 @@ func main() {
 		log.Fatal()
 	}
 
-	bar.Add(25)
+	_ = bar.Add(25)
 	sm := newScpiManager(inst)
-	bar.Add(50)
+	_ = bar.Add(50)
 
 	fmt.Println()
 

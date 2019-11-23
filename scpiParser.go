@@ -40,7 +40,6 @@ func createScpiTreeBranch(command []string, head *scpiNode) {
 			createScpiTreeBranch(command[1:], &head.Children[len(head.Children)-1])
 		}
 	}
-	return
 }
 
 func scpiNodeExists(nodes []scpiNode, word string) (bool, int) {
@@ -66,9 +65,7 @@ func splitScpiCommands(lines []string) [][]string {
 			withoutBars := handleBars(withOptionals)
 			withQueries := handleQueries(withoutBars)
 
-			for _, command := range withQueries {
-				commands = append(commands, command)
-			}
+			commands = append(commands, withQueries...)
 		}
 	}
 	return commands
@@ -78,24 +75,33 @@ func handleBars(commands [][]string) [][]string {
 	var result [][]string
 	for _, command := range commands {
 		barIndexes := getBarIndexes(command)
-		result = append(result, handleBarsInSingleCommand(command, barIndexes)...)
+		result = append(result, extractBarCommands(command, barIndexes)...)
 	}
 	return result
 }
 
-func handleBarsInSingleCommand(command []string, barIndexes []int) [][]string {
+//Recursively walk "tree" of command depth-first, returning all possible combinations of "bar" commands
+func extractBarCommands(command []string, barIndexes []int) [][]string {
 	var result [][]string
-	for i, index := range barIndexes {
-		options := strings.Split(command[index], "|")
-		remaining := removeIndexAndDecrement(barIndexes, i)
-		var first = command
-		first[index] = options[0]
-		result = append(result, handleBarsInSingleCommand(first, remaining)...)
-		var second = command
-		second[index] = options[1]
-		result = append(result, handleBarsInSingleCommand(second, remaining)...)
+
+	if len(barIndexes) == 0 {
+		return append(result, command)
 	}
+
+	options := strings.Split(command[barIndexes[0]], "|")
+
+	result = append(result, ReplaceAndRecurse(command, barIndexes, options[0])...)
+	result = append(result, ReplaceAndRecurse(command, barIndexes, options[1])...)
+
 	return result
+}
+
+func ReplaceAndRecurse(command []string, barIndexes []int, option string) [][]string {
+	var commandCopy = make([]string, len(command))
+	copy(commandCopy, command)
+
+	commandCopy[barIndexes[0]] = option
+	return extractBarCommands(commandCopy, barIndexes[1:])
 }
 
 func getBarIndexes(command []string) []int {

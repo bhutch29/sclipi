@@ -1,64 +1,129 @@
 package main
 
 import (
-	"bufio"
+	"time"
 	"fmt"
 	"net"
 	"strings"
 )
 
 type instrument interface {
-	Connect(string) error
-	Command(string)
+	Connect(time.Duration, string) error
+	Command(string) error
 	Query(string) (string, error)
 	getSupportedCommands() ([]string, error)
+	Close() error
 }
 
 type scpiInstrument struct {
 	address    string
-	connection net.Conn
+	connection *net.TCPConn
 }
 
-func (i *scpiInstrument) Connect(address string) error {
+func (i *scpiInstrument) Connect(timeout time.Duration, address string) error {
 	i.address = address
-	connection, err := net.Dial("tcp", i.address)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Successfully connected to scpiInstrument at address " + i.address)
-	i.connection = connection
+
+	d := net.Dialer{
+		Timeout: timeout,
+	}
+	conn, err := d.Dial("tcp", tcpAddr.String())
+	if err != nil {
+		return err
+	}
+	i.connection = conn.(*net.TCPConn)
 	return nil
 }
 
-func (i *scpiInstrument) Command(command string) {
-	fmt.Fprintf(i.connection, command+"\n")
+func (i *scpiInstrument) Command(command string) error {
+	if err := i.exec(command); err != nil {
+		return fmt.Errorf("failed to execute the command '%s': %s", command, err)
+	}
+	return i.queryError(command)
 }
 
-func (i *scpiInstrument) Query(query string) (string, error) {
-	fmt.Fprintf(i.connection, query+"\n")
-	message, err := bufio.NewReader(i.connection).ReadString('\n')
+func (i *scpiInstrument) exec(cmd string) error {
+	b := []byte(cmd + "\n")
+	if _, err := i.connection.Write(b); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (i *scpiInstrument) queryError(prevCmd string) error {
+	res, err := i.Query("SYST:ERR?")
+	if err != nil {
+		return err
+	}
+	fmt.Println("Error: " + res)
+	return nil
+}
+
+func (i *scpiInstrument) Query(cmd string) (res string, err error) {
+	if err := i.exec(cmd); err != nil {
+		return "", err
+	}
+
+	buf := make([]byte, 4096)
+	l, err := i.connection.Read(buf)
 	if err != nil {
 		return "", err
 	}
-	return message, nil
+
+	return string(buf[:l]), nil
 }
 
 func (i *scpiInstrument) getSupportedCommands() ([]string, error) {
-	result, err := i.Query("SYST:HELP:HEAD?")
-	if err != nil {
+	if err := i.exec(":SYST:HELP:HEAD?"); err != nil {
 		return []string{}, err
 	}
-	return strings.Split(result, "\n"), nil
+
+	var buf []byte
+	for {
+		temp := make([]byte, 4096)
+		l, err := i.connection.Read(temp)
+		if err != nil {
+			return []string{}, err
+		}
+		buf = append(buf, temp[:l]...)
+		if strings.Contains(string(buf), "*WAI") {
+			break
+		}
+	}
+
+	var commands = strings.Split(string(buf), "\n")
+	var result []string
+	for _, command := range(commands) {
+		if command != "" && command[0] != '#' {
+			result = append(result, command);
+		}
+	}
+	return result, nil
+}
+
+//TODO: Utilize this
+func (i *scpiInstrument) bulkExec(cmds ...string) error {
+	cmd := strings.Join(cmds, ";")
+	return i.exec(cmd)
+}
+
+//TODO: Utilize this
+func (i *scpiInstrument) Close() error {
+	return i.connection.Close()
 }
 
 type simInstrument struct {
 }
 
-func (i *simInstrument) Connect(address string) error {
+func (i *simInstrument) Connect(timeout time.Duration, address string) error {
 	return nil
 }
 
-func (i *simInstrument) Command(command string) {
+func (i *simInstrument) Command(command string) error {
+	return nil
 }
 
 func (i *simInstrument) Query(query string) (string, error) {
@@ -71,4 +136,8 @@ func (i *simInstrument) getSupportedCommands() ([]string, error) {
 		return []string{}, err
 	}
 	return lines, nil
+}
+
+func (i *simInstrument) Close() error {
+	return nil
 }

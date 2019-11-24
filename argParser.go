@@ -15,6 +15,7 @@ var colors = []string{"DefaultColor", "Black", "DarkRed", "DarkGreen", "Brown", 
 type Arguments struct{
 	Ip *string
 	Port *string
+	Command *string
 	ScriptFile *string
 	Silent *bool
 	TextColor prompt.Color
@@ -33,11 +34,13 @@ func ParseArgs() Arguments {
 	args.Port = parser.String("p", "port", &argparse.Options{
 		Default: "5025",
 		Help: "The SCPI port of the instrument"})
+	args.Command = parser.String("c", "command", &argparse.Options{
+		Help: "A single SCPI command to send non-interactively. Must set IP address if using this feature"})
 	args.ScriptFile = parser.String("f", "file", &argparse.Options{
 		Help: "The path to a newline-delimited list of commands to be run non-interactively. Must set IP address if using this feature"})
 	args.Silent = parser.Flag("s", "silent", &argparse.Options{
 		Help: "Suppresses unnecessary output"})
-	textColorFlag := parser.Selector("c", "text-color", colors, &argparse.Options{
+	textColorFlag := parser.Selector("", "text-color", colors, &argparse.Options{
 		Default: colors[prompt.Yellow],
 		Help: "The command line text color"})
 	previewColorFlag := parser.Selector("", "preview-color", colors, &argparse.Options{

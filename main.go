@@ -11,6 +11,11 @@ import (
 func main() {
 	args := ParseArgs()
 
+	if *args.Command != "" {
+		runCommand(*args.Command, *args.Ip, *args.Port)
+		return
+	}
+
 	if *args.ScriptFile != "" {
 		runScriptFile(*args.ScriptFile, *args.Ip, *args.Port)
 		return
@@ -57,6 +62,22 @@ func main() {
 		prompt.OptionPreviewSuggestionTextColor(args.PreviewColor))
 
 	p.Run()
+}
+
+func runCommand(command string, ip string, port string) {
+	if ip == "" {
+		log.Fatal("Error: IP flag must be set when using Command flag")
+	}
+	inst, err := buildAndConnectInstrument(ip, port)
+	if err != nil {
+		fmt.Println()
+		fmt.Println(err)
+		log.Fatal()
+	}
+	defer inst.Close()
+
+	sm := newScpiManager(inst)
+	sm.handleScpi(command)
 }
 
 func runScriptFile(file string, ip string, port string) {

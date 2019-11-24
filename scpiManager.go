@@ -193,19 +193,27 @@ func (sm *scpiManager) getNodeChildByContent(parent scpiNode, item string) (bool
 }
 
 func (sm *scpiManager) runScript(file string) {
-	f, err := os.Open(file)
+	lines, err := readLines(file)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.Close()
+	for _, line := range lines {
+		fmt.Println("> " + line)
+		sm.handleScpi(line)
+	}
+}
 
-	scanner := bufio.NewScanner(f)
+func readLines(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		fmt.Println("> " + scanner.Text())
-		sm.handleScpi(scanner.Text())
+		lines = append(lines, scanner.Text())
 	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
+	return lines, scanner.Err()
 }

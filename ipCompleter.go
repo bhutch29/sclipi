@@ -18,7 +18,7 @@ func (ic *ipCompleter) completer(d prompt.Document) []prompt.Suggest {
 
 	otherSuggests := []prompt.Suggest{
 		{Text: "localhost", Description: "Connect to local machine"},
-		{Text: "simulated", Description: "Simulate SCPI instrument using SCPI.txt file in SCliPI directory"},
+		{Text: "simulated", Description: "Simulate SCPI instrument using SCPI.txt file in Sclipi directory"},
 		{Text: "?", Description: "Help"},
 	}
 	otherSuggests = prompt.FilterHasPrefix(otherSuggests, d.GetWordBeforeCursor(), false)

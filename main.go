@@ -41,7 +41,7 @@ func main() {
 	p := prompt.New(
 		sm.executor,
 		sm.completer,
-		prompt.OptionTitle("SCPI CLI (SCliPI)"),
+		prompt.OptionTitle("Sclipi (SCPI cli)"),
 		prompt.OptionCompletionWordSeparator(":"),
 		prompt.OptionSwitchKeyBindMode(prompt.CommonKeyBind),
 		prompt.OptionShowCompletionAtStart(),
@@ -77,7 +77,7 @@ func runScriptFile(file string, ip string, port string) {
 
 func printIntroText(silent bool) {
 	if silent {return}
-	fmt.Println("Welcome to the SCPI CLI!")
+	fmt.Println("Welcome to the SCPI cli!")
 	fmt.Println("Use Tab to navigate auto-completion options")
 	fmt.Println("Use `CTRL-D` or `quit` to exit this program")
 }
@@ -106,7 +106,7 @@ func getAddress(args Arguments) string {
 		if result != "?" {
 			break
 		}
-		printHelp(".")
+		printHelp()
 	}
 	return result
 }
@@ -141,11 +141,10 @@ func (p *Progress) Forward(percent int) {
 	_ = p.bar.Add(percent)
 }
 
-func printHelp(delimiter string) {
+func printHelp() {
 	fmt.Println()
-	fmt.Println("SCliPI's tab-completion is operated entirely using the Tab and Enter Keys")
-	fmt.Println("- Press Tab repeatedly to cycle through the available options")
-	fmt.Println("- Typing characters will filter the options list")
-	fmt.Println("- Press Enter or the delimiter key \"" + delimiter + "\" to select the current option")
+	fmt.Println("# Sclipi's tab-completion is operated entirely using the Tab key")
+	fmt.Println("#     Press Tab repeatedly to cycle through the available options")
+	fmt.Println("#     Typing will filter the list")
 	fmt.Println()
 }

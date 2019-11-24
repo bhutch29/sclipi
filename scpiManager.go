@@ -44,7 +44,7 @@ func (sm *scpiManager) executor(s string) {
 	} else if string(s[0]) == "$"{
 		sm.handlePassThrough(s)
 	} else if string(s[0]) == "?"{
-		printHelp(":")
+		printHelp()
 	} else {
 		fmt.Println("Command not recognized. All commands must start with :, *, -, or $")
 	}
@@ -68,6 +68,8 @@ func (sm *scpiManager) handleDashCommands(s string) {
 		sm.copyPreviousToClipboard()
 	} else if strings.HasPrefix(s, "-save_script") {
 		sm.saveCommandsToFile(strings.TrimPrefix(s, "-save_script"))
+	} else if strings.HasPrefix(s, "-run_script") {
+		sm.runScript(strings.TrimPrefix(s, "-run_script"))
 	} else {
 		fmt.Println(s + ": command not found")
 	}
@@ -123,23 +125,24 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 		return prompt.FilterHasPrefix(suggests, d.GetWordBeforeCursor(), false)
 	}
 
-	if string(d.Text[0]) == ":" || string(d.Text[0]) == "*" {
-		inputs := strings.Split(d.TextBeforeCursor(), ":")
-		inputs = inputs[1:] // Discard first input, is empty string
-		current := sm.getCurrentNode(sm.tree, inputs)
+	firstChar := string(d.Text[0])
 
+	if firstChar == ":" || firstChar == "*" {
+		inputs := strings.Split(d.TextBeforeCursor(), ":")
+		current := sm.getCurrentNode(sm.tree, inputs[1:]) // Discard first input, is empty string
 		return prompt.FilterHasPrefix(sm.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
 	}
 
-	if string(d.Text[0]) == "-" || string(d.Text[0]) == "q" {
+	if firstChar == "-" || firstChar == "q" {
 		suggests := []prompt.Suggest{
 			{Text: "-history", Description: "Show all commands sent this session"},
 			{Text: "-copy", Description: "Copy most recent result to clipboard"},
+			{Text: "-run_script", Description: "Run script from provided filename. Default: ScpiCommands.txt"},
 			{Text: "-save_script", Description: "Save command history to provided filename. Default: ScpiCommands.txt"},
-			{Text: "quit", Description: "Exit SCliPI"},
+			{Text: "quit", Description: "Exit Sclipi"},
 		}
 
-		return prompt.FilterHasPrefix(suggests, d.GetWordBeforeCursor(), true)
+		return prompt.FilterHasPrefix(suggests, d.CurrentLine(), true)
 	}
 
 	return []prompt.Suggest{}
@@ -193,6 +196,10 @@ func (sm *scpiManager) getNodeChildByContent(parent scpiNode, item string) (bool
 }
 
 func (sm *scpiManager) runScript(file string) {
+	file = strings.TrimSpace(file)
+	if file == "" {
+		file = "ScpiCommands.txt"
+	}
 	lines, err := readLines(file)
 	if err != nil {
 		log.Fatal(err)

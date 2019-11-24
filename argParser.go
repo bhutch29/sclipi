@@ -27,9 +27,9 @@ type Arguments struct{
 
 func ParseArgs() Arguments {
 	args := Arguments{}
-	parser := argparse.NewParser("SCliPI", "A SCPI CLI. Features autocomplete and much more")
+	parser := argparse.NewParser("Sclipi", "A SCPI cli. Features autocomplete and much more")
 	args.Ip = parser.String("i", "ip", &argparse.Options{
-		Help: "The IP address of the instrument. If not provided, SCliPI will use your network information and auto-completion to assist you"})
+		Help: "The IP address of the instrument. If not provided, Sclipi will use your network information and auto-completion to assist you"})
 	args.Port = parser.String("p", "port", &argparse.Options{
 		Default: "5025",
 		Help: "The SCPI port of the instrument"})

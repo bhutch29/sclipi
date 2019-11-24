@@ -14,8 +14,7 @@ import (
 
 type scpiManager struct {
 	inst     instrument
-	commandHistory History
-	responseHistory History
+	history History
 	tree scpiNode
 }
 
@@ -35,7 +34,7 @@ func (sm *scpiManager) executor(s string) {
 		os.Exit(0)
 	}
 
-	sm.commandHistory.addEntry(s)
+	sm.history.addCommand(s)
 
 	if string(s[0]) == ":" || string(s[0]) == "*"{
 		sm.handleScpi(s)
@@ -66,6 +65,8 @@ func (sm *scpiManager) handleDashCommands(s string) {
 		sm.printCommandHistory()
 	} else if s == "-copy" {
 		sm.copyPreviousToClipboard()
+	} else if s == "-copy_all" {
+		sm.copyAllToClipboard()
 	} else if strings.HasPrefix(s, "-save_script") {
 		sm.saveCommandsToFile(strings.TrimPrefix(s, "-save_script"))
 	} else if strings.HasPrefix(s, "-run_script") {
@@ -80,21 +81,26 @@ func (sm *scpiManager) saveCommandsToFile(fileName string) {
 	if file == "" {
 		file = "ScpiCommands.txt"
 	}
-	commands := sm.commandHistory.String()
+	commands := sm.history.CommandsString()
 	if err := ioutil.WriteFile(file, []byte(commands), 0644); err != nil {
 		fmt.Println(err)
 	}
 }
 
 func (sm *scpiManager) copyPreviousToClipboard() {
-	if err := clipboard.WriteAll(sm.responseHistory.latest()); err != nil {
+	if err := clipboard.WriteAll(sm.history.latestResponse()); err != nil {
+		fmt.Println("Copy to clipboard failed: " + err.Error())
+	}
+}
+
+func (sm *scpiManager) copyAllToClipboard() {
+	if err := clipboard.WriteAll(sm.history.String()); err != nil {
 		fmt.Println("Copy to clipboard failed: " + err.Error())
 	}
 }
 
 func (sm *scpiManager) printCommandHistory() {
-	fmt.Print(sm.commandHistory.String())
-	sm.responseHistory.addEntry(sm.commandHistory.String())
+	fmt.Print(sm.history.CommandsString())
 }
 
 func (sm *scpiManager) handleScpi(s string) {
@@ -102,10 +108,10 @@ func (sm *scpiManager) handleScpi(s string) {
 		r, err := sm.inst.Query(s)
 		if err != nil {
 			fmt.Println(err)
-			sm.responseHistory.addEntry(err.Error())
+			sm.history.addResponse(err.Error())
 		}
 		fmt.Print(r)
-		sm.responseHistory.addEntry(r)
+		sm.history.addResponse(r)
 	} else {
 		err := sm.inst.Command(s); if err != nil {
 			fmt.Println(err)
@@ -136,9 +142,10 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	if firstChar == "-" || firstChar == "q" {
 		suggests := []prompt.Suggest{
 			{Text: "-history", Description: "Show all commands sent this session"},
-			{Text: "-copy", Description: "Copy most recent result to clipboard"},
-			{Text: "-run_script", Description: "Run script from provided filename. Default: ScpiCommands.txt"},
 			{Text: "-save_script", Description: "Save command history to provided filename. Default: ScpiCommands.txt"},
+			{Text: "-run_script", Description: "Run script from provided filename. Default: ScpiCommands.txt"},
+			{Text: "-copy", Description: "Copy most recent SCPI response to clipboard"},
+			{Text: "-copy_all", Description: "Copy all session responses to clipboard"},
 			{Text: "quit", Description: "Exit Sclipi"},
 		}
 

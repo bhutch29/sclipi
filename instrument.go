@@ -59,7 +59,7 @@ func (i *scpiInstrument) queryError(prevCmd string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Error: " + res)
+	fmt.Println("Error: " + strings.TrimRight(res, "\n"))
 	return nil
 }
 

@@ -66,8 +66,8 @@ func (sm *scpiManager) handleDashCommands(s string) {
 		sm.printCommandHistory()
 	} else if s == "-copy" {
 		sm.copyPreviousToClipboard()
-	} else if strings.HasPrefix(s, "-saveCommands") {
-		sm.saveCommandsToFile(strings.TrimPrefix(s, "-saveCommands"))
+	} else if strings.HasPrefix(s, "-save_script") {
+		sm.saveCommandsToFile(strings.TrimPrefix(s, "-save_script"))
 	} else {
 		fmt.Println(s + ": command not found")
 	}
@@ -135,7 +135,7 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 		suggests := []prompt.Suggest{
 			{Text: "-history", Description: "Show all commands sent this session"},
 			{Text: "-copy", Description: "Copy most recent result to clipboard"},
-			{Text: "-saveCommands", Description: "Save command history to provided filename. Default: ScpiCommands.txt"},
+			{Text: "-save_script", Description: "Save command history to provided filename. Default: ScpiCommands.txt"},
 			{Text: "quit", Description: "Exit SCliPI"},
 		}
 

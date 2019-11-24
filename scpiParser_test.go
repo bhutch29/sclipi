@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -122,6 +123,45 @@ func TestScpiParserBasic(t *testing.T) {
 	}
 }
 
+func TestScpiParserOneBar(t *testing.T) {
+	lines := []string{"Hello|Goodbye:My:Friend/nquery/"}
+	commands := splitScpiCommands(lines)
+	if len(commands) != 2 {
+		t.Error(":Hello|Goodbye:My:Friend/nquery not parsed properly")
+	}
+	if len(commands[0]) != 3 {
+		t.Error(":Hello|Goodbye:My:Friend/nquery not parsed properly")
+	}
+}
+
+func TestScpiParserMultipleBarsNoQuery(t *testing.T) {
+	lines := []string{"Hello|Goodbye:My:Friend|Love/nquery/"}
+	commands := splitScpiCommands(lines)
+	if len(commands) != 4 {
+		t.Error(":Hello|Goodbye:My:Friend|Love/nquery not parsed properly")
+	}
+	if len(commands[0]) != 3 {
+		t.Error(":Hello|Goodbye:My:Friend|Love/nquery not parsed properly")
+	}
+}
+
+func TestScpiParserMultipleBarsCommandAndQuery(t *testing.T) {
+	lines := []string{"Hello|Goodbye:My:Friend|Love"}
+	commands := splitScpiCommands(lines)
+	if len(commands) != 8 {
+		t.Error(":Hello|Goodbye:My:Friend|Love not parsed properly")
+	}
+	if len(commands[0]) != 3 {
+		t.Error(":Hello|Goodbye:My:Friend|Love not parsed properly")
+	}
+	if !strings.HasSuffix(commands[7][len(commands[2]) - 1], "?") {
+		t.Error(":Hello|Goodbye:My:Friend|Love corner case failed, ? not transferred to both options")
+	}
+	if !strings.HasSuffix(commands[6][len(commands[2]) - 1], "?") {
+		t.Error(":Hello|Goodbye:My:Friend|Love corner case failed, ? not transferred to both options")
+	}
+}
+
 func TestBranchSuffixes(t *testing.T) {
 	result := handleSuffixes("Example{1:1}")
 	if len(result) != 1 {
@@ -146,3 +186,4 @@ func TestBranchSuffixes(t *testing.T) {
 		t.Error("	[:SOURce]:FSIMulator{1:1}:CORRelation:FADer{1:1}:FADer{1:1}:PATH{1:24} not parsed to 24 results", len(result), result)
 	}
 }
+

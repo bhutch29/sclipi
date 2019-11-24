@@ -62,10 +62,10 @@ func splitScpiCommands(lines []string) [][]string {
 		for _, item := range suffixed {
 			split := strings.Split(item, ":")
 			withOptionals := handleOptionals(removeSquareBraces(split), getOptionalIndexes(split))
-			withoutBars := handleBars(withOptionals)
-			withQueries := handleQueries(withoutBars)
+			withQueries := handleQueries(withOptionals)
+			withoutBars := handleBars(withQueries)
 
-			commands = append(commands, withQueries...)
+			commands = append(commands, withoutBars...)
 		}
 	}
 	return commands
@@ -89,14 +89,24 @@ func extractBarCommands(command []string, barIndexes []int) [][]string {
 	}
 
 	options := strings.Split(command[barIndexes[0]], "|")
+	checkForQuerySuffix(options)
 
-	result = append(result, ReplaceAndRecurse(command, barIndexes, options[0])...)
-	result = append(result, ReplaceAndRecurse(command, barIndexes, options[1])...)
+	result = append(result, replaceAndRecurse(command, barIndexes, options[0])...)
+	result = append(result, replaceAndRecurse(command, barIndexes, options[1])...)
 
 	return result
 }
 
-func ReplaceAndRecurse(command []string, barIndexes []int, option string) [][]string {
+func checkForQuerySuffix(options []string) {
+	if strings.HasSuffix(options[0], "?") && !strings.HasSuffix(options[1], "?") {
+		options[1] += "?"
+	}
+	if strings.HasSuffix(options[1], "?") && !strings.HasSuffix(options[0], "?") {
+		options[0] += "?"
+	}
+}
+
+func replaceAndRecurse(command []string, barIndexes []int, option string) [][]string {
 	var commandCopy = make([]string, len(command))
 	copy(commandCopy, command)
 

@@ -12,12 +12,12 @@ func main() {
 	args := ParseArgs()
 
 	if *args.Command != "" {
-		runCommand(*args.Command, *args.Ip, *args.Port)
+		runCommand(*args.Command, *args.Address, *args.Port)
 		return
 	}
 
 	if *args.ScriptFile != "" {
-		runScriptFile(*args.ScriptFile, *args.Ip, *args.Port)
+		runScriptFile(*args.ScriptFile, *args.Address, *args.Port)
 		return
 	}
 
@@ -66,7 +66,7 @@ func main() {
 
 func runCommand(command string, ip string, port string) {
 	if ip == "" {
-		log.Fatal("Error: IP flag must be set when using Command flag")
+		log.Fatal("Error: Address flag must be set when using Command flag")
 	}
 	inst, err := buildAndConnectInstrument(ip, port)
 	if err != nil {
@@ -82,7 +82,7 @@ func runCommand(command string, ip string, port string) {
 
 func runScriptFile(file string, ip string, port string) {
 		if ip == "" {
-			log.Fatal("Error: IP flag must be set when using File flag")
+			log.Fatal("Error: Address flag must be set when using File flag")
 		}
 		inst, err := buildAndConnectInstrument(ip, port)
 		if err != nil {
@@ -104,12 +104,12 @@ func printIntroText(silent bool) {
 }
 
 func getAddress(args Arguments) string {
-	if *args.Ip != "" { return *args.Ip }
+	if *args.Address != "" { return *args.Address }
 	ic := ipCompleter{}
 	var result string
 	for {
 		result = prompt.Input(
-			"IP Address: ",
+			"Address: ",
 			ic.completer,
 			prompt.OptionSwitchKeyBindMode(prompt.CommonKeyBind),
 			prompt.OptionShowCompletionAtStart(),

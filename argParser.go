@@ -13,7 +13,7 @@ var colors = []string{"DefaultColor", "Black", "DarkRed", "DarkGreen", "Brown", 
 	"LightGray", "DarkGray", "Red", "Green", "Yellow", "Blue", "Fuchsia", "Turquoise", "White",}
 
 type Arguments struct{
-	Ip *string
+	Address *string
 	Port *string
 	Command *string
 	ScriptFile *string
@@ -32,15 +32,15 @@ func ParseArgs() Arguments {
 		`A SCPI cli!
 Features an autocomplete-enabled interactive shell for sending SCPI commands.
 Arguments allow sending single commands or scripts from files non-interactively.`)
-	args.Ip = parser.String("i", "ip", &argparse.Options{
-		Help: "The IP address of the instrument. If not provided, Sclipi will use your network information and auto-completion to assist you"})
+	args.Address = parser.String("a", "address", &argparse.Options{
+		Help: "The network address of the instrument. If not provided, Sclipi will use your network information and auto-completion to assist you"})
 	args.Port = parser.String("p", "port", &argparse.Options{
 		Default: "5025",
 		Help: "The SCPI port of the instrument"})
 	args.Command = parser.String("c", "command", &argparse.Options{
-		Help: "A single SCPI command to send non-interactively. Must set IP address if using this feature"})
+		Help: "A single SCPI command to send non-interactively. Must set address if using this feature"})
 	args.ScriptFile = parser.String("f", "file", &argparse.Options{
-		Help: "The path to a newline-delimited list of commands to be run non-interactively. Must set IP address if using this feature"})
+		Help: "The path to a newline-delimited list of commands to be run non-interactively. Must set address if using this feature"})
 	args.Silent = parser.Flag("s", "silent", &argparse.Options{
 		Help: "Suppresses unnecessary output"})
 	textColorFlag := parser.Selector("", "text-color", colors, &argparse.Options{

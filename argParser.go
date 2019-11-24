@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"github.com/akamensky/argparse"
 	"github.com/c-bata/go-prompt"
-	"strings"
-	"fmt"
-	"os"
 	"log"
+	"os"
+	"strings"
 )
 
 var colors = []string{"DefaultColor", "Black", "DarkRed", "DarkGreen", "Brown", "DarkBlue", "Purple", "Cyan",
@@ -72,7 +72,7 @@ func ParseArgs() Arguments {
 	return args
 }
 
-func HelpMessage(o *argparse.Command, msg interface{}) string {
+func HelpMessage(o *argparse.Command, _ interface{}) string {
 	var result string
 
 	maxWidth := 80
@@ -118,7 +118,7 @@ func HelpMessage(o *argparse.Command, msg interface{}) string {
 
 	var temp = "Color Options: "
 	temp += strings.Repeat(" ", argPadding-len(temp))
-	for _, color := range(colors) {
+	for _, color := range colors {
 		temp += "\"" + color +  "\", "
 	}
 	temp = strings.TrimSuffix(temp, ", ")

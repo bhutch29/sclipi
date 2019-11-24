@@ -1,10 +1,10 @@
 package main
 
 import (
-	"time"
 	"fmt"
 	"net"
 	"strings"
+	"time"
 )
 
 type instrument interface {
@@ -98,9 +98,9 @@ func (i *scpiInstrument) getSupportedCommands() ([]string, error) {
 
 	var commands = strings.Split(string(buf), "\n")
 	var result []string
-	for _, command := range(commands) {
+	for _, command := range commands {
 		if command != "" && command[0] != '#' {
-			result = append(result, command);
+			result = append(result, command)
 		}
 	}
 	return result, nil

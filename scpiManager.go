@@ -1,15 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"github.com/c-bata/go-prompt"
-	"strings"
-	"os/exec"
-	"os"
-	"github.com/atotto/clipboard"
-	"io/ioutil"
 	"bufio"
+	"fmt"
+	"github.com/atotto/clipboard"
+	"github.com/c-bata/go-prompt"
+	"io/ioutil"
 	"log"
+	"os"
+	"os/exec"
+	"strings"
 )
 
 type scpiManager struct {

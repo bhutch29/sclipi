@@ -11,38 +11,40 @@ import (
 func main() {
 	args := ParseArgs()
 
-	if args.ScriptFile != "" {
-		runScriptFile(args.ScriptFile, args.Ip, args.Port)
+	if *args.ScriptFile != "" {
+		runScriptFile(*args.ScriptFile, *args.Ip, *args.Port)
 		return
 	}
 
-	fmt.Println("Welcome to the SCPI CLI!")
-	fmt.Println("Please use `CTRL-D` or `quit` to exit this program..")
+	printIntroText(*args.Silent)
 	defer fmt.Println("Goodbye!")
+	address := getAddress(args)
 
-	address := getAddress(args.Ip)
+	bar := Progress{Silent: *args.Silent}
+	bar.Forward(33)
 
-	bar := progressbar.New(100)
-	_ = bar.Add(25)
-
-	inst, err := buildAndConnectInstrument(address, args.Port)
+	inst, err := buildAndConnectInstrument(address, *args.Port)
 	if err != nil {
 		fmt.Println()
 		log.Fatal(err)
 	}
 	defer inst.Close()
 
-	_ = bar.Add(25)
+	bar.Forward(34)
 	sm := newScpiManager(inst)
-	_ = bar.Add(50)
+	bar.Forward(33)
 
-	fmt.Println("Connected!")
+	if !*args.Silent {
+		fmt.Println("Connected!")
+	}
 
 	p := prompt.New(
 		sm.executor,
 		sm.completer,
 		prompt.OptionTitle("SCPI CLI (SCliPI)"),
 		prompt.OptionCompletionWordSeparator(":"),
+		prompt.OptionSwitchKeyBindMode(prompt.CommonKeyBind),
+		prompt.OptionShowCompletionAtStart(),
 		prompt.OptionInputTextColor(args.TextColor),
 		prompt.OptionSuggestionTextColor(args.SuggestionColor),
 		prompt.OptionSuggestionBGColor(args.SuggestionBgColor),
@@ -73,15 +75,40 @@ func runScriptFile(file string, ip string, port string) {
 		sm.runScript(file)
 }
 
-func getAddress(ip string) string {
-	if ip == "" {
-		ic := ipCompleter{}
-		return prompt.Input(
+func printIntroText(silent bool) {
+	if silent {return}
+	fmt.Println("Welcome to the SCPI CLI!")
+	fmt.Println("Use Tab to navigate auto-completion options")
+	fmt.Println("Use `CTRL-D` or `quit` to exit this program")
+}
+
+func getAddress(args Arguments) string {
+	if *args.Ip != "" { return *args.Ip }
+	ic := ipCompleter{}
+	var result string
+	for {
+		result = prompt.Input(
 			"IP Address: ",
 			ic.completer,
+			prompt.OptionSwitchKeyBindMode(prompt.CommonKeyBind),
+			prompt.OptionShowCompletionAtStart(),
+			prompt.OptionInputTextColor(args.TextColor),
+			prompt.OptionSuggestionTextColor(args.SuggestionColor),
+			prompt.OptionSuggestionBGColor(args.SuggestionBgColor),
+			prompt.OptionSelectedSuggestionTextColor(args.SelectedColor),
+			prompt.OptionSelectedSuggestionBGColor(args.SelectedBgColor),
+			prompt.OptionDescriptionTextColor(args.SelectedColor),
+			prompt.OptionDescriptionBGColor(args.SelectedBgColor),
+			prompt.OptionSelectedDescriptionTextColor(args.SuggestionColor),
+			prompt.OptionSelectedDescriptionBGColor(args.SuggestionBgColor),
+			prompt.OptionPreviewSuggestionTextColor(args.PreviewColor),
 			prompt.OptionCompletionWordSeparator("."))
+		if result != "?" {
+			break
+		}
+		printHelp(".")
 	}
-	return ip
+	return result
 }
 
 func buildAndConnectInstrument(address string, port string) (instrument, error) {
@@ -97,4 +124,28 @@ func buildAndConnectInstrument(address string, port string) (instrument, error) 
 	}
 
 	return inst, nil
+}
+
+type Progress struct {
+	Silent bool
+	bar *progressbar.ProgressBar
+	initialized bool
+}
+
+func (p *Progress) Forward(percent int) {
+	if p.Silent { return }
+	if !p.initialized {
+		p.bar = progressbar.New(100)
+		p.initialized = true
+	}
+	_ = p.bar.Add(percent)
+}
+
+func printHelp(delimiter string) {
+	fmt.Println()
+	fmt.Println("SCliPI's tab-completion is operated entirely using the Tab and Enter Keys")
+	fmt.Println("- Press Tab repeatedly to cycle through the available options")
+	fmt.Println("- Typing characters will filter the options list")
+	fmt.Println("- Press Enter or the delimiter key \"" + delimiter + "\" to select the current option")
+	fmt.Println()
 }

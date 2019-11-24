@@ -13,9 +13,10 @@ var colors = []string{"DefaultColor", "Black", "DarkRed", "DarkGreen", "Brown", 
 	"LightGray", "DarkGray", "Red", "Green", "Yellow", "Blue", "Fuchsia", "Turquoise", "White",}
 
 type Arguments struct{
-	Ip string
-	Port string
-	ScriptFile string
+	Ip *string
+	Port *string
+	ScriptFile *string
+	Silent *bool
 	TextColor prompt.Color
 	PreviewColor prompt.Color
 	SuggestionColor prompt.Color
@@ -27,13 +28,15 @@ type Arguments struct{
 func ParseArgs() Arguments {
 	args := Arguments{}
 	parser := argparse.NewParser("SCliPI", "A SCPI CLI. Features autocomplete and much more")
-	args.Ip = *parser.String("i", "ip", &argparse.Options{
+	args.Ip = parser.String("i", "ip", &argparse.Options{
 		Help: "The IP address of the instrument. If not provided, SCliPI will use your network information and auto-completion to assist you"})
-	args.Port = *parser.String("p", "port", &argparse.Options{
+	args.Port = parser.String("p", "port", &argparse.Options{
 		Default: "5025",
 		Help: "The SCPI port of the instrument"})
-	args.ScriptFile = *parser.String("f", "file", &argparse.Options{
+	args.ScriptFile = parser.String("f", "file", &argparse.Options{
 		Help: "The path to a newline-delimited list of commands to be run non-interactively. Must set IP address if using this feature"})
+	args.Silent = parser.Flag("s", "silent", &argparse.Options{
+		Help: "Suppresses unnecessary output"})
 	textColorFlag := parser.Selector("c", "text-color", colors, &argparse.Options{
 		Default: colors[prompt.Yellow],
 		Help: "The command line text color"})
@@ -44,13 +47,13 @@ func ParseArgs() Arguments {
 		Default: colors[prompt.White],
 		Help: "The suggestion text color"})
 	suggestionBgColorFlag := parser.Selector("", "suggestion-bg-color", colors, &argparse.Options{
-		Default: colors[prompt.Cyan],
+		Default: colors[prompt.DarkBlue],
 		Help: "The suggestion bg color"})
 	selectedColorFlag := parser.Selector("", "selected-color", colors, &argparse.Options{
 		Default: colors[prompt.Black],
 		Help: "The selected text color"})
 	selectedBgColorFlag := parser.Selector("", "selected-bg-color", colors, &argparse.Options{
-		Default: colors[prompt.Turquoise],
+		Default: colors[prompt.Cyan],
 		Help: "The selected bg color"})
 
 	parser.HelpFunc = HelpMessage

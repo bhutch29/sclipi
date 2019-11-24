@@ -41,11 +41,17 @@ func (sm *scpiManager) executor(s string) {
 		sm.handleScpi(s)
 	} else if string(s[0]) == "-"{
 		sm.handleDashCommands(s)
-	} else {
+	} else if string(s[0]) == "$"{
 		sm.handlePassThrough(s)
+	} else if string(s[0]) == "?"{
+		printHelp(":")
+	} else {
+		fmt.Println("Command not recognized. All commands must start with :, *, -, or $")
 	}
 }
+
 func (sm *scpiManager) handlePassThrough(s string) {
+	s = strings.TrimLeft(s, "$ ")
 	cmd := exec.Command("sh", "-c", s)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -107,7 +113,14 @@ func (sm *scpiManager) handleScpi(s string) {
 
 func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	if d.TextBeforeCursor() == "" {
-		return []prompt.Suggest{}
+		suggests := []prompt.Suggest{
+			{Text: ":", Description: "Standard Commands"},
+			{Text: "*", Description: "Common Commands"},
+			{Text: "-", Description: "Actions (history, clipboard, etc.)"},
+			{Text: "$", Description: "Run shell command"},
+			{Text: "?", Description: "Help"},
+		}
+		return prompt.FilterHasPrefix(suggests, d.GetWordBeforeCursor(), false)
 	}
 
 	if string(d.Text[0]) == ":" || string(d.Text[0]) == "*" {
@@ -121,8 +134,8 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	if string(d.Text[0]) == "-" || string(d.Text[0]) == "q" {
 		suggests := []prompt.Suggest{
 			{Text: "-history", Description: "Show all commands sent this session"},
-			{Text: "-copy", Description: "Copy most recent output to clipboard"},
-			{Text: "-saveCommands", Description: "Save command history to provided filename. If none is provided, will save to ScpiCommands.txt"},
+			{Text: "-copy", Description: "Copy most recent result to clipboard"},
+			{Text: "-saveCommands", Description: "Save command history to provided filename. Default: ScpiCommands.txt"},
 			{Text: "quit", Description: "Exit SCliPI"},
 		}
 

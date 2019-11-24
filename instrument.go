@@ -107,10 +107,10 @@ func (i *scpiInstrument) getSupportedCommands() ([]string, error) {
 }
 
 //TODO: Utilize this
-func (i *scpiInstrument) bulkExec(cmds ...string) error {
-	cmd := strings.Join(cmds, ";")
-	return i.exec(cmd)
-}
+// func (i *scpiInstrument) bulkExec(cmds ...string) error {
+// 	cmd := strings.Join(cmds, ";")
+// 	return i.exec(cmd)
+// }
 
 func (i *scpiInstrument) Close() error {
 	return i.connection.Close()

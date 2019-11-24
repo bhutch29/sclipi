@@ -19,6 +19,7 @@ type Arguments struct{
 	ScriptFile *string
 	Silent *bool
 	TextColor prompt.Color
+	PromptColor prompt.Color
 	PreviewColor prompt.Color
 	SuggestionColor prompt.Color
 	SuggestionBgColor prompt.Color
@@ -46,6 +47,9 @@ Arguments allow sending single commands or scripts from files non-interactively.
 	textColorFlag := parser.Selector("", "text-color", colors, &argparse.Options{
 		Default: colors[prompt.Yellow],
 		Help: "The command line text color"})
+	promptColorFlag := parser.Selector("", "prompt-color", colors, &argparse.Options{
+		Default: colors[prompt.Blue],
+		Help: "The command line text color"})
 	previewColorFlag := parser.Selector("", "preview-color", colors, &argparse.Options{
 		Default: colors[prompt.Blue],
 		Help: "The preview text color"})
@@ -69,6 +73,7 @@ Arguments allow sending single commands or scripts from files non-interactively.
 	}
 
 	args.TextColor = colorFromString(*textColorFlag)
+	args.PromptColor = colorFromString(*promptColorFlag)
 	args.SuggestionColor = colorFromString(*suggestionColorFlag)
 	args.SuggestionBgColor = colorFromString(*suggestionBgColorFlag)
 	args.SelectedColor = colorFromString(*selectedColorFlag)

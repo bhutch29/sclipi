@@ -51,6 +51,7 @@ func main() {
 		prompt.OptionSwitchKeyBindMode(prompt.CommonKeyBind),
 		prompt.OptionShowCompletionAtStart(),
 		prompt.OptionInputTextColor(args.TextColor),
+		prompt.OptionPrefixTextColor(args.PromptColor),
 		prompt.OptionSuggestionTextColor(args.SuggestionColor),
 		prompt.OptionSuggestionBGColor(args.SuggestionBgColor),
 		prompt.OptionSelectedSuggestionTextColor(args.SelectedColor),

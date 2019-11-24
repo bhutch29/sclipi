@@ -1,14 +1,25 @@
 package main
 
+import "strings"
+
 type History struct{
 	entries []string
 }
 
 func (h *History) addEntry(s string) {
-	h.entries = append(h.entries, s)
+	if !strings.HasPrefix(s, "-") {
+		h.entries = append(h.entries, s)
+	}
 }
 
-//most recent command other than command used to query latest
 func (h *History) latest() string {
-	return h.entries[len(h.entries) - 2]
+		return h.entries[len(h.entries) - 1]
+}
+
+func (h *History) String() string {
+	var result string
+	for _, entry := range h.entries{
+		result += entry + "\n"
+	}
+	return result
 }

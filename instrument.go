@@ -21,19 +21,19 @@ type scpiInstrument struct {
 }
 
 func (i *scpiInstrument) Connect(timeout time.Duration, address string) error {
-	i.address = address
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return err
 	}
 
-	d := net.Dialer{
-		Timeout: timeout,
-	}
+	d := net.Dialer{Timeout: timeout}
+
 	conn, err := d.Dial("tcp", tcpAddr.String())
 	if err != nil {
 		return err
 	}
+
+	i.address = address
 	i.connection = conn.(*net.TCPConn)
 	return nil
 }
@@ -47,6 +47,7 @@ func (i *scpiInstrument) Command(command string) error {
 
 func (i *scpiInstrument) exec(cmd string) error {
 	b := []byte(cmd + "\n")
+	_ = i.connection.SetWriteDeadline(time.Now().Add(10 * time.Second))
 	if _, err := i.connection.Write(b); err != nil {
 		return err
 	}
@@ -68,6 +69,7 @@ func (i *scpiInstrument) Query(cmd string) (res string, err error) {
 	}
 
 	buf := make([]byte, 4096)
+	_ = i.connection.SetReadDeadline(time.Now().Add(10 * time.Second))
 	l, err := i.connection.Read(buf)
 	if err != nil {
 		return "", err

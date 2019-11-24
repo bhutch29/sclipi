@@ -7,11 +7,15 @@ import (
 	"os/exec"
 	"os"
 	"github.com/atotto/clipboard"
+	"io/ioutil"
+	"bufio"
+	"log"
 )
 
 type scpiManager struct {
 	inst     instrument
-	history History
+	commandHistory History
+	responseHistory History
 	tree scpiNode
 }
 
@@ -31,12 +35,12 @@ func (sm *scpiManager) executor(s string) {
 		os.Exit(0)
 	}
 
-	sm.history.addEntry(s)
+	sm.commandHistory.addEntry(s)
 
 	if string(s[0]) == ":" || string(s[0]) == "*"{
-		sm.handleScpi(s, sm.inst)
+		sm.handleScpi(s)
 	} else if string(s[0]) == "-"{
-		sm.handleOptions(s)
+		sm.handleDashCommands(s)
 	} else {
 		sm.handlePassThrough(s)
 	}
@@ -51,39 +55,51 @@ func (sm *scpiManager) handlePassThrough(s string) {
 	}
 }
 
-func (sm *scpiManager) handleOptions(s string) {
-	switch s {
-	case "-history":
-		sm.printHistory()
-	case "-copy":
+func (sm *scpiManager) handleDashCommands(s string) {
+	if s == "-history"{
+		sm.printCommandHistory()
+	} else if s == "-copy" {
 		sm.copyPreviousToClipboard()
-	default:
-		fmt.Println(s + ": No command found")
+	} else if strings.HasPrefix(s, "-saveCommands") {
+		sm.saveCommandsToFile(strings.TrimPrefix(s, "-saveCommands"))
+	} else {
+		fmt.Println(s + ": command not found")
 	}
 }
+
+func (sm *scpiManager) saveCommandsToFile(fileName string) {
+	file := strings.TrimSpace(fileName)
+	if file == "" {
+		file = "ScpiCommands.txt"
+	}
+	commands := sm.commandHistory.String()
+	if err := ioutil.WriteFile(file, []byte(commands), 0644); err != nil {
+		fmt.Println(err)
+	}
+}
+
 func (sm *scpiManager) copyPreviousToClipboard() {
-	if err := clipboard.WriteAll(sm.history.latest()); err != nil {
+	if err := clipboard.WriteAll(sm.responseHistory.latest()); err != nil {
 		fmt.Println("Copy to clipboard failed: " + err.Error())
 	}
 }
 
-func (sm *scpiManager) printHistory() {
-	for i, entry := range sm.history.entries{
-		if i != len(sm.history.entries) {
-			fmt.Println(entry)
-		}
-	}
+func (sm *scpiManager) printCommandHistory() {
+	fmt.Print(sm.commandHistory.String())
+	sm.responseHistory.addEntry(sm.commandHistory.String())
 }
 
-func (sm *scpiManager) handleScpi(s string, inst instrument) {
-	if strings.HasSuffix(s, "?") {
-		r, err := inst.Query(s)
+func (sm *scpiManager) handleScpi(s string) {
+	if strings.Contains(s, "?") {
+		r, err := sm.inst.Query(s)
 		if err != nil {
 			fmt.Println(err)
+			sm.responseHistory.addEntry(err.Error())
 		}
-		fmt.Println(r)
+		fmt.Print(r)
+		sm.responseHistory.addEntry(r)
 	} else {
-		err := inst.Command(s); if err != nil {
+		err := sm.inst.Command(s); if err != nil {
 			fmt.Println(err)
 		}
 	}
@@ -106,6 +122,7 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 		suggests := []prompt.Suggest{
 			{Text: "-history", Description: "Show all commands sent this session"},
 			{Text: "-copy", Description: "Copy most recent output to clipboard"},
+			{Text: "-saveCommands", Description: "Save command history to provided filename. If none is provided, will save to ScpiCommands.txt"},
 			{Text: "quit", Description: "Exit SCliPI"},
 		}
 
@@ -160,4 +177,22 @@ func (sm *scpiManager) getNodeChildByContent(parent scpiNode, item string) (bool
 		}
 	}
 	return false, scpiNode{}
+}
+
+func (sm *scpiManager) runScript(file string) {
+	f, err := os.Open(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		fmt.Println("> " + scanner.Text())
+		sm.handleScpi(scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
 }

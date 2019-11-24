@@ -105,7 +105,7 @@ func checkForQuerySuffix(options []string) {
 }
 
 func replaceAndRecurse(command []string, barIndexes []int, option string) [][]string {
-	var commandCopy = make([]string, len(command))
+	commandCopy := make([]string, len(command))
 	copy(commandCopy, command)
 
 	commandCopy[barIndexes[0]] = option

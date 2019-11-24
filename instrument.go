@@ -96,7 +96,7 @@ func (i *scpiInstrument) getSupportedCommands() ([]string, error) {
 		}
 	}
 
-	var commands = strings.Split(string(buf), "\n")
+	commands := strings.Split(string(buf), "\n")
 	var result []string
 	for _, command := range commands {
 		if command != "" && command[0] != '#' {

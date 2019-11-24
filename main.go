@@ -64,43 +64,19 @@ func main() {
 	p.Run()
 }
 
-func runCommand(command string, ip string, port string) {
-	if ip == "" {
-		log.Fatal("Error: Address flag must be set when using Command flag")
-	}
-	inst, err := buildAndConnectInstrument(ip, port)
-	if err != nil {
-		fmt.Println()
-		fmt.Println(err)
-		log.Fatal()
-	}
-	defer inst.Close()
-
-	sm := newScpiManager(inst)
-	sm.handleScpi(command)
-}
-
-func runScriptFile(file string, ip string, port string) {
-		if ip == "" {
-			log.Fatal("Error: Address flag must be set when using File flag")
-		}
-		inst, err := buildAndConnectInstrument(ip, port)
-		if err != nil {
-			fmt.Println()
-			fmt.Println(err)
-			log.Fatal()
-		}
-		defer inst.Close()
-
-		sm := newScpiManager(inst)
-		sm.runScript(file)
-}
-
 func printIntroText(silent bool) {
 	if silent {return}
 	fmt.Println("Welcome to the SCPI cli!")
 	fmt.Println("Use Tab to navigate auto-completion options")
 	fmt.Println("Use `CTRL-D` or `quit` to exit this program")
+}
+
+func printHelp() {
+	fmt.Println()
+	fmt.Println("# Sclipi's tab-completion is operated entirely using the Tab key")
+	fmt.Println("#     Press Tab repeatedly to cycle through the available options")
+	fmt.Println("#     Typing will filter the list")
+	fmt.Println()
 }
 
 func getAddress(args Arguments) string {
@@ -160,12 +136,4 @@ func (p *Progress) Forward(percent int) {
 		p.initialized = true
 	}
 	_ = p.bar.Add(percent)
-}
-
-func printHelp() {
-	fmt.Println()
-	fmt.Println("# Sclipi's tab-completion is operated entirely using the Tab key")
-	fmt.Println("#     Press Tab repeatedly to cycle through the available options")
-	fmt.Println("#     Typing will filter the list")
-	fmt.Println()
 }

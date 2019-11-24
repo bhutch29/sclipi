@@ -3,42 +3,40 @@ package main
 import (
 	"github.com/c-bata/go-prompt"
 	"strings"
+	"net"
 )
 
 type ipCompleter struct {
-	provider IpProvider
+	addresses []net.IP
 }
 
-func (ic *ipCompleter) completer(d prompt.Document) []prompt.Suggest {
-	tree := parseIpv4(ic.provider.getIpAddresses(ic.provider.filterIpv4))
+func (ip *ipCompleter) completer(d prompt.Document) []prompt.Suggest {
+	tree := ip.parseIpv4(ip.getIpAddresses(ip.filterIpv4))
 	inputs := strings.Split(d.TextBeforeCursor(), ".")
+	s := ip.suggestsFromNode(ip.getCurrentNode(tree, inputs))
+	ipSuggests := prompt.FilterHasPrefix(s, d.GetWordBeforeCursorUntilSeparator("."), true)
 
-	ipSuggests := ic.suggestsFromNode(ic.getCurrentNode(tree, inputs))
-	ipSuggests = prompt.FilterHasPrefix(ipSuggests, d.GetWordBeforeCursorUntilSeparator("."), true)
-
-	otherSuggests := []prompt.Suggest{
+	s = []prompt.Suggest{
 		{Text: "localhost", Description: "Connect to local machine"},
 		{Text: "simulated", Description: "Simulate SCPI instrument using SCPI.txt file in Sclipi directory"},
 		{Text: "?", Description: "Help"},
 	}
-	otherSuggests = prompt.FilterHasPrefix(otherSuggests, d.GetWordBeforeCursor(), false)
+	otherSuggests := prompt.FilterHasPrefix(s, d.GetWordBeforeCursor(), false)
 
-	suggests := append(ipSuggests, otherSuggests...)
-
-	return prompt.FilterHasPrefix(suggests, d.GetWordBeforeCursorUntilSeparator("."), true)
+	return prompt.FilterHasPrefix(append(ipSuggests, otherSuggests...), d.GetWordBeforeCursorUntilSeparator("."), true)
 }
 
-func (ic *ipCompleter) getCurrentNode(node ipNode, inputs []string) ipNode {
+func (ip *ipCompleter) getCurrentNode(node ipNode, inputs []string) ipNode {
 	current := node
 	for _, item := range inputs {
-		if success, node := ic.getNodeChildByContent(current, item); success {
+		if success, node := ip.getNodeChildByContent(current, item); success {
 			current = node
 		}
 	}
 	return current
 }
 
-func (ic *ipCompleter) getNodeChildByContent(parent ipNode, item string) (bool, ipNode) {
+func (ip *ipCompleter) getNodeChildByContent(parent ipNode, item string) (bool, ipNode) {
 	for _, node := range parent.Children {
 		if node.Content == item {
 			return true, node
@@ -47,10 +45,84 @@ func (ic *ipCompleter) getNodeChildByContent(parent ipNode, item string) (bool, 
 	return false, ipNode{}
 }
 
-func (ic *ipCompleter) suggestsFromNode(node ipNode) []prompt.Suggest {
+func (ip *ipCompleter) suggestsFromNode(node ipNode) []prompt.Suggest {
 	var s []prompt.Suggest
 	for _, item := range node.Children {
 		s = append(s, prompt.Suggest{Text: item.Content})
 	}
 	return s
+}
+
+func (ip *ipCompleter) getIpAddresses(filter func([]net.IP) []net.IP) []net.IP {
+	if len(ip.addresses) == 0 {
+		var ips []net.IP
+		interfaces, _ := net.Interfaces()
+		for _, i := range interfaces {
+			addresses, _ := i.Addrs()
+			for _, addr := range addresses {
+				if strings.HasPrefix(addr.String(), "127") {
+					continue
+				}
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ips = append(ips, v.IP)
+				case *net.IPAddr:
+					ips = append(ips, v.IP)
+				}
+			}
+		}
+		ip.addresses = ips
+	}
+	return filter(ip.addresses)
+}
+
+func (ip *ipCompleter) filterIpv4(ips []net.IP) []net.IP {
+	var filtered []net.IP
+	for _, ip := range ips {
+		if !strings.Contains(ip.String(), ":") {
+			filtered = append(filtered, ip)
+		}
+	}
+	return filtered
+}
+
+type ipNode struct {
+	Content  string
+	Children []ipNode
+}
+
+func (ip *ipCompleter) parseIpv4(ips []net.IP) ipNode {
+	head := ipNode{}
+	for _, address := range ips {
+		parts := strings.Split(address.String(), ".")
+		if exists, node0 := ip.ipNodeExists(head, parts[0]); exists {
+			if exists, node1 := ip.ipNodeExists(head.Children[node0], parts[1]); exists {
+				if exists, _ := ip.ipNodeExists(head.Children[node0].Children[node1], parts[2]); exists {
+					//Do Nothing
+				} else {
+					head.Children[node0].Children[node1].Children = append(head.Children[node0].Children[node1].Children, ipNode{Content: parts[2]})
+				}
+			} else {
+				head.Children[node0].Children = append(head.Children[node0].Children, ipNode{Content: parts[1]})
+				last := len(head.Children[node0].Children) - 1
+				head.Children[node0].Children[last].Children = append(head.Children[node0].Children[last].Children, ipNode{Content: parts[2]})
+			}
+		} else {
+			head.Children = append(head.Children, ipNode{Content: parts[0]})
+			last := len(head.Children) - 1
+			head.Children[last].Children = append(head.Children[last].Children, ipNode{Content: parts[1]})
+			last2 := len(head.Children[last].Children) - 1
+			head.Children[last].Children[last2].Children = append(head.Children[last].Children[last2].Children, ipNode{Content: parts[2]})
+		}
+	}
+	return head
+}
+
+func (ip *ipCompleter) ipNodeExists(head ipNode, s string) (bool, int) {
+	for i, node := range head.Children {
+		if node.Content == s {
+			return true, i
+		}
+	}
+	return false, -1
 }

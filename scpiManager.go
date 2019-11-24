@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/atotto/clipboard"
 	"github.com/c-bata/go-prompt"
@@ -36,15 +35,16 @@ func (sm *scpiManager) executor(s string) {
 
 	sm.history.addCommand(s)
 
-	if string(s[0]) == ":" || string(s[0]) == "*"{
+	switch string(s[0]) {
+	case ":", "*":
 		sm.handleScpi(s)
-	} else if string(s[0]) == "-"{
+	case "-":
 		sm.handleDashCommands(s)
-	} else if string(s[0]) == "$"{
+	case "$":
 		sm.handlePassThrough(s)
-	} else if string(s[0]) == "?"{
+	case "?":
 		printHelp()
-	} else {
+	default:
 		fmt.Println("Command not recognized. All commands must start with :, *, -, or $")
 	}
 }
@@ -145,7 +145,7 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 			{Text: "-save_script", Description: "Save command history to provided filename. Default: ScpiCommands.txt"},
 			{Text: "-run_script", Description: "Run script from provided filename. Default: ScpiCommands.txt"},
 			{Text: "-copy", Description: "Copy most recent SCPI response to clipboard"},
-			{Text: "-copy_all", Description: "Copy all session responses to clipboard"},
+			{Text: "-copy_all", Description: "Copy entire session to clipboard"},
 			{Text: "quit", Description: "Exit Sclipi"},
 		}
 
@@ -215,19 +215,4 @@ func (sm *scpiManager) runScript(file string) {
 		fmt.Println("> " + line)
 		sm.handleScpi(line)
 	}
-}
-
-func readLines(path string) ([]string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-	return lines, scanner.Err()
 }

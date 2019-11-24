@@ -122,7 +122,7 @@ func HelpMessage(o *argparse.Command, _ interface{}) string {
 		result += argContent + "\n\n"
 	}
 
-	var temp = "Color Options: "
+	temp := "Color Options: "
 	temp += strings.Repeat(" ", argPadding-len(temp))
 	for _, color := range colors {
 		temp += "\"" + color +  "\", "

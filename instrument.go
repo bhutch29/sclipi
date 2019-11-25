@@ -128,7 +128,7 @@ func (i *simInstrument) Command(command string) error {
 }
 
 func (i *simInstrument) Query(query string) (string, error) {
-	return query, nil
+	return query + "\n", nil
 }
 
 func (i *simInstrument) getSupportedCommands() ([]string, error) {

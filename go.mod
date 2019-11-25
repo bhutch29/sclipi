@@ -10,6 +10,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/google/gops v0.3.6 // indirect
 	github.com/keybase/go-ps v0.0.0-20190827175125-91aafc93ba19 // indirect
+	github.com/magefile/mage v1.9.0
 	github.com/mattn/go-tty v0.0.3 // indirect
 	github.com/pkg/term v0.0.0-20190109203006-aa71e9d9e942 // indirect
 	github.com/schollz/progressbar v1.0.0

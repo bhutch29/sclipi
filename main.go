@@ -8,8 +8,15 @@ import (
 	"time"
 )
 
+var version = "undefined"
+
 func main() {
 	args := ParseArgs()
+
+	if *args.Version {
+		fmt.Println(version)
+		return
+	}
 
 	if *args.Command != "" {
 		runCommand(*args.Command, *args.Address, *args.Port)
@@ -66,7 +73,9 @@ func main() {
 }
 
 func printIntroText(silent bool) {
-	if silent {return}
+	if silent {
+		return
+	}
 	fmt.Println("Welcome to the SCPI cli!")
 	fmt.Println("Use Tab to navigate auto-completion options")
 	fmt.Println("Use `CTRL-D`, `quit`, or `exit` to exit this program")
@@ -81,7 +90,9 @@ func printHelp() {
 }
 
 func getAddress(args Arguments) string {
-	if *args.Address != "" { return *args.Address }
+	if *args.Address != "" {
+		return *args.Address
+	}
 	ic := ipCompleter{}
 	var result string
 	for {
@@ -117,7 +128,7 @@ func buildAndConnectInstrument(address string, port string) (instrument, error) 
 		inst = &scpiInstrument{}
 	}
 
-	if err := inst.Connect(5 * time.Second, address + ":" + port); err != nil {
+	if err := inst.Connect(5*time.Second, address+":"+port); err != nil {
 		return inst, err
 	}
 
@@ -125,13 +136,15 @@ func buildAndConnectInstrument(address string, port string) (instrument, error) 
 }
 
 type Progress struct {
-	Silent bool
-	bar *progressbar.ProgressBar
+	Silent      bool
+	bar         *progressbar.ProgressBar
 	initialized bool
 }
 
 func (p *Progress) Forward(percent int) {
-	if p.Silent { return }
+	if p.Silent {
+		return
+	}
 	if !p.initialized {
 		p.bar = progressbar.New(100)
 		p.initialized = true

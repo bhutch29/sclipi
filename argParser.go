@@ -10,21 +10,22 @@ import (
 )
 
 var colors = []string{"DefaultColor", "Black", "DarkRed", "DarkGreen", "Brown", "DarkBlue", "Purple", "Cyan",
-	"LightGray", "DarkGray", "Red", "Green", "Yellow", "Blue", "Fuchsia", "Turquoise", "White",}
+	"LightGray", "DarkGray", "Red", "Green", "Yellow", "Blue", "Fuchsia", "Turquoise", "White"}
 
-type Arguments struct{
-	Address *string
-	Port *string
-	Command *string
-	ScriptFile *string
-	Silent *bool
-	TextColor prompt.Color
-	PromptColor prompt.Color
-	PreviewColor prompt.Color
-	SuggestionColor prompt.Color
+type Arguments struct {
+	Address           *string
+	Port              *string
+	Command           *string
+	ScriptFile        *string
+	Silent            *bool
+	Version           *bool
+	TextColor         prompt.Color
+	PromptColor       prompt.Color
+	PreviewColor      prompt.Color
+	SuggestionColor   prompt.Color
 	SuggestionBgColor prompt.Color
-	SelectedColor prompt.Color
-	SelectedBgColor prompt.Color
+	SelectedColor     prompt.Color
+	SelectedBgColor   prompt.Color
 }
 
 func ParseArgs() Arguments {
@@ -37,34 +38,36 @@ Arguments allow sending single commands or scripts from files non-interactively.
 		Help: "The network address of the instrument. If not provided, Sclipi will use your network information and auto-completion to assist you"})
 	args.Port = parser.String("p", "port", &argparse.Options{
 		Default: "5025",
-		Help: "The SCPI port of the instrument"})
+		Help:    "The SCPI port of the instrument"})
 	args.Command = parser.String("c", "command", &argparse.Options{
 		Help: "A single SCPI command to send non-interactively. Must set address if using this feature"})
 	args.ScriptFile = parser.String("f", "file", &argparse.Options{
 		Help: "The path to a newline-delimited list of commands to be run non-interactively. Must set address if using this feature"})
 	args.Silent = parser.Flag("s", "silent", &argparse.Options{
 		Help: "Suppresses unnecessary output"})
+	args.Version = parser.Flag("", "version", &argparse.Options{
+		Help: "Print version information"})
 	textColorFlag := parser.Selector("", "text-color", colors, &argparse.Options{
 		Default: colors[prompt.Yellow],
-		Help: "The command line text color"})
+		Help:    "The command line text color"})
 	promptColorFlag := parser.Selector("", "prompt-color", colors, &argparse.Options{
 		Default: colors[prompt.Blue],
-		Help: "The command line text color"})
+		Help:    "The command line text color"})
 	previewColorFlag := parser.Selector("", "preview-color", colors, &argparse.Options{
 		Default: colors[prompt.Blue],
-		Help: "The preview text color"})
+		Help:    "The preview text color"})
 	suggestionColorFlag := parser.Selector("", "suggestion-color", colors, &argparse.Options{
 		Default: colors[prompt.White],
-		Help: "The suggestion text color"})
+		Help:    "The suggestion text color"})
 	suggestionBgColorFlag := parser.Selector("", "suggestion-bg-color", colors, &argparse.Options{
 		Default: colors[prompt.DarkBlue],
-		Help: "The suggestion bg color"})
+		Help:    "The suggestion bg color"})
 	selectedColorFlag := parser.Selector("", "selected-color", colors, &argparse.Options{
 		Default: colors[prompt.Black],
-		Help: "The selected text color"})
+		Help:    "The selected text color"})
 	selectedBgColorFlag := parser.Selector("", "selected-bg-color", colors, &argparse.Options{
 		Default: colors[prompt.Cyan],
-		Help: "The selected bg color"})
+		Help:    "The selected bg color"})
 
 	parser.HelpFunc = HelpMessage
 
@@ -130,7 +133,7 @@ func HelpMessage(o *argparse.Command, _ interface{}) string {
 	temp := "Color Options: "
 	temp += strings.Repeat(" ", argPadding-len(temp))
 	for _, color := range colors {
-		temp += "\"" + color +  "\", "
+		temp += "\"" + color + "\", "
 	}
 	temp = strings.TrimSuffix(temp, ", ")
 	result = addToLastLine(result, temp, maxWidth, argPadding, true)
@@ -171,25 +174,43 @@ func getLastLine(input string) string {
 }
 
 func colorFromString(color string) prompt.Color {
-	switch color{
-		case "DefaultColor": return prompt.DefaultColor
-		case "Black": return prompt.Black
-		case "DarkRed": return prompt.DarkRed
-		case "DarkGreen": return prompt.DarkGreen
-		case "Brown": return prompt.Brown
-		case "DarkBlue": return prompt.DarkBlue
-		case "Purple": return prompt.Purple
-		case "Cyan": return prompt.Cyan
-		case "LightGray": return prompt.LightGray
-		case "DarkGray": return prompt.DarkGray
-		case "Red": return prompt.Red
-		case "Green": return prompt.Green
-		case "Yellow": return prompt.Yellow
-		case "Blue": return prompt.Blue
-		case "Fuchsia": return prompt.Fuchsia
-		case "Turquoise": return prompt.Turquoise
-		case "White": return prompt.White
-		default: log.Fatal("Color not found: " + color)
+	switch color {
+	case "DefaultColor":
+		return prompt.DefaultColor
+	case "Black":
+		return prompt.Black
+	case "DarkRed":
+		return prompt.DarkRed
+	case "DarkGreen":
+		return prompt.DarkGreen
+	case "Brown":
+		return prompt.Brown
+	case "DarkBlue":
+		return prompt.DarkBlue
+	case "Purple":
+		return prompt.Purple
+	case "Cyan":
+		return prompt.Cyan
+	case "LightGray":
+		return prompt.LightGray
+	case "DarkGray":
+		return prompt.DarkGray
+	case "Red":
+		return prompt.Red
+	case "Green":
+		return prompt.Green
+	case "Yellow":
+		return prompt.Yellow
+	case "Blue":
+		return prompt.Blue
+	case "Fuchsia":
+		return prompt.Fuchsia
+	case "Turquoise":
+		return prompt.Turquoise
+	case "White":
+		return prompt.White
+	default:
+		log.Fatal("Color not found: " + color)
 	}
 	return prompt.DefaultColor
 }

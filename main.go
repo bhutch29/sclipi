@@ -5,7 +5,6 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/schollz/progressbar"
 	"log"
-	"os"
 	"time"
 )
 
@@ -13,26 +12,6 @@ var version = "undefined"
 
 func main() {
 	args := ParseArgs()
-
-	if *args.Version {
-		fmt.Println(version)
-		return
-	}
-
-	if *args.Command != "" {
-		runCommand(*args.Command, *args.Address, *args.Port)
-		return
-	}
-
-	if *args.ScriptFile != "" {
-		runScriptFile(*args.ScriptFile, *args.Address, *args.Port)
-		return
-	}
-
-	attemptingSim := *args.Address == "simulated" || *args.Simulate
-	if attemptingSim && !simFileExists() {
-		log.Fatal("Error: Simulated instrument requires SCPI.txt file in working directory")
-	}
 
 	printIntroText(*args.Quiet)
 	defer fmt.Println("Goodbye!")
@@ -144,14 +123,6 @@ func buildAndConnectInstrument(address string, port string) (instrument, error) 
 	}
 
 	return inst, nil
-}
-
-func simFileExists() bool {
-	info, err := os.Stat("SCPI.txt")
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
 }
 
 type Progress struct {

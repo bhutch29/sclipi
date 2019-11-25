@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
-	"fmt"
 	"bufio"
+	"fmt"
 	"log"
+	"os"
 )
 
 func readLines(path string) ([]string, error) {
@@ -52,4 +52,12 @@ func runScriptFile(file string, ip string, port string) {
 
 	sm := newScpiManager(inst)
 	sm.runScript(file)
+}
+
+func simFileExists() bool {
+	info, err := os.Stat("SCPI.txt")
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }

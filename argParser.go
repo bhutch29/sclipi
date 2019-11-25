@@ -86,6 +86,26 @@ Arguments allow sending single commands or scripts from files non-interactively.
 	args.SelectedBgColor = colorFromString(*selectedBgColorFlag)
 	args.PreviewColor = colorFromString(*previewColorFlag)
 
+	if *args.Version {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
+	if *args.Command != "" {
+		runCommand(*args.Command, *args.Address, *args.Port)
+		os.Exit(0)
+	}
+
+	if *args.ScriptFile != "" {
+		runScriptFile(*args.ScriptFile, *args.Address, *args.Port)
+		os.Exit(0)
+	}
+
+	attemptingSim := *args.Address == "simulated" || *args.Simulate
+	if attemptingSim && !simFileExists() {
+		log.Fatal("Error: Simulated instrument requires SCPI.txt file in working directory")
+	}
+
 	return args
 }
 

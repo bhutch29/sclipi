@@ -5,6 +5,7 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/schollz/progressbar"
 	"log"
+	"os"
 	"time"
 )
 
@@ -28,11 +29,16 @@ func main() {
 		return
 	}
 
-	printIntroText(*args.Silent)
+	attemptingSim := *args.Address == "simulated" || *args.Simulate
+	if attemptingSim && !simFileExists() {
+		log.Fatal("Error: Simulated instrument requires SCPI.txt file in working directory")
+	}
+
+	printIntroText(*args.Quiet)
 	defer fmt.Println("Goodbye!")
 	address := getAddress(args)
 
-	bar := Progress{Silent: *args.Silent}
+	bar := Progress{Silent: *args.Quiet}
 	bar.Forward(33)
 
 	inst, err := buildAndConnectInstrument(address, *args.Port)
@@ -46,7 +52,7 @@ func main() {
 	sm := newScpiManager(inst)
 	bar.Forward(33)
 
-	if !*args.Silent {
+	if !*args.Quiet {
 		fmt.Println("Connected!")
 	}
 
@@ -86,14 +92,19 @@ func printHelp() {
 	fmt.Println("# Sclipi's tab-completion is operated entirely using the Tab key")
 	fmt.Println("#     Press Tab repeatedly to cycle through the available options")
 	fmt.Println("#     Typing will filter the list")
+	fmt.Println("#     Pressing the Right Arrow key or continuing to type will accept the selected option")
+	fmt.Println("#     Up and Down arrow keys cycle through your command history")
 	fmt.Println()
 }
 
 func getAddress(args Arguments) string {
+	if *args.Simulate {
+		return "simulated"
+	}
 	if *args.Address != "" {
 		return *args.Address
 	}
-	ic := ipCompleter{}
+	ic := ipCompleter{simSupported: simFileExists()}
 	var result string
 	for {
 		result = prompt.Input(
@@ -133,6 +144,14 @@ func buildAndConnectInstrument(address string, port string) (instrument, error) 
 	}
 
 	return inst, nil
+}
+
+func simFileExists() bool {
+	info, err := os.Stat("SCPI.txt")
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
 
 type Progress struct {

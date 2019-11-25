@@ -2,12 +2,13 @@ package main
 
 import (
 	"github.com/c-bata/go-prompt"
-	"strings"
 	"net"
+	"strings"
 )
 
 type ipCompleter struct {
-	addresses []net.IP
+	addresses    []net.IP
+	simSupported bool
 }
 
 func (ip *ipCompleter) completer(d prompt.Document) []prompt.Suggest {
@@ -16,12 +17,12 @@ func (ip *ipCompleter) completer(d prompt.Document) []prompt.Suggest {
 	s := ip.suggestsFromNode(ip.getCurrentNode(tree, inputs))
 	ipSuggests := prompt.FilterHasPrefix(s, d.GetWordBeforeCursorUntilSeparator("."), true)
 
-	s = []prompt.Suggest{
-		{Text: "localhost", Description: "Connect to local machine"},
-		{Text: "simulated", Description: "Simulate SCPI instrument using SCPI.txt file in Sclipi directory"},
-		{Text: "?", Description: "Help"},
+	var o []prompt.Suggest
+	if ip.simSupported {
+		o = []prompt.Suggest{{Text: "simulated", Description: "Simulate SCPI instrument using SCPI.txt file in Sclipi directory"}}
 	}
-	otherSuggests := prompt.FilterHasPrefix(s, d.GetWordBeforeCursor(), false)
+	o = append(o, []prompt.Suggest{{Text: "localhost", Description: "Connect to local machine"}, {Text: "?", Description: "Help"}}...)
+	otherSuggests := prompt.FilterHasPrefix(o, d.GetWordBeforeCursor(), false)
 
 	return prompt.FilterHasPrefix(append(ipSuggests, otherSuggests...), d.GetWordBeforeCursorUntilSeparator("."), true)
 }

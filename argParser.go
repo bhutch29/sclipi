@@ -17,7 +17,8 @@ type Arguments struct {
 	Port              *string
 	Command           *string
 	ScriptFile        *string
-	Silent            *bool
+	Quiet             *bool
+	Simulate          *bool
 	Version           *bool
 	TextColor         prompt.Color
 	PromptColor       prompt.Color
@@ -43,8 +44,10 @@ Arguments allow sending single commands or scripts from files non-interactively.
 		Help: "A single SCPI command to send non-interactively. Must set address if using this feature"})
 	args.ScriptFile = parser.String("f", "file", &argparse.Options{
 		Help: "The path to a newline-delimited list of commands to be run non-interactively. Must set address if using this feature"})
-	args.Silent = parser.Flag("s", "silent", &argparse.Options{
+	args.Quiet = parser.Flag("q", "quiet", &argparse.Options{
 		Help: "Suppresses unnecessary output"})
+	args.Simulate = parser.Flag("s", "simulate", &argparse.Options{
+		Help: "Runs in simulated mode. Requires SCPI.txt file in working directory"})
 	args.Version = parser.Flag("", "version", &argparse.Options{
 		Help: "Print version information"})
 	textColorFlag := parser.Selector("", "text-color", colors, &argparse.Options{

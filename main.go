@@ -12,10 +12,11 @@ var version = "undefined"
 
 func main() {
 	args := ParseArgs()
+	commonPromptOptions := getPromptOptions(args)
 
 	printIntroText(*args.Quiet)
 	defer fmt.Println("Goodbye!")
-	address := getAddress(args)
+	address := getAddress(args, commonPromptOptions)
 
 	bar := Progress{Silent: *args.Quiet}
 	bar.Forward(33)
@@ -35,15 +36,20 @@ func main() {
 		fmt.Println("Connected!")
 	}
 
-	p := prompt.New(
-		sm.executor,
-		sm.completer,
+	options := []prompt.Option{
 		prompt.OptionTitle("Sclipi (SCPI cli)"),
 		prompt.OptionCompletionWordSeparator(":"),
+	}
+	p := prompt.New(sm.executor, sm.completer, append(options, commonPromptOptions...)...)
+
+	p.Run()
+}
+
+func getPromptOptions(args Arguments) []prompt.Option {
+	return []prompt.Option{
 		prompt.OptionSwitchKeyBindMode(prompt.CommonKeyBind),
 		prompt.OptionShowCompletionAtStart(),
 		prompt.OptionInputTextColor(args.TextColor),
-		prompt.OptionPrefixTextColor(args.PromptColor),
 		prompt.OptionSuggestionTextColor(args.SuggestionColor),
 		prompt.OptionSuggestionBGColor(args.SuggestionBgColor),
 		prompt.OptionSelectedSuggestionTextColor(args.SelectedColor),
@@ -52,9 +58,8 @@ func main() {
 		prompt.OptionDescriptionBGColor(args.SelectedBgColor),
 		prompt.OptionSelectedDescriptionTextColor(args.SuggestionColor),
 		prompt.OptionSelectedDescriptionBGColor(args.SuggestionBgColor),
-		prompt.OptionPreviewSuggestionTextColor(args.PreviewColor))
-
-	p.Run()
+		prompt.OptionPreviewSuggestionTextColor(args.PreviewColor),
+	}
 }
 
 func printIntroText(silent bool) {
@@ -76,32 +81,22 @@ func printHelp() {
 	fmt.Println()
 }
 
-func getAddress(args Arguments) string {
+func getAddress(args Arguments, commonOptions []prompt.Option) string {
 	if *args.Simulate {
 		return "simulated"
 	}
 	if *args.Address != "" {
 		return *args.Address
 	}
+
 	ic := ipCompleter{simSupported: simFileExists()}
 	var result string
 	for {
-		result = prompt.Input(
-			"Address: ",
-			ic.completer,
-			prompt.OptionSwitchKeyBindMode(prompt.CommonKeyBind),
-			prompt.OptionShowCompletionAtStart(),
-			prompt.OptionInputTextColor(args.TextColor),
-			prompt.OptionSuggestionTextColor(args.SuggestionColor),
-			prompt.OptionSuggestionBGColor(args.SuggestionBgColor),
-			prompt.OptionSelectedSuggestionTextColor(args.SelectedColor),
-			prompt.OptionSelectedSuggestionBGColor(args.SelectedBgColor),
-			prompt.OptionDescriptionTextColor(args.SelectedColor),
-			prompt.OptionDescriptionBGColor(args.SelectedBgColor),
-			prompt.OptionSelectedDescriptionTextColor(args.SuggestionColor),
-			prompt.OptionSelectedDescriptionBGColor(args.SuggestionBgColor),
-			prompt.OptionPreviewSuggestionTextColor(args.PreviewColor),
-			prompt.OptionCompletionWordSeparator("."))
+		options := []prompt.Option{
+			prompt.OptionTitle("Sclipi (SCPI cli)"),
+			prompt.OptionCompletionWordSeparator("."),
+		}
+		result = prompt.Input("Address: ", ic.completer, append(options, commonOptions...)...)
 		if result != "?" {
 			break
 		}

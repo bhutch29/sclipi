@@ -12,9 +12,9 @@ import (
 )
 
 type scpiManager struct {
-	inst     instrument
+	inst    instrument
 	history History
-	tree scpiNode
+	tree    scpiNode
 }
 
 func newScpiManager(i instrument) scpiManager {
@@ -32,8 +32,6 @@ func (sm *scpiManager) executor(s string) {
 		fmt.Println("Bye!")
 		os.Exit(0)
 	}
-
-	sm.history.addCommand(s)
 
 	switch string(s[0]) {
 	case ":", "*":
@@ -61,7 +59,7 @@ func (sm *scpiManager) handlePassThrough(s string) {
 }
 
 func (sm *scpiManager) handleDashCommands(s string) {
-	if s == "-history"{
+	if s == "-history" {
 		sm.printCommandHistory()
 	} else if s == "-copy" {
 		sm.copyPreviousToClipboard()
@@ -111,11 +109,14 @@ func (sm *scpiManager) handleScpi(s string) {
 			sm.history.addResponse(err.Error())
 		}
 		fmt.Print(r)
+		sm.history.addCommand(s)
 		sm.history.addResponse(r)
 	} else {
-		err := sm.inst.Command(s); if err != nil {
+		err := sm.inst.Command(s)
+		if err != nil {
 			fmt.Println(err)
 		}
+		sm.history.addCommand(s)
 	}
 }
 
@@ -157,7 +158,8 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 
 func (sm *scpiManager) getTree(i instrument) {
 	if len(sm.tree.Children) == 0 {
-		lines, err := i.getSupportedCommands(); if err != nil {
+		lines, err := i.getSupportedCommands()
+		if err != nil {
 			fmt.Println(err)
 		} else {
 			sm.tree = parseScpi(lines)
@@ -176,7 +178,7 @@ func (sm *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
 		if success, node := sm.getNodeChildByContent(current, item); success {
 			current = node
 			continue
-		} else if i < len(inputs) - 1 {
+		} else if i < len(inputs)-1 {
 			return scpiNode{}
 		} else {
 			break

@@ -69,7 +69,7 @@ func printIntroText(silent bool) {
 	if silent {return}
 	fmt.Println("Welcome to the SCPI cli!")
 	fmt.Println("Use Tab to navigate auto-completion options")
-	fmt.Println("Use `CTRL-D` or `quit` to exit this program")
+	fmt.Println("Use `CTRL-D`, `quit`, or `exit` to exit this program")
 }
 
 func printHelp() {

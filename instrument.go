@@ -73,30 +73,37 @@ func (i *scpiInstrument) Query(cmd string) (res string, err error) {
 	_ = i.connection.SetReadDeadline(time.Now().Add(10 * time.Second))
 
 	b := bufio.NewReader(i.connection)
-	blockInfo, err := b.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-
-	responseSize, err := i.parseBlockInfo(blockInfo)
-	if err != nil {
-		return "", err
-	}
-
-	result := ""
 	buf := make([]byte, 4096)
-	numBytesRead := 0
-	for {
-		n, err := b.Read(buf)
+
+	l, err := b.Read(buf)
+	if err != nil {
+		return "", err
+	}
+
+	firstRead := string(buf[:l])
+
+	result := firstRead
+	if strings.HasPrefix(firstRead, "#") {
+		firstLineIndex := strings.IndexByte(firstRead, '\n')
+		result = result[firstLineIndex:]
+		responseSize, err := i.parseBlockInfo(firstRead[:firstLineIndex])
 		if err != nil {
 			return "", err
 		}
 
-		numBytesRead += n
-		result += string(buf[:n])
+		numBytesRead := l
+		for {
+			n, err := b.Read(buf)
+			if err != nil {
+				return "", err
+			}
 
-		if numBytesRead >= responseSize {
-			break
+			numBytesRead += n
+			result += string(buf[:n])
+
+			if numBytesRead >= responseSize {
+				break
+			}
 		}
 	}
 	return result, nil

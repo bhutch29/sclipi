@@ -160,7 +160,7 @@ func (sm *scpiManager) getTree(i instrument) {
 	if len(sm.tree.Children) == 0 {
 		lines, err := i.getSupportedCommands()
 		if err != nil {
-			fmt.Println(err)
+			log.Fatal(err)
 		} else {
 			sm.tree = parseScpi(lines)
 		}

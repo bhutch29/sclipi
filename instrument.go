@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -68,49 +70,82 @@ func (i *scpiInstrument) Query(cmd string) (res string, err error) {
 		return "", err
 	}
 
-	buf := make([]byte, 4096)
 	_ = i.connection.SetReadDeadline(time.Now().Add(10 * time.Second))
-	l, err := i.connection.Read(buf)
+
+	b := bufio.NewReader(i.connection)
+	blockInfo, err := b.ReadString('\n')
 	if err != nil {
 		return "", err
 	}
 
-	return string(buf[:l]), nil
-}
-
-func (i *scpiInstrument) getSupportedCommands() ([]string, error) {
-	if err := i.exec(":SYST:HELP:HEAD?"); err != nil {
-		return []string{}, err
+	responseSize, err := i.parseBlockInfo(blockInfo)
+	if err != nil {
+		return "", err
 	}
 
-	var buf []byte
+	result := ""
+	buf := make([]byte, 4096)
+	numBytesRead := 0
 	for {
-		temp := make([]byte, 4096)
-		l, err := i.connection.Read(temp)
+		n, err := b.Read(buf)
 		if err != nil {
-			return []string{}, err
+			return "", err
 		}
-		buf = append(buf, temp[:l]...)
-		if strings.Contains(string(buf), "*WAI") {
-			break
-		}
-	}
 
-	commands := strings.Split(string(buf), "\n")
-	var result []string
-	for _, command := range commands {
-		if command != "" && command[0] != '#' {
-			result = append(result, command)
+		numBytesRead += n
+		result += string(buf[:n])
+
+		if numBytesRead >= responseSize {
+			break
 		}
 	}
 	return result, nil
 }
 
-//TODO: Utilize this
-// func (i *scpiInstrument) bulkExec(cmds ...string) error {
-// 	cmd := strings.Join(cmds, ";")
-// 	return i.exec(cmd)
-// }
+func (i *scpiInstrument) parseBlockInfo(blockInfo string) (int, error) {
+	blockInfo = strings.TrimSuffix(blockInfo, "\n")
+	if !strings.HasPrefix(blockInfo, "#") || len(blockInfo) == 0 {
+		return -1, fmt.Errorf("Unrecognized response header found: " + blockInfo)
+	}
+
+	blockInfo = strings.TrimPrefix(blockInfo, "#")
+	characters := strings.Split(blockInfo, "")
+
+	numChars, err := strconv.Atoi(characters[0])
+	if err != nil {
+		return -1, err
+	}
+
+	if len(characters[1:]) != numChars {
+		return -1, fmt.Errorf("SCPI block info malformed: " + blockInfo)
+	}
+
+	resultString := ""
+	for _, char := range characters[1 : numChars+1] {
+		resultString += char
+	}
+
+	result, err := strconv.Atoi(resultString)
+	if err != nil {
+		return -1, err
+	}
+
+	return result, nil
+}
+
+func (i *scpiInstrument) getSupportedCommands() ([]string, error) {
+	r, err := i.Query(":SYST:HELP:HEAD?")
+	commands := strings.Split(r, "\n")
+
+	var result []string
+	for _, command := range commands {
+		if command != "" {
+			result = append(result, command)
+		}
+	}
+
+	return result, err
+}
 
 func (i *scpiInstrument) Close() error {
 	return i.connection.Close()

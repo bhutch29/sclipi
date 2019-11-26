@@ -13,7 +13,7 @@ type instrument interface {
 	Connect(time.Duration, string) error
 	Command(string) error
 	Query(string) (string, error)
-	getSupportedCommands() ([]string, error)
+	getSupportedCommands() ([]string, []string, error)
 	Close() error
 }
 
@@ -133,18 +133,23 @@ func (i *scpiInstrument) parseBlockInfo(blockInfo string) (int, error) {
 	return result, nil
 }
 
-func (i *scpiInstrument) getSupportedCommands() ([]string, error) {
+func (i *scpiInstrument) getSupportedCommands() ([]string, []string, error) {
 	r, err := i.Query(":SYST:HELP:HEAD?")
 	commands := strings.Split(r, "\n")
 
-	var result []string
+	var colonCommands []string
+	var starCommands []string
 	for _, command := range commands {
 		if command != "" {
-			result = append(result, command)
+			if strings.HasPrefix(command, "*") {
+				starCommands = append(starCommands, command)
+			} else {
+				colonCommands = append(colonCommands, command)
+			}
 		}
 	}
 
-	return result, err
+	return colonCommands, starCommands, err
 }
 
 func (i *scpiInstrument) Close() error {
@@ -166,12 +171,24 @@ func (i *simInstrument) Query(query string) (string, error) {
 	return query + "\n", nil
 }
 
-func (i *simInstrument) getSupportedCommands() ([]string, error) {
-	lines, err := readLines("SCPI.txt")
+func (i *simInstrument) getSupportedCommands() ([]string, []string, error) {
+	commands, err := readLines("SCPI.txt")
 	if err != nil {
-		return []string{}, err
+		return []string{}, []string{}, err
 	}
-	return lines, nil
+
+	var colonCommands []string
+	var starCommands []string
+	for _, command := range commands {
+		if command != "" {
+			if strings.HasPrefix(command, "*") {
+				starCommands = append(starCommands, command)
+			} else {
+				colonCommands = append(colonCommands, command)
+			}
+		}
+	}
+	return colonCommands, starCommands, nil
 }
 
 func (i *simInstrument) Close() error {

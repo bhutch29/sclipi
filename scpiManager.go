@@ -12,9 +12,10 @@ import (
 )
 
 type scpiManager struct {
-	inst    instrument
-	history History
-	tree    scpiNode
+	inst      instrument
+	history   History
+	colonTree scpiNode
+	starTree  scpiNode
 }
 
 func newScpiManager(i instrument) scpiManager {
@@ -134,9 +135,14 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 
 	firstChar := string(d.Text[0])
 
-	if firstChar == ":" || firstChar == "*" {
+	if firstChar == ":" {
 		inputs := strings.Split(d.TextBeforeCursor(), ":")
-		current := sm.getCurrentNode(sm.tree, inputs[1:]) // Discard first input, is empty string
+		current := sm.getCurrentNode(sm.colonTree, inputs[1:]) // Discard first input, is empty string
+		return prompt.FilterHasPrefix(sm.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
+	}
+
+	if firstChar == "*" {
+		current := sm.getCurrentNode(sm.starTree, []string{d.TextBeforeCursor()}) // Discard first input, is empty string
 		return prompt.FilterHasPrefix(sm.suggestsFromNode(current), d.GetWordBeforeCursorUntilSeparator(":"), true)
 	}
 
@@ -157,12 +163,13 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 }
 
 func (sm *scpiManager) getTree(i instrument) {
-	if len(sm.tree.Children) == 0 {
-		lines, err := i.getSupportedCommands()
+	if len(sm.colonTree.Children) == 0 {
+		colonCommands, starCommands, err := i.getSupportedCommands()
 		if err != nil {
 			log.Fatal(err)
 		} else {
-			sm.tree = parseScpi(lines)
+			sm.colonTree = parseScpi(colonCommands)
+			sm.starTree = parseScpi(starCommands)
 		}
 	}
 }

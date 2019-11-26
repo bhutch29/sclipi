@@ -29,6 +29,10 @@ func Test() error {
 	return sh.RunV("go", "test", "-v")
 }
 
+func Bench() error {
+	return sh.RunV("go", "test", "-bench", ".")
+}
+
 func Clean() {
 	sh.Rm("sclipi")
 	sh.Rm("sclipi.exe")

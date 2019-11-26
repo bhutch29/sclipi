@@ -5,10 +5,16 @@ import (
 	"testing"
 )
 
-func BenchmarkMxgScpi(b *testing.B) {
+func BenchmarkVxgScpi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		lines, _ := readLines("SCPI.txt")
-		parseScpi(lines)
+		head := scpiNode{}
+		lines, _ := readLines("benchmark_SCPI.txt")
+		commands := splitScpiCommands(lines)
+		b.Log("# of commands found: ", len(commands))
+
+		for _, command := range commands {
+			createScpiTreeBranch(command, &head)
+		}
 	}
 }
 
@@ -154,10 +160,10 @@ func TestScpiParserMultipleBarsCommandAndQuery(t *testing.T) {
 	if len(commands[0]) != 3 {
 		t.Error(":Hello|Goodbye:My:Friend|Love not parsed properly")
 	}
-	if !strings.HasSuffix(commands[7][len(commands[2]) - 1], "?") {
+	if !strings.HasSuffix(commands[7][len(commands[2])-1], "?") {
 		t.Error(":Hello|Goodbye:My:Friend|Love corner case failed, ? not transferred to both options")
 	}
-	if !strings.HasSuffix(commands[6][len(commands[2]) - 1], "?") {
+	if !strings.HasSuffix(commands[6][len(commands[2])-1], "?") {
 		t.Error(":Hello|Goodbye:My:Friend|Love corner case failed, ? not transferred to both options")
 	}
 }
@@ -186,4 +192,3 @@ func TestBranchSuffixes(t *testing.T) {
 		t.Error("	[:SOURce]:FSIMulator{1:1}:CORRelation:FADer{1:1}:FADer{1:1}:PATH{1:24} not parsed to 24 results", len(result), result)
 	}
 }
-

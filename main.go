@@ -47,7 +47,6 @@ func main() {
 
 func getPromptOptions(args Arguments) []prompt.Option {
 	return []prompt.Option{
-		prompt.OptionSwitchKeyBindMode(prompt.CommonKeyBind),
 		prompt.OptionShowCompletionAtStart(),
 		prompt.OptionInputTextColor(args.TextColor),
 		prompt.OptionSuggestionTextColor(args.SuggestionColor),

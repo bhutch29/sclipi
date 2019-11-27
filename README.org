@@ -1,0 +1,50 @@
+* Overview
+
+*Sclipi* is a command line tool for sending *SCPI* commands. *SCPI* is a standard syntax for remotely controlling test and measurement devices.
+
+ *Sclipi* features:
+- Auto-completion support!
+- Interactive and non-interactive operation
+- Saving command history to file
+- Running scripts from file
+
+Upcoming features:
+- Device discovery via mDNS/DNS-SD
+ 
+* Usage
+
+** Interactive-Mode
+By default *Sclipi* runs in interactive mode. This mode drops you into a shell where auto-completion and custom commands are enabled. 
+
+You will be presented with a prompt asking for the IP address of the target instrument. Auto-completion of the first 3 octets of each of the network interfaces on your machine
+
+Once the connection is established, an auto-completion prompt will appear with all of the available options. Type any of these to get started:
+- ~:~ and ~*~: SCPI commands
+- ~-~: Actions (Show history, Save to script, Run script, Copy result to clipboard, etc)
+- ~$~: Shell Passthrough (e.g. ~$echo "Hello World"~, or ~$clear~ to clear the terminal)
+- ~?~: Help
+- ~quit~ or ~exit~: Exit the shell
+
+The behavior can be tweaked with various arguments, including:
+- ~[-a|--address] "<ip-address/hostname>"~: Connect to instrument this address (skips IP address prompt)
+- ~[-p|--port] "<port>"~: Change target SCPI socket port from the default 5025
+- ~[-q|--quiet]~: Suppress most output to reduce clutter
+- Various ~--*-color~ options: Change the default color of various elements inside the shell
+ 
+** Non-Interactive Mode 
+If you know what commands you want to run (or have them saved to a file) and don't want to drop into the interactive shell, there are two command line arguments to run SCPI command directly:
+- ~[-c|--command "<scpi-command>"]~: Run the provided command and print the result, if any
+- ~[-f|--file "<file-path>]~: Run each of the commands in a newline-delimited text file sequentially, printing the results, if any
+
+Both non-interactive arguments require that the address of the instrument is also provided using ~-a~.
+
+* For Sclipi Developers
+** Simulated Instruments
+If *Sclipi* is run from a directory containing a SCPI.txt file, it supports parsing that file into a list of supported SCPI commands. The file must be in the *:SYSTem:HELP:HEADers?* format.
+
+Simulation mode can be triggered two ways:
+-The ~[-s|--simulate]~ argument
+-Typing ~simulated~ into the ~[-a|--address]~ argument or the IP Address interactive prompt
+
+
+

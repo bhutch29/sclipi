@@ -9,6 +9,11 @@ import (
 type ipCompleter struct {
 	addresses    []net.IP
 	simSupported bool
+	ipProvider   func(func([]net.IP) []net.IP) []net.IP
+}
+
+func newIpCompleter(simSupported bool) ipCompleter {
+	return ipCompleter{simSupported: simSupported, ipProvider: getIPv4InterfaceAddresses}
 }
 
 func (ip *ipCompleter) completer(d prompt.Document) []prompt.Suggest {
@@ -56,25 +61,29 @@ func (ip *ipCompleter) suggestsFromNode(node ipNode) []prompt.Suggest {
 
 func (ip *ipCompleter) getIpAddresses(filter func([]net.IP) []net.IP) []net.IP {
 	if len(ip.addresses) == 0 {
-		var ips []net.IP
-		interfaces, _ := net.Interfaces()
-		for _, i := range interfaces {
-			addresses, _ := i.Addrs()
-			for _, addr := range addresses {
-				if strings.HasPrefix(addr.String(), "127") {
-					continue
-				}
-				switch v := addr.(type) {
-				case *net.IPNet:
-					ips = append(ips, v.IP)
-				case *net.IPAddr:
-					ips = append(ips, v.IP)
-				}
-			}
-		}
-		ip.addresses = ips
+		ip.addresses = ip.ipProvider(filter)
 	}
 	return filter(ip.addresses)
+}
+
+func getIPv4InterfaceAddresses(filter func([]net.IP) []net.IP) []net.IP {
+	var ips []net.IP
+	interfaces, _ := net.Interfaces()
+	for _, i := range interfaces {
+		addresses, _ := i.Addrs()
+		for _, addr := range addresses {
+			if strings.HasPrefix(addr.String(), "127") {
+				continue
+			}
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ips = append(ips, v.IP)
+			case *net.IPAddr:
+				ips = append(ips, v.IP)
+			}
+		}
+	}
+	return ips
 }
 
 func (ip *ipCompleter) filterIpv4(ips []net.IP) []net.IP {

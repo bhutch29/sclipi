@@ -89,7 +89,7 @@ func getAddress(args Arguments, commonOptions []prompt.Option) string {
 		return *args.Address
 	}
 
-	ic := ipCompleter{simSupported: simFileExists()}
+	ic := newIpCompleter(simFileExists())
 	var result string
 	for {
 		options := []prompt.Option{

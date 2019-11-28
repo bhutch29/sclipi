@@ -10,11 +10,11 @@ import (
 )
 
 type instrument interface {
-	Connect(time.Duration, string) error
-	Command(string) error
-	Query(string) (string, error)
+	connect(time.Duration, string) error
+	command(string) error
+	query(string) (string, error)
 	getSupportedCommands() ([]string, []string, error)
-	Close() error
+	close() error
 }
 
 type scpiInstrument struct {
@@ -22,7 +22,7 @@ type scpiInstrument struct {
 	connection *net.TCPConn
 }
 
-func (i *scpiInstrument) Connect(timeout time.Duration, address string) error {
+func (i *scpiInstrument) connect(timeout time.Duration, address string) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return err
@@ -40,7 +40,7 @@ func (i *scpiInstrument) Connect(timeout time.Duration, address string) error {
 	return nil
 }
 
-func (i *scpiInstrument) Command(command string) error {
+func (i *scpiInstrument) command(command string) error {
 	if err := i.exec(command); err != nil {
 		return fmt.Errorf("failed to execute the command '%s': %s", command, err)
 	}
@@ -57,7 +57,7 @@ func (i *scpiInstrument) exec(cmd string) error {
 }
 
 func (i *scpiInstrument) queryError(prevCmd string) error {
-	res, err := i.Query("SYST:ERR?")
+	res, err := i.query("SYST:ERR?")
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (i *scpiInstrument) queryError(prevCmd string) error {
 	return nil
 }
 
-func (i *scpiInstrument) Query(cmd string) (res string, err error) {
+func (i *scpiInstrument) query(cmd string) (res string, err error) {
 	if err := i.exec(cmd); err != nil {
 		return "", err
 	}
@@ -141,7 +141,7 @@ func (i *scpiInstrument) parseBlockInfo(blockInfo string) (int, error) {
 }
 
 func (i *scpiInstrument) getSupportedCommands() ([]string, []string, error) {
-	r, err := i.Query(":SYST:HELP:HEAD?")
+	r, err := i.query(":SYST:HELP:HEAD?")
 	commands := strings.Split(r, "\n")
 
 	var colonCommands []string
@@ -159,22 +159,22 @@ func (i *scpiInstrument) getSupportedCommands() ([]string, []string, error) {
 	return colonCommands, starCommands, err
 }
 
-func (i *scpiInstrument) Close() error {
+func (i *scpiInstrument) close() error {
 	return i.connection.Close()
 }
 
 type simInstrument struct {
 }
 
-func (i *simInstrument) Connect(timeout time.Duration, address string) error {
+func (i *simInstrument) connect(timeout time.Duration, address string) error {
 	return nil
 }
 
-func (i *simInstrument) Command(command string) error {
+func (i *simInstrument) command(command string) error {
 	return nil
 }
 
-func (i *simInstrument) Query(query string) (string, error) {
+func (i *simInstrument) query(query string) (string, error) {
 	return query + "\n", nil
 }
 
@@ -198,6 +198,6 @@ func (i *simInstrument) getSupportedCommands() ([]string, []string, error) {
 	return colonCommands, starCommands, nil
 }
 
-func (i *simInstrument) Close() error {
+func (i *simInstrument) close() error {
 	return nil
 }

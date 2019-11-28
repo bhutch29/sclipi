@@ -11,7 +11,7 @@ import (
 var version = "undefined"
 
 func main() {
-	args := ParseArgs()
+	args := parseArgs()
 	commonPromptOptions := getPromptOptions(args)
 
 	printIntroText(*args.Quiet)
@@ -26,7 +26,7 @@ func main() {
 		fmt.Println()
 		log.Fatal(err)
 	}
-	defer inst.Close()
+	defer inst.close()
 
 	bar.Forward(34)
 	sm := newScpiManager(inst)
@@ -45,7 +45,7 @@ func main() {
 	p.Run()
 }
 
-func getPromptOptions(args Arguments) []prompt.Option {
+func getPromptOptions(args arguments) []prompt.Option {
 	return []prompt.Option{
 		prompt.OptionShowCompletionAtStart(),
 		prompt.OptionInputTextColor(args.TextColor),
@@ -80,7 +80,7 @@ func printHelp() {
 	fmt.Println()
 }
 
-func getAddress(args Arguments, commonOptions []prompt.Option) string {
+func getAddress(args arguments, commonOptions []prompt.Option) string {
 	if *args.Simulate {
 		return "simulated"
 	}
@@ -112,7 +112,7 @@ func buildAndConnectInstrument(address string, port string) (instrument, error) 
 		inst = &scpiInstrument{}
 	}
 
-	if err := inst.Connect(5*time.Second, address+":"+port); err != nil {
+	if err := inst.connect(5*time.Second, address+":"+port); err != nil {
 		return inst, err
 	}
 

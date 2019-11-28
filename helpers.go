@@ -32,7 +32,7 @@ func runCommand(command string, ip string, port string) {
 		fmt.Println(err)
 		log.Fatal()
 	}
-	defer inst.Close()
+	defer inst.close()
 
 	sm := newScpiManager(inst)
 	sm.handleScpi(command)
@@ -48,7 +48,7 @@ func runScriptFile(file string, ip string, port string) {
 		fmt.Println(err)
 		log.Fatal()
 	}
-	defer inst.Close()
+	defer inst.close()
 
 	sm := newScpiManager(inst)
 	sm.runScript(file)

@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -104,7 +105,7 @@ func (sm *scpiManager) printCommandHistory() {
 
 func (sm *scpiManager) handleScpi(s string) {
 	if strings.Contains(s, "?") {
-		r, err := sm.inst.Query(s)
+		r, err := sm.inst.query(s)
 		if err != nil {
 			fmt.Println(err)
 			sm.history.addResponse(err.Error())
@@ -113,7 +114,7 @@ func (sm *scpiManager) handleScpi(s string) {
 		sm.history.addCommand(s)
 		sm.history.addResponse(r)
 	} else {
-		err := sm.inst.Command(s)
+		err := sm.inst.command(s)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -175,37 +176,58 @@ func (sm *scpiManager) getTree(i instrument) {
 }
 
 func (sm *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
-	//Only entered a ':'
-	if len(inputs) == 1 {
-		return tree
-	}
-
 	current := tree
+	next := tree
 	for i, item := range inputs {
-		if success, node := sm.getNodeChildByContent(current, item); success {
-			current = node
+		if success, node := sm.getNodeChildByContent(current, item); success { // Found a match, store it away and keep looking in case colon has not been pressed
+			current = next
+			next = node
 			continue
-		} else if i < len(inputs)-1 {
+		} else if i < len(inputs)-1 { // Colon pressed twice in a row, return nothing
 			return scpiNode{}
-		} else {
-			break
 		}
+		current = next // item not found
+		break
 	}
+	// If we made it here without calling break, then a match has been found but colon has not been pressed yet, so return the previous node's suggestions
 	return current
 }
 
 func (sm *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
 	var s []prompt.Suggest
 	for _, item := range node.Children {
-		s = append(s, prompt.Suggest{Text: item.Content})
+		if item.Content.Suffixed {
+			for i := item.Content.Start; i <= item.Content.Stop; i++ {
+				var text string
+				if strings.HasSuffix(item.Content.Text, "?") {
+					text = item.Content.Text[:len(item.Content.Text)-1] + strconv.Itoa(i) + "?"
+				} else {
+					text = item.Content.Text + strconv.Itoa(i)
+				}
+				s = append(s, prompt.Suggest{Text: text})
+			}
+		} else {
+			s = append(s, prompt.Suggest{Text: item.Content.Text})
+		}
 	}
 	return s
 }
 
-func (sm *scpiManager) getNodeChildByContent(parent scpiNode, item string) (bool, scpiNode) {
+func (sm *scpiManager) getNodeChildByContent(parent scpiNode, input string) (bool, scpiNode) {
 	for _, node := range parent.Children {
-		if node.Content == item {
-			return true, node
+		if node.Content.Suffixed {
+			input = strings.TrimSuffix(input, "?")
+			if strings.HasPrefix(input, node.Content.Text) {
+				if numSuffix, err := strconv.Atoi(input[len(node.Content.Text):]); err == nil {
+					if numSuffix >= node.Content.Start && numSuffix <= node.Content.Stop {
+						return true, node
+					}
+				}
+			}
+		} else {
+			if input == node.Content.Text {
+				return true, node
+			}
 		}
 	}
 	return false, scpiNode{}

@@ -12,7 +12,7 @@ import (
 var colors = []string{"DefaultColor", "Black", "DarkRed", "DarkGreen", "Brown", "DarkBlue", "Purple", "Cyan",
 	"LightGray", "DarkGray", "Red", "Green", "Yellow", "Blue", "Fuchsia", "Turquoise", "White"}
 
-type Arguments struct {
+type arguments struct {
 	Address           *string
 	Port              *string
 	Command           *string
@@ -29,8 +29,8 @@ type Arguments struct {
 	SelectedBgColor   prompt.Color
 }
 
-func ParseArgs() Arguments {
-	args := Arguments{}
+func parseArgs() arguments {
+	args := arguments{}
 	parser := argparse.NewParser("Sclipi",
 		`A SCPI cli!
 Features an autocomplete-enabled interactive shell for sending SCPI commands.
@@ -72,7 +72,7 @@ Arguments allow sending single commands or scripts from files non-interactively.
 		Default: colors[prompt.Cyan],
 		Help:    "The selected bg color"})
 
-	parser.HelpFunc = HelpMessage
+	parser.HelpFunc = helpMessage
 
 	if err := parser.Parse(os.Args); err != nil {
 		log.Fatal(parser.Usage(err))
@@ -109,7 +109,7 @@ Arguments allow sending single commands or scripts from files non-interactively.
 	return args
 }
 
-func HelpMessage(o *argparse.Command, _ interface{}) string {
+func helpMessage(o *argparse.Command, _ interface{}) string {
 	var result string
 
 	maxWidth := 80

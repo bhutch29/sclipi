@@ -10,7 +10,6 @@ func BenchmarkVxgScpi(b *testing.B) {
 		head := scpiNode{}
 		lines, _ := readLines("benchmark_SCPI.txt")
 		commands := splitScpiCommands(lines)
-		b.Log("# of commands found: ", len(commands))
 
 		for _, command := range commands {
 			createScpiTreeBranch(command, &head)
@@ -47,18 +46,6 @@ func TestScpiParserFourOptionals(t *testing.T) {
 	if len(commands) != 32 {
 		t.Error("[:SOURce]:FREQuency[:CW][:FIXed][:FIXed] not parsed properly:", commands)
 		return
-	}
-}
-
-func TestScpiParserSuffix(t *testing.T) {
-	lines := []string{":Example{1:2}:Afterward"}
-	commands := splitScpiCommands(lines)
-	if len(commands) != 4 {
-		t.Error(":Example{1:2}:Afterward not parsed properly:", commands)
-		return
-	}
-	if len(commands[0]) != 2 {
-		t.Error(":Example{1:2}:Afterward not parsed properly:", commands[0])
 	}
 }
 
@@ -160,35 +147,10 @@ func TestScpiParserMultipleBarsCommandAndQuery(t *testing.T) {
 	if len(commands[0]) != 3 {
 		t.Error(":Hello|Goodbye:My:Friend|Love not parsed properly")
 	}
-	if !strings.HasSuffix(commands[7][len(commands[2])-1], "?") {
+	if !strings.HasSuffix(commands[7][len(commands[2])-1].Text, "?") {
 		t.Error(":Hello|Goodbye:My:Friend|Love corner case failed, ? not transferred to both options")
 	}
-	if !strings.HasSuffix(commands[6][len(commands[2])-1], "?") {
+	if !strings.HasSuffix(commands[6][len(commands[2])-1].Text, "?") {
 		t.Error(":Hello|Goodbye:My:Friend|Love corner case failed, ? not transferred to both options")
-	}
-}
-
-func TestBranchSuffixes(t *testing.T) {
-	result := handleSuffixes("Example{1:1}")
-	if len(result) != 1 {
-		t.Error("Example{1:1} not parsed to 1 result", result)
-	}
-
-	result = handleSuffixes("Example{1:3}")
-	if len(result) != 3 {
-		t.Error("Example{1:3} not parsed to 3 results", result)
-	}
-	if result[0] != "Example1" {
-		t.Error("Example{1:3} first element not Example1", result)
-	}
-
-	result = handleSuffixes(":Hello{1:2}:World{1:3}:Again{1:2}")
-	if len(result) != 12 {
-		t.Error(":Hello{1:2}:World{1:3}:Again{1:2} not parsed to 12 results", result)
-	}
-
-	result = handleSuffixes("	[:SOURce]:FSIMulator{1:1}:CORRelation:FADer{1:1}:FADer{1:1}:PATH{1:24}")
-	if len(result) != 24 {
-		t.Error("	[:SOURce]:FSIMulator{1:1}:CORRelation:FADer{1:1}:FADer{1:1}:PATH{1:24} not parsed to 24 results", len(result), result)
 	}
 }

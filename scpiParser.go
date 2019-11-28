@@ -1,14 +1,22 @@
 package main
 
 import (
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
 type scpiNode struct {
-	Content  string
+	Content  nodeInfo
 	Children []scpiNode
+}
+
+type nodeInfo struct {
+	Text     string
+	Start    int
+	Stop     int
+	Suffixed bool
 }
 
 func parseScpi(lines []string) scpiNode {
@@ -22,7 +30,7 @@ func parseScpi(lines []string) scpiNode {
 	return head
 }
 
-func createScpiTreeBranch(command []string, head *scpiNode) {
+func createScpiTreeBranch(command []nodeInfo, head *scpiNode) {
 	if len(command) == 0 {
 		return
 	}
@@ -40,9 +48,9 @@ func createScpiTreeBranch(command []string, head *scpiNode) {
 	}
 }
 
-func scpiNodeExists(nodes []scpiNode, word string) (bool, int) {
+func scpiNodeExists(nodes []scpiNode, info nodeInfo) (bool, int) {
 	for i, node := range nodes {
-		if node.Content == word {
+		if node.Content == info {
 			return true, i
 		}
 	}
@@ -50,23 +58,50 @@ func scpiNodeExists(nodes []scpiNode, word string) (bool, int) {
 	return false, -1
 }
 
-func splitScpiCommands(lines []string) [][]string {
-	var commands [][]string
+func splitScpiCommands(lines []string) [][]nodeInfo {
+	var commands [][]nodeInfo
 	for _, line := range lines {
 		line = strings.Replace(line, "[", "", -1)
 		trimmed := strings.TrimLeft(line, ":")
-		suffixed := handleSuffixes(trimmed)
+		suffixed := reformatSuffixes(trimmed)
+		split := strings.Split(suffixed, ":")
+		withOptionals := handleOptionals(removeSquareBraces(split), getOptionalIndexes(split))
+		withQueries := handleQueries(withOptionals)
+		withoutBars := handleBars(withQueries)
+		finished := finishSuffixes(withoutBars)
 
-		for _, item := range suffixed {
-			split := strings.Split(item, ":")
-			withOptionals := handleOptionals(removeSquareBraces(split), getOptionalIndexes(split))
-			withQueries := handleQueries(withOptionals)
-			withoutBars := handleBars(withQueries)
-
-			commands = append(commands, withoutBars...)
-		}
+		commands = append(commands, finished...)
 	}
 	return commands
+}
+
+func finishSuffixes(commands [][]string) [][]nodeInfo {
+	var result [][]nodeInfo
+	for _, command := range commands {
+		var commandInfo []nodeInfo
+		for _, subcommand := range command {
+			if atIndex := strings.Index(subcommand, "@"); atIndex != -1 {
+				startVal, err := strconv.Atoi(string(subcommand[atIndex+1]))
+				if err != nil {
+					log.Fatal("Failed to parse one of the available SCPI commands: ", subcommand)
+				}
+				end := string(subcommand[atIndex+3:])
+				stopVal, err := strconv.Atoi(strings.TrimSuffix(end, "?"))
+				if err != nil {
+					log.Fatal("Failed to parse one of the available SCPI commands: ", subcommand)
+				}
+				text := subcommand[:atIndex]
+				if strings.HasSuffix(subcommand, "?") {
+					text += "?"
+				}
+				commandInfo = append(commandInfo, nodeInfo{Text: text, Suffixed: true, Start: startVal, Stop: stopVal})
+			} else {
+				commandInfo = append(commandInfo, nodeInfo{Text: subcommand, Suffixed: false})
+			}
+		}
+		result = append(result, commandInfo)
+	}
+	return result
 }
 
 func handleBars(commands [][]string) [][]string {
@@ -143,48 +178,32 @@ func handleQueries(commands [][]string) [][]string {
 	return result
 }
 
-func handleSuffixes(s string) []string {
-	var suffixes []string
+// Rewrites any discovered suffixes into an easier to parse format that most importantly doesnt have any ':' characters
+func reformatSuffixes(s string) string {
 	r, _ := regexp.Compile("{([0-9]):([0-9][0-9]?)}")
 	match := r.FindStringSubmatchIndex(s)
 	if match == nil {
-		return []string{s}
+		return s
 	}
-	startSuffix, _ := strconv.Atoi(string(s[match[2]]))
-	stopSuffix := calculateStopSuffix(s, match)
+	startVal := string(s[match[2]])
+	stopVal := calculateStopSuffix(s, match)
+
 	startCut := match[0]
 	stopCut := match[1]
 
-	for i := startSuffix; i <= stopSuffix; i++ {
-		var cut []byte
-		temp := []byte(s)
-		if i < 10 {
-			cut = append(temp[:startCut], s[stopCut-1:]...) //Cut suffix portion out, leave one element for value
-			cut[startCut] = strconv.Itoa(i)[0]              //Insert value into spare element
-		} else {
-			cut = append(temp[:startCut], s[stopCut-2:]...) //Cut suffix portion out, leave two elements for value
-			cut[startCut] = strconv.Itoa(i)[0]              //Insert values into spare elements
-			test := strconv.Itoa(i)
-			cut[startCut+1] = test[1]
-		}
-		suffixes = append(suffixes, handleSuffixes(string(cut))...)
-	}
-
-	return suffixes
+	result := s[:startCut] + "@" + string(startVal) + "#" + string(stopVal) + s[stopCut:]
+	return reformatSuffixes(result)
 }
 
 //Determines whether the stop value of the suffix is double digit or not, then generates the correct value
-func calculateStopSuffix(s string, match []int) int {
+func calculateStopSuffix(s string, match []int) string {
 	if match[5]-match[4] == 1 {
-		result, _ := strconv.Atoi(string(s[match[4]]))
-		return result
+		return string(s[match[4]])
 	} else {
 		digit1 := string(s[match[4]])
 		digit2 := string(s[match[4]+1])
-		result, _ := strconv.Atoi(digit1 + digit2)
-		return result
+		return digit1 + digit2
 	}
-
 }
 
 func handleOptionals(command []string, optionalIndexes []int) [][]string {

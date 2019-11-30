@@ -204,13 +204,27 @@ func (sm *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
 				} else {
 					text = item.Content.Text + strconv.Itoa(i)
 				}
-				s = append(s, prompt.Suggest{Text: text})
+				suggest := prompt.Suggest{Text: text}
+				sm.getSuggestDescription(&suggest, item)
+				s = append(s, suggest)
 			}
 		} else {
-			s = append(s, prompt.Suggest{Text: item.Content.Text})
+			suggest := prompt.Suggest{Text: item.Content.Text}
+			sm.getSuggestDescription(&suggest, item)
+			s = append(s, suggest)
 		}
 	}
 	return s
+}
+
+func (sm *scpiManager) getSuggestDescription(suggest *prompt.Suggest, node scpiNode) {
+	if len(node.Children) == 0 {
+		if strings.HasSuffix(node.Content.Text, "?") {
+			suggest.Description = "Query"
+		} else {
+			suggest.Description = "Command"
+		}
+	}
 }
 
 func (sm *scpiManager) getNodeChildByContent(parent scpiNode, input string) (bool, scpiNode) {

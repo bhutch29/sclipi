@@ -17,11 +17,6 @@ func BenchmarkVxgScpi(b *testing.B) {
 	}
 }
 
-func TestGenerateTree(t *testing.T) {
-	lines, _ := readLines("SCPI.txt")
-	parseScpi(lines) //TODO: Generate real tests
-}
-
 func TestScpiParserTwoOptionals(t *testing.T) {
 	lines := []string{":DIAGnostic[:CPU]:BLOCk:ABUS:LIST[:SINGle]"}
 	commands := splitScpiCommands(lines)
@@ -153,4 +148,24 @@ func TestScpiParserMultipleBarsCommandAndQuery(t *testing.T) {
 	if !strings.HasSuffix(commands[6][len(commands[2])-1].Text, "?") {
 		t.Error(":Hello|Goodbye:My:Friend|Love corner case failed, ? not transferred to both options")
 	}
+}
+
+func TestScpiParserSuffix(t *testing.T) {
+	line := ":SOURce:RADio{1:1}:ALL:OFF/nquery/"
+	command := reformatSuffixes(line)
+	if !strings.Contains(command, "@") {
+		t.Error(line, " Not parsed properly")
+	}
+}
+func TestScpiParserIrregularSuffix(t *testing.T) {
+	line := ":SOURce1:RADio1:ALL:OFF/nquery/"
+	command := reformatIrregularSuffixes(line)
+	if !strings.Contains(command, "@") {
+		t.Error(line, " Not parsed properly")
+	}
+}
+
+func TestGenerateTree(t *testing.T) {
+	lines, _ := readLines("SCPI.txt")
+	parseScpi(lines) //TODO: Generate real tests
 }

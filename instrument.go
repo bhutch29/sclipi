@@ -44,7 +44,7 @@ func (i *scpiInstrument) command(command string) error {
 	if err := i.exec(command); err != nil {
 		return fmt.Errorf("failed to execute the command '%s': %s", command, err)
 	}
-	return i.queryError(command)
+	return i.queryError()
 }
 
 func (i *scpiInstrument) exec(cmd string) error {
@@ -56,12 +56,15 @@ func (i *scpiInstrument) exec(cmd string) error {
 	return nil
 }
 
-func (i *scpiInstrument) queryError(prevCmd string) error {
+func (i *scpiInstrument) queryError() error {
 	res, err := i.query("SYST:ERR?")
 	if err != nil {
 		return err
 	}
-	fmt.Println("Error: " + strings.TrimRight(res, "\n"))
+	if !strings.HasPrefix(res, "+0") {
+		fmt.Println("Error: " + strings.TrimRight(res, "\n"))
+		return i.queryError()
+	}
 	return nil
 }
 

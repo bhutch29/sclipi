@@ -179,7 +179,7 @@ func (sm *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
 	current := tree
 	next := tree
 	for i, item := range inputs {
-		if success, node := sm.getNodeChildByContent(current, item); success { // Found a match, store it away and keep looking in case colon has not been pressed
+		if success, node := sm.getNodeChildByContent(next, item); success { // Found a match, store it away and keep looking in case colon has not been pressed
 			current = next
 			next = node
 			continue

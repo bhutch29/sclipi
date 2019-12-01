@@ -23,6 +23,16 @@ func parseScpi(lines []string) scpiNode {
 	head := scpiNode{}
 	commands := splitScpiCommands(lines)
 
+	// if !strings.HasPrefix(commands[0][0].Text, "*") {
+	// 	f, _ := os.Create("temp.txt")
+	// 	for _, command := range commands {
+	// 		for _, subcommand := range command {
+	// 			fmt.Fprint(f, subcommand.Text+":")
+	// 		}
+	// 		fmt.Fprint(f, "\n")
+	// 	}
+	// }
+
 	for _, command := range commands {
 		createScpiTreeBranch(command, &head)
 	}
@@ -137,24 +147,6 @@ func finishSuffixes(commands [][]string) [][]nodeInfo {
 			}
 
 			commandInfo = append(commandInfo, nodeInfo{Text: text, Suffixed: true, Start: startVal, Stop: stopVal})
-			// if atIndex := strings.Index(subcommand, "@"); atIndex != -1 {
-			// startVal, err := strconv.Atoi(string(subcommand[atIndex+1]))
-			// if err != nil {
-			// 	log.Fatal("Failed to parse one of the available SCPI commands: ", subcommand, " ", subcommand[atIndex+1])
-			// }
-			// end := string(subcommand[atIndex+3:])
-			// stopVal, err := strconv.Atoi(strings.TrimSuffix(end, "?"))
-			// if err != nil {
-			// 	log.Fatal("Failed to parse one of the available SCPI commands: ", subcommand, " ", subcommand[atIndex+3])
-			// }
-			// text := subcommand[:atIndex]
-			// if strings.HasSuffix(subcommand, "?") {
-			// 	text += "?"
-			// }
-			// commandInfo = append(commandInfo, nodeInfo{Text: text, Suffixed: true, Start: startVal, Stop: stopVal})
-			// } else {
-			// 	commandInfo = append(commandInfo, nodeInfo{Text: subcommand, Suffixed: false})
-			// }
 		}
 		result = append(result, commandInfo)
 	}

@@ -23,15 +23,7 @@ func parseScpi(lines []string) scpiNode {
 	head := scpiNode{}
 	commands := splitScpiCommands(lines)
 
-	// if !strings.HasPrefix(commands[0][0].Text, "*") {
-	// 	f, _ := os.Create("temp.txt")
-	// 	for _, command := range commands {
-	// 		for _, subcommand := range command {
-	// 			fmt.Fprint(f, subcommand.Text+":")
-	// 		}
-	// 		fmt.Fprint(f, "\n")
-	// 	}
-	// }
+	// writeCommandsToFile(commands)
 
 	for _, command := range commands {
 		createScpiTreeBranch(command, &head)
@@ -47,9 +39,8 @@ func createScpiTreeBranch(command []nodeInfo, head *scpiNode) {
 	if exists, index := scpiNodeExists(head.Children, command[0]); exists {
 		if len(command) == 1 {
 			return
-		} else {
-			createScpiTreeBranch(command[1:], &head.Children[index])
 		}
+		createScpiTreeBranch(command[1:], &head.Children[index])
 	} else {
 		head.Children = append(head.Children, scpiNode{Content: command[0]})
 		if len(command) > 1 {
@@ -68,18 +59,24 @@ func scpiNodeExists(nodes []scpiNode, info nodeInfo) (bool, int) {
 	return false, -1
 }
 
+// Converts :SYSTem:HELP:HEADers?-style SCPI definitions into a complete list of possible SCPI commands/queries.
+// NodeInfo objects contain command "suffix" information, e.g. RADio{1:16}
 func splitScpiCommands(lines []string) [][]nodeInfo {
 	var commands [][]nodeInfo
 	for _, line := range lines {
 		s := strings.Replace(line, "[", "", -1)
 		s = strings.TrimLeft(s, ":")
+		//TODO: Suffixed items are also accessible without suffix (default value)
 		s = reformatSuffixes(s)
 		s = reformatIrregularSuffixes(s)
+		//TODO: Convert all methods up to finishSuffixes to use strings instead of slices, will enable speeding up finishSuffixes by switching it from loops to recursion.
 		ss := strings.Split(s, ":")
 		sss := handleOptionals(removeSquareBraces(ss), getOptionalIndexes(ss))
 		sss = handleQueries(sss)
 		sss = handleBars(sss)
+		// now := time.Now()
 		nodeInfos := finishSuffixes(sss)
+		// fmt.Println(time.Since(now))
 
 		commands = append(commands, nodeInfos...)
 	}
@@ -93,13 +90,13 @@ func reformatSuffixes(s string) string {
 	if match == nil {
 		return s
 	}
-	startVal := string(s[match[2]])
-	stopVal := calculateStopSuffix(s, match)
+	start := calculateSuffix(s, match[2], match[3])
+	stop := calculateSuffix(s, match[4], match[5])
 
 	startCut := match[0]
 	stopCut := match[1]
 
-	return reformatSuffixes(s[:startCut] + "@" + string(startVal) + "#" + string(stopVal) + s[stopCut:])
+	return reformatSuffixes(s[:startCut] + "@" + start + "#" + stop + s[stopCut:])
 }
 
 // Workaround for MXG SCPI existence of RAD1 and RAD{1:1} syntax simultaneously
@@ -116,53 +113,66 @@ func reformatIrregularSuffixes(s string) string {
 	return reformatIrregularSuffixes(s[:startCut] + "@" + value + "#" + value + s[stopCut:])
 }
 
+// Finds the temporarily adjusted suffix information and moves it into nodeInfo fields
 func finishSuffixes(commands [][]string) [][]nodeInfo {
+	//TODO: Need to speed this up
 	var result [][]nodeInfo
 	for _, command := range commands {
 		var commandInfo []nodeInfo
 		for _, subcommand := range command {
-			r, _ := regexp.Compile(`@(\d{1,2})#(\d{1,2})`)
-			match := r.FindStringSubmatchIndex(subcommand)
-			if match == nil {
-				commandInfo = append(commandInfo, nodeInfo{Text: subcommand, Suffixed: false})
-				continue
-			}
-
-			start := calculateStartSuffix(subcommand, match)
-			stop := calculateStopSuffix(subcommand, match)
-
-			startVal, err := strconv.Atoi(start)
-			if err != nil {
-				log.Fatal("Failed to parse suffix from SCPI command: ", subcommand)
-			}
-			stopVal, err := strconv.Atoi(stop)
-			if err != nil {
-				log.Fatal("Failed to parse suffix from SCPI command: ", subcommand)
-			}
-
-			startCut := match[0]
-			text := subcommand[:startCut]
-			if strings.HasSuffix(subcommand, "?") {
-				text += "?"
-			}
-
-			commandInfo = append(commandInfo, nodeInfo{Text: text, Suffixed: true, Start: startVal, Stop: stopVal})
+			commandInfo = append(commandInfo, finishSuffix(subcommand))
 		}
 		result = append(result, commandInfo)
 	}
 	return result
 }
 
-func handleBars(commands [][]string) [][]string {
-	var result [][]string
-	for _, command := range commands {
-		barIndexes := getBarIndexes(command)
-		result = append(result, extractBarCommands(command, barIndexes)...)
+func finishSuffix(subcommand string) nodeInfo {
+	r, _ := regexp.Compile(`@(\d{1,2})#(\d{1,2})`)
+	match := r.FindStringSubmatchIndex(subcommand)
+	if match == nil {
+		return nodeInfo{Text: subcommand, Suffixed: false}
+	}
+
+	start := tryConvertAtoi(calculateSuffix(subcommand, match[2], match[3]))
+	stop := tryConvertAtoi(calculateSuffix(subcommand, match[4], match[5]))
+
+	startCut := match[0]
+	text := subcommand[:startCut]
+	if strings.HasSuffix(subcommand, "?") {
+		text += "?"
+	}
+	return nodeInfo{Text: text, Suffixed: true, Start: start, Stop: stop}
+}
+
+func tryConvertAtoi(character string) int {
+	result, err := strconv.Atoi(character)
+	if err != nil {
+		log.Fatal("Failed to parse suffix from SCPI command: ")
 	}
 	return result
 }
 
-//Recursively walk "tree" of command depth-first, returning all possible combinations of "bar" commands
+//Determines whether the value is double digit or not, then generates the correct value string
+func calculateSuffix(s string, startIndex int, stopIndex int) string {
+	if stopIndex-startIndex == 1 {
+		return string(s[startIndex])
+	} else {
+		digit1 := string(s[startIndex])
+		digit2 := string(s[startIndex+1])
+		return digit1 + digit2
+	}
+}
+
+func handleBars(commands [][]string) [][]string {
+	var result [][]string
+	for _, command := range commands {
+		result = append(result, extractBarCommands(command, getBarIndexes(command))...)
+	}
+	return result
+}
+
+//Recursively walk "tree" of command depth-first, returning all possible combinations of "bar" commands, e.g. Option1|Option2
 func extractBarCommands(command []string, barIndexes []int) [][]string {
 	var result [][]string
 
@@ -206,6 +216,7 @@ func getBarIndexes(command []string) []int {
 	return indexes
 }
 
+// Converts the various command types: qonly (query-only), nquery(no query), and default (command and query)
 func handleQueries(commands [][]string) [][]string {
 	var result [][]string
 	for _, command := range commands {
@@ -220,33 +231,11 @@ func handleQueries(commands [][]string) [][]string {
 			result = append(result, command)
 			query := make([]string, len(command))
 			copy(query, command)
-			query[last] = query[last] + "?"
+			query[last] += "?"
 			result = append(result, query)
 		}
 	}
 	return result
-}
-
-//Determines whether the start value of the suffix is double digit or not, then generates the correct value
-func calculateStartSuffix(s string, match []int) string {
-	if match[3]-match[2] == 1 {
-		return string(s[match[2]])
-	} else {
-		digit1 := string(s[match[2]])
-		digit2 := string(s[match[2]+1])
-		return digit1 + digit2
-	}
-}
-
-//Determines whether the stop value of the suffix is double digit or not, then generates the correct value
-func calculateStopSuffix(s string, match []int) string {
-	if match[5]-match[4] == 1 {
-		return string(s[match[4]])
-	} else {
-		digit1 := string(s[match[4]])
-		digit2 := string(s[match[4]+1])
-		return digit1 + digit2
-	}
 }
 
 func handleOptionals(command []string, optionalIndexes []int) [][]string {
@@ -259,6 +248,19 @@ func handleOptionals(command []string, optionalIndexes []int) [][]string {
 	return commands
 }
 
+func deleteIndexFromSliceRetainingQueryInfo(command []string, index int) []string {
+	newCommand := make([]string, len(command))
+	copy(newCommand, command)
+	if index == len(newCommand)-1 {
+		if strings.HasSuffix(newCommand[index], "/nquery/") {
+			newCommand[index-1] += "/nquery/"
+		} else if strings.HasSuffix(command[index], "?/qonly/") {
+			newCommand[index-1] += "?/qonly/"
+		}
+	}
+	return append(newCommand[:index], newCommand[index+1:]...)
+}
+
 func removeIndexAndDecrement(indexes []int, i int) []int {
 	newIndexes := make([]int, len(indexes))
 	copy(newIndexes, indexes)
@@ -268,19 +270,6 @@ func removeIndexAndDecrement(indexes []int, i int) []int {
 		}
 	}
 	return newIndexes[i+1:]
-}
-
-func deleteIndexFromSliceRetainingQueryInfo(command []string, index int) []string {
-	newCommand := make([]string, len(command))
-	copy(newCommand, command)
-	if index == len(newCommand)-1 && strings.Contains(newCommand[index], "/") {
-		if strings.Contains(newCommand[index], "/nquery/") {
-			newCommand[index-1] = newCommand[index-1] + "/nquery/"
-		} else if strings.Contains(command[index], "?/qonly/") {
-			newCommand[index-1] = newCommand[index-1] + "?/qonly/"
-		}
-	}
-	return append(newCommand[:index], newCommand[index+1:]...)
 }
 
 func getOptionalIndexes(words []string) []int {

@@ -208,10 +208,11 @@ func (sm *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
 				sm.getSuggestDescription(&suggest, item)
 				s = append(s, suggest)
 			}
+		} else {
+			suggest := prompt.Suggest{Text: item.Content.Text}
+			sm.getSuggestDescription(&suggest, item)
+			s = append(s, suggest)
 		}
-		suggest := prompt.Suggest{Text: item.Content.Text}
-		sm.getSuggestDescription(&suggest, item)
-		s = append(s, suggest)
 	}
 	return s
 }
@@ -237,8 +238,7 @@ func (sm *scpiManager) getNodeChildByContent(parent scpiNode, input string) (boo
 					}
 				}
 			}
-		}
-		if input == node.Content.Text {
+		} else if input == node.Content.Text {
 			return true, node
 		}
 	}

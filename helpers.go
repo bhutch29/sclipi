@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 func readLines(path string) ([]string, error) {
@@ -60,4 +61,17 @@ func simFileExists() bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func writeCommandsToFile(commands [][]nodeInfo) {
+	//Only writes the non-star commands to file
+	if !strings.HasPrefix(commands[0][0].Text, "*") {
+		f, _ := os.Create("temp.txt")
+		for _, command := range commands {
+			for _, subcommand := range command {
+				fmt.Fprint(f, subcommand.Text+":")
+			}
+			fmt.Fprint(f, "\n")
+		}
+	}
 }

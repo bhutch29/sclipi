@@ -222,7 +222,7 @@ type simInstrument struct {
 }
 
 func (i *simInstrument) connect(timeout time.Duration, address string, p *progress) error {
-	time.Sleep(timeout / 2)
+	// time.Sleep(timeout / 2)
 	p.forward(40)
 	return nil
 }

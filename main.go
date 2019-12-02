@@ -18,19 +18,19 @@ func main() {
 	defer fmt.Println("Goodbye!")
 	address := getAddress(args, commonPromptOptions)
 
-	bar := Progress{Silent: *args.Quiet}
-	bar.Forward(33)
+	bar := progress{Silent: *args.Quiet}
+	bar.forward(0)
 
-	inst, err := buildAndConnectInstrument(address, *args.Port)
+	inst, err := buildAndConnectInstrument(address, *args.Port, &bar)
 	if err != nil {
 		fmt.Println()
 		log.Fatal(err)
 	}
 	defer inst.close()
 
-	bar.Forward(34)
+	bar.forward(30)
 	sm := newScpiManager(inst)
-	bar.Forward(33)
+	bar.forward(30)
 
 	if !*args.Quiet {
 		fmt.Println("Connected!")
@@ -104,7 +104,7 @@ func getAddress(args arguments, commonOptions []prompt.Option) string {
 	return result
 }
 
-func buildAndConnectInstrument(address string, port string) (instrument, error) {
+func buildAndConnectInstrument(address string, port string, bar *progress) (instrument, error) {
 	var inst instrument
 	if address == "simulated" {
 		inst = &simInstrument{}
@@ -112,26 +112,64 @@ func buildAndConnectInstrument(address string, port string) (instrument, error) 
 		inst = &scpiInstrument{}
 	}
 
-	if err := inst.connect(5*time.Second, address+":"+port); err != nil {
+	if err := inst.connect(5*time.Second, address+":"+port, bar); err != nil {
 		return inst, err
 	}
 
 	return inst, nil
 }
 
-type Progress struct {
+type progress struct {
 	Silent      bool
 	bar         *progressbar.ProgressBar
 	initialized bool
+	add         chan int
+	done        chan bool
+	progress    int
 }
 
-func (p *Progress) Forward(percent int) {
+func (p *progress) forward(percent int) {
 	if p.Silent {
 		return
 	}
 	if !p.initialized {
-		p.bar = progressbar.New(100)
+		p.progress = 0
+		p.done = make(chan bool)
+		p.add = make(chan int, 100)
+		go p.runBar(p.add)
 		p.initialized = true
 	}
-	_ = p.bar.Add(percent)
+	p.progress += percent
+	p.add <- percent
+	if p.progress >= 100 {
+		p.close()
+	}
+}
+
+func (p *progress) close() {
+	close(p.add)
+	<-p.done
+}
+
+func (p *progress) runBar(in <-chan int) {
+	p.bar = progressbar.New(100)
+	added := 0
+	for {
+		select {
+		case percent, more := <-in:
+			if more {
+				_ = p.bar.Add(percent - added)
+				added = 0
+			} else {
+				p.done <- true
+				return
+			}
+		case <-time.After(time.Second / 2):
+			if added > 20 {
+				return
+			}
+			added++
+			_ = p.bar.Add(1)
+		}
+	}
 }

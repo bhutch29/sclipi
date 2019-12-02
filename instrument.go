@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/schollz/progressbar"
 	"net"
 	"strconv"
 	"strings"
@@ -10,7 +11,7 @@ import (
 )
 
 type instrument interface {
-	connect(time.Duration, string) error
+	connect(time.Duration, string, *progress) error
 	command(string) error
 	query(string) (string, error)
 	getSupportedCommands() ([]string, []string, error)
@@ -22,11 +23,12 @@ type scpiInstrument struct {
 	connection *net.TCPConn
 }
 
-func (i *scpiInstrument) connect(timeout time.Duration, address string) error {
+func (i *scpiInstrument) connect(timeout time.Duration, address string, p *progress) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return err
 	}
+	p.forward(20)
 
 	d := net.Dialer{Timeout: timeout}
 
@@ -34,6 +36,7 @@ func (i *scpiInstrument) connect(timeout time.Duration, address string) error {
 	if err != nil {
 		return err
 	}
+	p.forward(20)
 
 	i.address = address
 	i.connection = conn.(*net.TCPConn)
@@ -73,13 +76,21 @@ func (i *scpiInstrument) query(cmd string) (res string, err error) {
 		return "", err
 	}
 
-	_ = i.connection.SetReadDeadline(time.Now().Add(10 * time.Second))
+	timeout := 10 * time.Second
+	queryCompleted := make(chan bool, 1)
+	queryFailed := make(chan bool, 1)
+	done := make(chan bool)
+	go queryProgress(queryCompleted, queryFailed, done, timeout)
+
+	_ = i.connection.SetReadDeadline(time.Now().Add(timeout))
 
 	b := bufio.NewReader(i.connection)
 	buf := make([]byte, 4096)
 
 	l, err := b.Read(buf)
 	if err != nil {
+		queryFailed <- true
+		<-done
 		return "", err
 	}
 
@@ -91,6 +102,8 @@ func (i *scpiInstrument) query(cmd string) (res string, err error) {
 		result = result[firstLineIndex:]
 		responseSize, err := i.parseBlockInfo(firstRead[:firstLineIndex])
 		if err != nil {
+			queryFailed <- true
+			<-done
 			return "", err
 		}
 
@@ -98,6 +111,8 @@ func (i *scpiInstrument) query(cmd string) (res string, err error) {
 		for {
 			n, err := b.Read(buf)
 			if err != nil {
+				queryFailed <- true
+				<-done
 				return "", err
 			}
 
@@ -109,6 +124,8 @@ func (i *scpiInstrument) query(cmd string) (res string, err error) {
 			}
 		}
 	}
+	queryCompleted <- true
+	<-done
 	return result, nil
 }
 
@@ -143,6 +160,41 @@ func (i *scpiInstrument) parseBlockInfo(blockInfo string) (int, error) {
 	return result, nil
 }
 
+func queryProgress(queryCompleted chan bool, queryFailed chan bool, done chan bool, timeout time.Duration) {
+	select {
+	case <-queryCompleted:
+		done <- true
+		return
+	case <-queryFailed:
+		done <- true
+		return
+	case <-time.After(time.Second):
+		break
+	}
+
+	bar := progressbar.New(100)
+	_ = bar.Add(10)
+	percent := 10
+
+loop:
+	for {
+		select {
+		case <-queryCompleted:
+			_ = bar.Add(100 - percent)
+			break loop
+		case <-queryFailed:
+			break loop
+		case <-time.After(timeout / 10):
+			if percent < 90 {
+				_ = bar.Add(10)
+				percent += 10
+			}
+		}
+	}
+	fmt.Println()
+	done <- true
+}
+
 func (i *scpiInstrument) getSupportedCommands() ([]string, []string, error) {
 	r, err := i.query(":SYST:HELP:HEAD?")
 	commands := strings.Split(r, "\n")
@@ -169,7 +221,9 @@ func (i *scpiInstrument) close() error {
 type simInstrument struct {
 }
 
-func (i *simInstrument) connect(timeout time.Duration, address string) error {
+func (i *simInstrument) connect(timeout time.Duration, address string, p *progress) error {
+	time.Sleep(timeout / 2)
+	p.forward(40)
 	return nil
 }
 
@@ -178,6 +232,21 @@ func (i *simInstrument) command(command string) error {
 }
 
 func (i *simInstrument) query(query string) (string, error) {
+	if query == "*ESR?" || query == "*ID?" {
+		timeout := 5 * time.Second
+		queryCompleted := make(chan bool, 1)
+		queryFailed := make(chan bool, 1)
+		done := make(chan bool)
+		go queryProgress(queryCompleted, queryFailed, done, timeout)
+		time.Sleep(timeout)
+		if query == "*ID?" {
+			time.Sleep(timeout)
+			queryFailed <- true
+		} else {
+			queryCompleted <- true
+		}
+		<-done
+	}
 	return query + "\n", nil
 }
 

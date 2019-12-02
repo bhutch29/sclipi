@@ -26,7 +26,7 @@ func runCommand(command string, ip string, port string) {
 	if ip == "" {
 		log.Fatal("Error: Address flag must be set when using Command flag")
 	}
-	inst, err := buildAndConnectInstrument(ip, port)
+	inst, err := buildAndConnectInstrument(ip, port, &progress{})
 	if err != nil {
 		fmt.Println()
 		fmt.Println(err)
@@ -42,7 +42,7 @@ func runScriptFile(file string, ip string, port string) {
 	if ip == "" {
 		log.Fatal("Error: Address flag must be set when using File flag")
 	}
-	inst, err := buildAndConnectInstrument(ip, port)
+	inst, err := buildAndConnectInstrument(ip, port, &progress{})
 	if err != nil {
 		fmt.Println()
 		fmt.Println(err)

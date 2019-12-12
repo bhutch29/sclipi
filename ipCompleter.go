@@ -34,11 +34,19 @@ func (ip *ipCompleter) completer(d prompt.Document) []prompt.Suggest {
 
 func (ip *ipCompleter) getCurrentNode(node ipNode, inputs []string) ipNode {
 	current := node
-	for _, item := range inputs {
-		if success, node := ip.getNodeChildByContent(current, item); success {
-			current = node
+	next := node
+	for i, item := range inputs {
+		if success, node := ip.getNodeChildByContent(current, item); success { // Found a match, store it away and keep looking in case period has not been pressed
+			current = next
+			next = node
+			continue
+		} else if i < len(inputs) -1 { // Period pressed twice in a row, return nothing
+			return ipNode{}
 		}
+		current = next // item not found
+		break
 	}
+	// If we made it here without calling break, then a match has been found but period has not been pressed yet, so return the previous node's suggestions
 	return current
 }
 

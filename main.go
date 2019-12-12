@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/c-bata/go-prompt"
 	"github.com/schollz/progressbar"
-	"log"
 	"time"
+	"os"
 )
 
 var version = "undefined"
@@ -24,7 +24,8 @@ func main() {
 	inst, err := buildAndConnectInstrument(address, *args.Port, &bar)
 	if err != nil {
 		fmt.Println()
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 	defer inst.close()
 

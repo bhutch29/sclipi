@@ -17,6 +17,7 @@ func newIpCompleter(simSupported bool) ipCompleter {
 }
 
 func (ip *ipCompleter) completer(d prompt.Document) []prompt.Suggest {
+	//TODO: improve logic such that typing hostname and then a period doesnt present ip options
 	tree := ip.parseIpv4(ip.getIpAddresses(ip.filterIpv4))
 	inputs := strings.Split(d.TextBeforeCursor(), ".")
 	s := ip.suggestsFromNode(ip.getCurrentNode(tree, inputs))

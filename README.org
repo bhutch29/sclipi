@@ -19,7 +19,7 @@ Upcoming features:
 ** Interactive-Mode
 By default *Sclipi* runs in interactive mode. This mode drops you into a shell where auto-completion and custom commands are enabled. 
 
-You will be presented with a prompt asking for the IP address of the target instrument. Auto-completion of the first 3 octets of each of the network interfaces on your machine
+You will be presented with a prompt asking for the IP address of the target instrument. Auto-completion will assist by suggesting the first 3 octets of each of the network interfaces on your machine.
 
 Once the connection is established, an auto-completion prompt will appear with all of the available options. Type any of these to get started:
 - ~:~ and ~*~: SCPI commands

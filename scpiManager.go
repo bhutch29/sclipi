@@ -260,7 +260,11 @@ func (sm *scpiManager) runScript(file string) {
 	}
 	lines, err := readLines(file)
 	if err != nil {
-		log.Fatal(err)
+		if file == "ScpiCommands.txt" {
+			fmt.Println("Must call '-save_script' before calling '-run_script'")
+		} else {
+			fmt.Printf("Could not run script file with name '%s'. Check to make sure it exists\n", file)
+		}
 	}
 	for _, line := range lines {
 		fmt.Println("> " + line)

@@ -21,7 +21,7 @@ func main() {
 	bar := progress{Silent: *args.Quiet}
 	bar.forward(0)
 
-	inst, err := buildAndConnectInstrument(address, *args.Port, &bar)
+	inst, err := buildAndConnectInstrument(address, *args.Port, time.Duration(*args.Timeout) * time.Second, &bar)
 	if err != nil {
 		fmt.Println()
 		fmt.Println(err.Error())
@@ -105,15 +105,15 @@ func getAddress(args arguments, commonOptions []prompt.Option) string {
 	return result
 }
 
-func buildAndConnectInstrument(address string, port string, bar *progress) (instrument, error) {
+func buildAndConnectInstrument(address string, port string, timeout time.Duration, bar *progress) (instrument, error) {
 	var inst instrument
 	if address == "simulated" {
 		inst = &simInstrument{}
 	} else {
-		inst = &scpiInstrument{}
+		inst = &scpiInstrument{timeout: timeout}
 	}
 
-	if err := inst.connect(5*time.Second, address+":"+port, bar); err != nil {
+	if err := inst.connect(address+":"+port, bar); err != nil {
 		return inst, err
 	}
 

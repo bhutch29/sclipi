@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type scpiManager struct {
@@ -71,6 +72,12 @@ func (sm *scpiManager) handleDashCommands(s string) {
 		sm.saveCommandsToFile(strings.TrimPrefix(s, "-save_script"))
 	} else if strings.HasPrefix(s, "-run_script") {
 		sm.runScript(strings.TrimPrefix(s, "-run_script"))
+	} else if strings.HasPrefix(s, "-set_timeout") {
+		timeout, err := strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(s, "-set_timeout")))
+		if err != nil {
+			fmt.Println("Supplied timeout must be an integer")
+		}
+		sm.inst.setTimeout(time.Duration(timeout) * time.Second)
 	} else {
 		fmt.Println(s + ": command not found")
 	}
@@ -152,6 +159,7 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 			{Text: "-history", Description: "Show all commands sent this session"},
 			{Text: "-save_script", Description: "Save command history to provided filename. Default: ScpiCommands.txt"},
 			{Text: "-run_script", Description: "Run script from provided filename. Default: ScpiCommands.txt"},
+			{Text: "-set_timeout", Description: "Set timeout to provided number of seconds"},
 			{Text: "-copy", Description: "Copy most recent SCPI response to clipboard"},
 			{Text: "-copy_all", Description: "Copy entire session to clipboard"},
 			{Text: "quit", Description: "Exit Sclipi"},

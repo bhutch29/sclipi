@@ -11,26 +11,28 @@ import (
 )
 
 type instrument interface {
-	connect(time.Duration, string, *progress) error
+	connect(string, *progress) error
 	command(string) error
 	query(string) (string, error)
 	getSupportedCommands() ([]string, []string, error)
+	setTimeout(time.Duration)
 	close() error
 }
 
 type scpiInstrument struct {
 	address    string
 	connection *net.TCPConn
+	timeout time.Duration
 }
 
-func (i *scpiInstrument) connect(timeout time.Duration, address string, p *progress) error {
+func (i *scpiInstrument) connect(address string, p *progress) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return err
 	}
 	p.forward(20)
 
-	d := net.Dialer{Timeout: timeout}
+	d := net.Dialer{Timeout: i.timeout}
 
 	conn, err := d.Dial("tcp", tcpAddr.String())
 	if err != nil {
@@ -76,13 +78,12 @@ func (i *scpiInstrument) query(cmd string) (res string, err error) {
 		return "", err
 	}
 
-	timeout := 10 * time.Second
 	queryCompleted := make(chan bool, 1)
 	queryFailed := make(chan bool, 1)
 	done := make(chan bool)
-	go queryProgress(queryCompleted, queryFailed, done, timeout)
+	go queryProgress(queryCompleted, queryFailed, done, i.timeout)
 
-	_ = i.connection.SetReadDeadline(time.Now().Add(timeout))
+	_ = i.connection.SetReadDeadline(time.Now().Add(i.timeout))
 
 	b := bufio.NewReader(i.connection)
 	buf := make([]byte, 4096)
@@ -160,6 +161,10 @@ func (i *scpiInstrument) parseBlockInfo(blockInfo string) (int, error) {
 	return result, nil
 }
 
+func (i *scpiInstrument) setTimeout(timeout time.Duration) {
+	i.timeout = timeout
+}
+
 func queryProgress(queryCompleted chan bool, queryFailed chan bool, done chan bool, timeout time.Duration) {
 	select {
 	case <-queryCompleted:
@@ -219,9 +224,10 @@ func (i *scpiInstrument) close() error {
 }
 
 type simInstrument struct {
+	timeout time.Duration
 }
 
-func (i *simInstrument) connect(timeout time.Duration, address string, p *progress) error {
+func (i *simInstrument) connect(address string, p *progress) error {
 	// time.Sleep(timeout / 2)
 	p.forward(40)
 	return nil
@@ -233,14 +239,13 @@ func (i *simInstrument) command(command string) error {
 
 func (i *simInstrument) query(query string) (string, error) {
 	if query == "*ESR?" || query == "*ID?" {
-		timeout := 5 * time.Second
 		queryCompleted := make(chan bool, 1)
 		queryFailed := make(chan bool, 1)
 		done := make(chan bool)
-		go queryProgress(queryCompleted, queryFailed, done, timeout)
-		time.Sleep(timeout)
+		go queryProgress(queryCompleted, queryFailed, done, i.timeout)
+		time.Sleep(i.timeout)
 		if query == "*ID?" {
-			time.Sleep(timeout)
+			time.Sleep(i.timeout)
 			queryFailed <- true
 		} else {
 			queryCompleted <- true
@@ -268,6 +273,10 @@ func (i *simInstrument) getSupportedCommands() ([]string, []string, error) {
 		}
 	}
 	return colonCommands, starCommands, nil
+}
+
+func (i *simInstrument) setTimeout(timeout time.Duration) {
+	i.timeout = timeout
 }
 
 func (i *simInstrument) close() error {

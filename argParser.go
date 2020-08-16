@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 var colors = []string{"DefaultColor", "Black", "DarkRed", "DarkGreen", "Brown", "DarkBlue", "Purple", "Cyan",
@@ -15,6 +16,7 @@ var colors = []string{"DefaultColor", "Black", "DarkRed", "DarkGreen", "Brown", 
 type arguments struct {
 	Address           *string
 	Port              *string
+	Timeout			  *int
 	Command           *string
 	ScriptFile        *string
 	Quiet             *bool
@@ -40,6 +42,9 @@ Arguments allow sending single commands or scripts from files non-interactively.
 	args.Port = parser.String("p", "port", &argparse.Options{
 		Default: "5025",
 		Help:    "The SCPI port of the instrument"})
+	args.Timeout = parser.Int("t", "timeout", &argparse.Options{
+		Default: 10,
+		Help: "Time in seconds to wait for SCPI commands or initial connection to complete"})
 	args.Command = parser.String("c", "command", &argparse.Options{
 		Help: "A single SCPI command to send non-interactively. Must set address if using this feature"})
 	args.ScriptFile = parser.String("f", "file", &argparse.Options{
@@ -92,12 +97,12 @@ Arguments allow sending single commands or scripts from files non-interactively.
 	}
 
 	if *args.Command != "" {
-		runCommand(*args.Command, *args.Address, *args.Port)
+		runCommand(*args.Command, *args.Address, *args.Port, time.Duration(*args.Timeout) * time.Second)
 		os.Exit(0)
 	}
 
 	if *args.ScriptFile != "" {
-		runScriptFile(*args.ScriptFile, *args.Address, *args.Port)
+		runScriptFile(*args.ScriptFile, *args.Address, *args.Port, time.Duration(*args.Timeout) * time.Second)
 		os.Exit(0)
 	}
 

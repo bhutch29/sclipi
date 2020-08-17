@@ -47,7 +47,7 @@ func (i *scpiInstrument) connect(address string, p *progress) error {
 }
 
 func (i *scpiInstrument) reconnect() error {
-	i.close()
+	_ = i.close()
 	p := &progress{}
 	err := i.connect(i.address, p)
 	if err != nil {
@@ -273,7 +273,7 @@ func (i *simInstrument) query(query string) (string, error) {
 }
 
 func (i *simInstrument) getSupportedCommands() ([]string, []string, error) {
-	commands, err := readLines("SCPI.txt")
+	commands, err := readLinesFromPath("SCPI.txt")
 	if err != nil {
 		return []string{}, []string{}, err
 	}

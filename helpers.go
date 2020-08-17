@@ -3,25 +3,29 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/shibukawa/configdir"
 	"log"
 	"os"
 	"strings"
 	"time"
 )
 
-func readLines(path string) ([]string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
+func readLinesFromFile(file *os.File) ([]string, error) {
 	var lines []string
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
 	return lines, scanner.Err()
+}
+
+func readLinesFromPath(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	return readLinesFromFile(file)
 }
 
 func runCommand(command string, ip string, port string, timeout time.Duration) {
@@ -75,4 +79,20 @@ func writeCommandsToFile(commands [][]nodeInfo) {
 			fmt.Fprint(f, "\n")
 		}
 	}
+}
+
+func getHistoryFromFile() ([]string, *configdir.Config) {
+	var entries []string
+	configDirs := configdir.New("bhutch29", "sclipi")
+	cache := configDirs.QueryCacheFolder()
+	if cache.Exists("history.txt") {
+		file, _ := cache.Open("history.txt")
+		commands, err := readLinesFromFile(file)
+		if err == nil {
+			for _, command := range commands {
+				entries = append(entries, command)
+			}
+		}
+	}
+	return entries, cache
 }

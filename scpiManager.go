@@ -15,7 +15,7 @@ import (
 
 type scpiManager struct {
 	inst      instrument
-	history   History
+	history   history
 	colonTree scpiNode
 	starTree  scpiNode
 }
@@ -95,6 +95,10 @@ func (sm *scpiManager) saveCommandsToFile(fileName string) {
 		file = "ScpiCommands.txt"
 	}
 	commands := sm.history.CommandsString()
+	if len(commands) < 1 {
+		fmt.Println("You have not run any commands this session")
+		return
+	}
 	if err := ioutil.WriteFile(file, []byte(commands), 0644); err != nil {
 		fmt.Println(err)
 	}
@@ -265,7 +269,7 @@ func (sm *scpiManager) runScript(file string) {
 	if file == "" {
 		file = "ScpiCommands.txt"
 	}
-	lines, err := readLines(file)
+	lines, err := readLinesFromPath(file)
 	if err != nil {
 		if file == "ScpiCommands.txt" {
 			fmt.Println("Must call '-save_script' before calling '-run_script'")

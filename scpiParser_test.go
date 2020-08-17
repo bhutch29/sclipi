@@ -8,7 +8,7 @@ import (
 func BenchmarkVxgScpi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		head := scpiNode{}
-		lines, _ := readLines("benchmark_SCPI.txt")
+		lines, _ := readLinesFromPath("benchmark_SCPI.txt")
 		commands := splitScpiCommands(lines)
 
 		for _, command := range commands {
@@ -166,6 +166,6 @@ func TestScpiParserIrregularSuffix(t *testing.T) {
 }
 
 func TestGenerateTree(t *testing.T) {
-	lines, _ := readLines("SCPI.txt")
+	lines, _ := readLinesFromPath("SCPI.txt")
 	parseScpi(lines) //TODO: Generate real tests
 }

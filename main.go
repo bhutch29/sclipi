@@ -37,9 +37,12 @@ func main() {
 		fmt.Println("Connected!")
 	}
 
+	history, _ := getHistoryFromFile()
+
 	options := []prompt.Option{
 		prompt.OptionTitle("Sclipi (SCPI cli)"),
 		prompt.OptionCompletionWordSeparator(":"),
+		prompt.OptionHistory(history),
 	}
 	p := prompt.New(sm.executor, sm.completer, append(options, commonPromptOptions...)...)
 

@@ -1,6 +1,11 @@
 package main
 
-import "strings"
+import (
+	"github.com/shibukawa/configdir"
+	"os"
+	"path/filepath"
+	"strings"
+)
 
 type Class int
 
@@ -13,21 +18,36 @@ type Entry struct {
 	Text string
 	Class Class
 }
-type History struct{
+type history struct{
 	entries []Entry
 }
 
-func (h *History) addCommand(s string) {
+func (h *history) addCommand(s string) {
 	if !strings.HasPrefix(s, "-") {
-		h.entries = append(h.entries, Entry{Text: s, Class: Command})
+		entry := Entry{Class: Command, Text: s}
+		h.entries = append(h.entries, entry)
+		h.addCommandToFile(s)
 	}
 }
 
-func (h *History) addResponse(s string) {
-	h.entries = append(h.entries, Entry{Text: s, Class: Response})
+func (h *history) addCommandToFile(s string) {
+	configDirs := configdir.New("bhutch29", "sclipi")
+	_ = configDirs.QueryCacheFolder().CreateParentDir("history.txt")
+	file, err := os.OpenFile(filepath.Join(configDirs.QueryCacheFolder().Path, "history.txt"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	_, _ = file.WriteString(s + "\n")
 }
 
-func (h *History) latestResponse() string {
+func (h *history) addResponse(s string) {
+	entry := Entry{Text: s, Class: Response}
+	h.entries = append(h.entries, entry)
+}
+
+func (h *history) latestResponse() string {
 	for i := len(h.entries) - 1; i >= 0; i-- {
 		if h.entries[i].Class == Response {
 			return h.entries[i].Text
@@ -36,7 +56,7 @@ func (h *History) latestResponse() string {
 	return ""
 }
 
-func (h *History) CommandsString() string {
+func (h *history) CommandsString() string {
 	var result string
 	for _, entry := range h.entries{
 		if entry.Class == Command {
@@ -46,7 +66,7 @@ func (h *History) CommandsString() string {
 	return result 
 }
 
-func (h *History) String() string {
+func (h *history) String() string {
 	var result string
 	for _, entry := range h.entries{
 		if entry.Class == Command {

@@ -34,7 +34,7 @@
               options.programs.sclipi = {
                 enable = lib.mkEnableOption "sclipi";
               };
-              config = lib.mkIf cfg.enabled {
+              config = lib.mkIf cfg.enable {
                 environment.systemPackages = [ sclipiPkg ];
               };
             };

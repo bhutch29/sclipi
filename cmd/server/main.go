@@ -4,6 +4,7 @@ import (
     "context"
     "errors"
     "fmt"
+    "github.com/bhutch29/sclipi/internal/utils"
     "log"
     "net/http"
     "os"
@@ -20,6 +21,7 @@ func main() {
     }
 
     http.HandleFunc("/health", handleHealth)
+    http.HandleFunc("/idn", handleIdn)
 
     go func() {
         log.Println("Serving on port 8080")
@@ -48,17 +50,32 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "OK\n")
 }
 
-func buildAndConnectInstrument(address string, port string, timeout time.Duration, bar *progress) (instrument, error) {
-	var inst instrument
-	if address == "simulated" {
-		inst = &simInstrument{timeout: timeout}
-	} else {
-		inst = &scpiInstrument{timeout: timeout}
-	}
+func handleIdn(w http.ResponseWriter, r *http.Request) {
+    log.Println("Handling /idn")
+    inst, err := buildAndConnectInstrument("simulated", "1234", 10 * time.Second, nil)
+    if err != nil {
+	w.WriteHeader(http.StatusInternalServerError)
+    }
 
-	if err := inst.connect(address+":"+port, bar.forward); err != nil {
-		return inst, err
-	}
+    response, err := inst.Query("*IDN?");
+    if err != nil {
+	w.WriteHeader(http.StatusInternalServerError)
+    }
+    w.WriteHeader(http.StatusOK)
+    fmt.Fprintf(w, "%s\n", response)
+}
 
-	return inst, nil
+func buildAndConnectInstrument(address string, port string, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
+    var inst utils.Instrument
+    if address == "simulated" {
+	inst = utils.NewSimInstrument(timeout)
+    } else {
+	inst = utils.NewScpiInstrument(timeout)
+    }
+
+    if err := inst.Connect(address+":"+port, progressFn); err != nil {
+	return inst, err
+    }
+
+    return inst, nil
 }

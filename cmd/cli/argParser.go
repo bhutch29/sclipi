@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/akamensky/argparse"
+	"github.com/bhutch29/sclipi/internal/utils"
 	"github.com/c-bata/go-prompt"
 	"log"
 	"os"
@@ -107,7 +108,7 @@ Arguments allow sending single commands or scripts from files non-interactively.
 	}
 
 	attemptingSim := *args.Address == "simulated" || *args.Simulate
-	if attemptingSim && !simFileExists() {
+	if attemptingSim && !utils.SimFileExists() {
 		log.Fatal("Error: Simulated instrument requires SCPI.txt file in working directory")
 	}
 

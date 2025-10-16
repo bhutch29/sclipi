@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/atotto/clipboard"
+	"github.com/bhutch29/sclipi/internal/utils"
 	"github.com/c-bata/go-prompt"
 	"io/ioutil"
 	"log"
@@ -14,13 +15,13 @@ import (
 )
 
 type scpiManager struct {
-	inst      instrument
+	inst      utils.Instrument
 	history   history
 	colonTree scpiNode
 	starTree  scpiNode
 }
 
-func newScpiManager(i instrument) scpiManager {
+func newScpiManager(i utils.Instrument) scpiManager {
 	sm := scpiManager{}
 	sm.inst = i
 	sm.getTree(i)
@@ -77,7 +78,7 @@ func (sm *scpiManager) handleDashCommands(s string) {
 		if err != nil {
 			fmt.Println("Supplied timeout must be an integer")
 		}
-		sm.inst.setTimeout(time.Duration(timeout) * time.Second)
+		sm.inst.SetTimeout(time.Duration(timeout) * time.Second)
 	} else {
 		fmt.Println(s + ": command not found")
 	}
@@ -116,7 +117,7 @@ func (sm *scpiManager) printCommandHistory() {
 
 func (sm *scpiManager) handleScpi(s string) {
 	if strings.Contains(s, "?") {
-		r, err := sm.inst.query(s)
+		r, err := sm.inst.Query(s)
 		if err != nil {
 			fmt.Println(err)
 			sm.history.addResponse(err.Error())
@@ -125,7 +126,7 @@ func (sm *scpiManager) handleScpi(s string) {
 		sm.history.addCommand(s)
 		sm.history.addResponse(r)
 	} else {
-		err := sm.inst.command(s)
+		err := sm.inst.Command(s)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -175,9 +176,9 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 	return []prompt.Suggest{}
 }
 
-func (sm *scpiManager) getTree(i instrument) {
+func (sm *scpiManager) getTree(i utils.Instrument) {
 	if len(sm.colonTree.Children) == 0 {
-		colonCommands, starCommands, err := i.getSupportedCommands()
+		colonCommands, starCommands, err := i.GetSupportedCommands()
 		if err != nil {
 			log.Fatal(err)
 		} else {
@@ -262,7 +263,7 @@ func (sm *scpiManager) runScript(file string) {
 	if file == "" {
 		file = "ScpiCommands.txt"
 	}
-	lines, err := readLinesFromPath(file)
+	lines, err := utils.ReadLinesFromPath(file)
 	if err != nil {
 		if file == "ScpiCommands.txt" {
 			fmt.Println("Must call '-save_script' before calling '-run_script'")

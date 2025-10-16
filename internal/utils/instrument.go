@@ -1,36 +1,43 @@
-package main
+package utils
 
 import (
 	"bufio"
 	"fmt"
 	"github.com/schollz/progressbar"
 	"net"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type instrument interface {
-	connect(string, func(int)) error
-	command(string) error
-	query(string) (string, error)
-	getSupportedCommands() ([]string, []string, error)
-	setTimeout(time.Duration)
-	close() error
+type Instrument interface {
+	Connect(string, func(int)) error
+	Command(string) error
+	Query(string) (string, error)
+	GetSupportedCommands() ([]string, []string, error)
+	SetTimeout(time.Duration)
+	Close() error
 }
 
 type scpiInstrument struct {
 	address    string
 	connection *net.TCPConn
-	timeout time.Duration
+	timeout    time.Duration
 }
 
-func (i *scpiInstrument) connect(address string, progress func(int)) error {
+func NewScpiInstrument(timeout time.Duration) Instrument {
+	return &scpiInstrument{timeout: timeout}
+}
+
+func (i *scpiInstrument) Connect(address string, progress func(int)) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return err
 	}
-	progress(20)
+	if progress != nil {
+		progress(20)
+	}
 
 	d := net.Dialer{Timeout: i.timeout}
 
@@ -38,14 +45,16 @@ func (i *scpiInstrument) connect(address string, progress func(int)) error {
 	if err != nil {
 		return err
 	}
-	progress(20)
+	if progress != nil {
+		progress(20)
+	}
 
 	i.address = address
 	i.connection = conn.(*net.TCPConn)
 	return nil
 }
 
-func (i *scpiInstrument) command(command string) error {
+func (i *scpiInstrument) Command(command string) error {
 	if err := i.exec(command); err != nil {
 		return fmt.Errorf("failed to execute the command '%s': %s", command, err)
 	}
@@ -62,7 +71,7 @@ func (i *scpiInstrument) exec(cmd string) error {
 }
 
 func (i *scpiInstrument) queryError() error {
-	res, err := i.query("SYST:ERR?")
+	res, err := i.Query("SYST:ERR?")
 	if err != nil {
 		return err
 	}
@@ -73,7 +82,7 @@ func (i *scpiInstrument) queryError() error {
 	return nil
 }
 
-func (i *scpiInstrument) query(cmd string) (res string, err error) {
+func (i *scpiInstrument) Query(cmd string) (res string, err error) {
 	if err := i.exec(cmd); err != nil {
 		return "", err
 	}
@@ -161,7 +170,7 @@ func (i *scpiInstrument) parseBlockInfo(blockInfo string) (int, error) {
 	return result, nil
 }
 
-func (i *scpiInstrument) setTimeout(timeout time.Duration) {
+func (i *scpiInstrument) SetTimeout(timeout time.Duration) {
 	i.timeout = timeout
 }
 
@@ -201,8 +210,8 @@ loop:
 	done <- true
 }
 
-func (i *scpiInstrument) getSupportedCommands() ([]string, []string, error) {
-	r, err := i.query(":SYST:HELP:HEAD?")
+func (i *scpiInstrument) GetSupportedCommands() ([]string, []string, error) {
+	r, err := i.Query(":SYST:HELP:HEAD?")
 	commands := strings.Split(r, "\n")
 
 	var colonCommands []string
@@ -220,7 +229,7 @@ func (i *scpiInstrument) getSupportedCommands() ([]string, []string, error) {
 	return colonCommands, starCommands, err
 }
 
-func (i *scpiInstrument) close() error {
+func (i *scpiInstrument) Close() error {
 	return i.connection.Close()
 }
 
@@ -228,16 +237,22 @@ type simInstrument struct {
 	timeout time.Duration
 }
 
-func (i *simInstrument) connect(address string, progress func(int)) error {
-	progress(40)
+func NewSimInstrument(timeout time.Duration) Instrument {
+	return &simInstrument{timeout: timeout}
+}
+
+func (i *simInstrument) Connect(address string, progress func(int)) error {
+	if progress != nil {
+		progress(40)
+	}
 	return nil
 }
 
-func (i *simInstrument) command(command string) error {
+func (i *simInstrument) Command(command string) error {
 	return nil
 }
 
-func (i *simInstrument) query(query string) (string, error) {
+func (i *simInstrument) Query(query string) (string, error) {
 	if query == "*ESR?" || query == "*ID?" {
 		queryCompleted := make(chan bool, 1)
 		queryFailed := make(chan bool, 1)
@@ -253,7 +268,7 @@ func (i *simInstrument) query(query string) (string, error) {
 	return query + "\n", nil
 }
 
-func (i *simInstrument) getSupportedCommands() ([]string, []string, error) {
+func (i *simInstrument) GetSupportedCommands() ([]string, []string, error) {
 	commands, err := readLinesFromPath("SCPI.txt")
 	if err != nil {
 		return []string{}, []string{}, err
@@ -273,10 +288,25 @@ func (i *simInstrument) getSupportedCommands() ([]string, []string, error) {
 	return colonCommands, starCommands, nil
 }
 
-func (i *simInstrument) setTimeout(timeout time.Duration) {
+func (i *simInstrument) SetTimeout(timeout time.Duration) {
 	i.timeout = timeout
 }
 
-func (i *simInstrument) close() error {
+func (i *simInstrument) Close() error {
 	return nil
+}
+
+func readLinesFromPath(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	return lines, scanner.Err()
 }

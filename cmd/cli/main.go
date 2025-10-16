@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/bhutch29/sclipi/internal/utils"
 	"github.com/c-bata/go-prompt"
 	"github.com/schollz/progressbar"
 	"time"
@@ -27,7 +28,7 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	defer inst.close()
+	defer inst.Close()
 
 	bar.forward(30)
 	sm := newScpiManager(inst)
@@ -37,7 +38,7 @@ func main() {
 		bar.clear()
 	}
 
-	history, _ := getHistoryFromFile()
+	history, _ := utils.GetHistoryFromFile()
 
 	options := []prompt.Option{
 		prompt.OptionTitle("Sclipi (SCPI cli)"),
@@ -108,7 +109,7 @@ func getAddress(args arguments, commonOptions []prompt.Option) string {
 		return *args.Address
 	}
 
-	ic := newIpCompleter(simFileExists())
+	ic := newIpCompleter(utils.SimFileExists())
 	var result string
 	for {
 		options := []prompt.Option{
@@ -124,15 +125,15 @@ func getAddress(args arguments, commonOptions []prompt.Option) string {
 	return result
 }
 
-func buildAndConnectInstrument(address string, port string, timeout time.Duration, bar *progress) (instrument, error) {
-	var inst instrument
+func buildAndConnectInstrument(address string, port string, timeout time.Duration, bar *progress) (utils.Instrument, error) {
+	var inst utils.Instrument
 	if address == "simulated" {
-		inst = &simInstrument{timeout: timeout}
+		inst = utils.NewSimInstrument(timeout)
 	} else {
-		inst = &scpiInstrument{timeout: timeout}
+		inst = utils.NewScpiInstrument(timeout)
 	}
 
-	if err := inst.connect(address+":"+port, bar.forward); err != nil {
+	if err := inst.Connect(address+":"+port, bar.forward); err != nil {
 		return inst, err
 	}
 

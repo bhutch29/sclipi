@@ -209,7 +209,8 @@ loop:
 			}
 		}
 	}
-	fmt.Println()
+	// Clear the progress bar line by moving cursor to start and clearing the line
+	fmt.Print("\r\033[K")
 	done <- true
 }
 

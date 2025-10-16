@@ -19,7 +19,7 @@ func main() {
         Addr: ":8080",
     }
 
-    http.Handle("/", http.FileServer(http.Dir("./public")))
+    http.Handle("/", http.FileServer(http.Dir("./web/dist/sclipi-web/browser")))
 		http.HandleFunc("/health", handleHealth)
 
     go func() {

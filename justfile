@@ -57,6 +57,22 @@ simulate:
 run-server:
     go run ./cmd/server
 
+# Install web dependencies
+web-install:
+    cd web && npm install
+
+# Build Angular application
+web-build:
+    cd web && npm run build
+
+# Serve Angular application in development mode
+web-serve:
+    cd web && npm start
+
+# Build server and web application
+build-all: build-server web-build
+
 # Clean build artifacts
 clean:
     rm -f sclipi sclipi.exe scwipi scwipi.exe
+    rm -rf web/dist/

@@ -45,6 +45,8 @@
             go
             gopls
             gotools
+            nodejs
+            just
           ];
         };
       }

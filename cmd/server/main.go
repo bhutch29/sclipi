@@ -47,3 +47,18 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK)
     fmt.Fprintf(w, "OK\n")
 }
+
+func buildAndConnectInstrument(address string, port string, timeout time.Duration, bar *progress) (instrument, error) {
+	var inst instrument
+	if address == "simulated" {
+		inst = &simInstrument{timeout: timeout}
+	} else {
+		inst = &scpiInstrument{timeout: timeout}
+	}
+
+	if err := inst.connect(address+":"+port, bar.forward); err != nil {
+		return inst, err
+	}
+
+	return inst, nil
+}

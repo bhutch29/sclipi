@@ -132,7 +132,7 @@ func buildAndConnectInstrument(address string, port string, timeout time.Duratio
 		inst = &scpiInstrument{timeout: timeout}
 	}
 
-	if err := inst.connect(address+":"+port, bar); err != nil {
+	if err := inst.connect(address+":"+port, bar.forward); err != nil {
 		return inst, err
 	}
 

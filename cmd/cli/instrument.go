@@ -11,7 +11,7 @@ import (
 )
 
 type instrument interface {
-	connect(string, *progress) error
+	connect(string, func(int)) error
 	command(string) error
 	query(string) (string, error)
 	getSupportedCommands() ([]string, []string, error)
@@ -25,12 +25,12 @@ type scpiInstrument struct {
 	timeout time.Duration
 }
 
-func (i *scpiInstrument) connect(address string, p *progress) error {
+func (i *scpiInstrument) connect(address string, progress func(int)) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", address)
 	if err != nil {
 		return err
 	}
-	p.forward(20)
+	progress(20)
 
 	d := net.Dialer{Timeout: i.timeout}
 
@@ -38,7 +38,7 @@ func (i *scpiInstrument) connect(address string, p *progress) error {
 	if err != nil {
 		return err
 	}
-	p.forward(20)
+	progress(20)
 
 	i.address = address
 	i.connection = conn.(*net.TCPConn)
@@ -228,8 +228,8 @@ type simInstrument struct {
 	timeout time.Duration
 }
 
-func (i *simInstrument) connect(address string, p *progress) error {
-	p.forward(40)
+func (i *simInstrument) connect(address string, progress func(int)) error {
+	progress(40)
 	return nil
 }
 

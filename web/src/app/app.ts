@@ -1,3 +1,4 @@
+import { httpResource } from '@angular/common/http';
 import { Component, signal } from '@angular/core';
 
 @Component({
@@ -6,5 +7,6 @@ import { Component, signal } from '@angular/core';
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('sclipi-web');
+  public readonly title = signal('sclipi-web');
+  public temp = httpResource.text(() => '/api/health');
 }

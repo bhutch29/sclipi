@@ -241,7 +241,6 @@ type simInstrument struct {
 }
 
 func (i *simInstrument) connect(address string, p *progress) error {
-	// time.Sleep(timeout / 2)
 	p.forward(40)
 	return nil
 }
@@ -260,9 +259,7 @@ func (i *simInstrument) query(query string) (string, error) {
 		queryFailed := make(chan bool, 1)
 		done := make(chan bool)
 		go queryProgress(queryCompleted, queryFailed, done, i.timeout)
-		time.Sleep(i.timeout)
 		if query == "*ID?" {
-			time.Sleep(i.timeout)
 			queryFailed <- true
 		} else {
 			queryCompleted <- true

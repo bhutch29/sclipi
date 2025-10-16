@@ -34,7 +34,7 @@ func main() {
 	bar.forward(30)
 
 	if !*args.Quiet {
-		fmt.Println("Connected!")
+		bar.clear()
 	}
 
 	history, _ := getHistoryFromFile()
@@ -127,7 +127,7 @@ func getAddress(args arguments, commonOptions []prompt.Option) string {
 func buildAndConnectInstrument(address string, port string, timeout time.Duration, bar *progress) (instrument, error) {
 	var inst instrument
 	if address == "simulated" {
-		inst = &simInstrument{}
+		inst = &simInstrument{timeout: timeout}
 	} else {
 		inst = &scpiInstrument{timeout: timeout}
 	}
@@ -169,6 +169,14 @@ func (p *progress) forward(percent int) {
 func (p *progress) close() {
 	close(p.add)
 	<-p.done
+}
+
+func (p *progress) clear() {
+	if p.Silent || !p.initialized {
+		return
+	}
+	// Clear the progress bar line by moving cursor to start and clearing the line
+	fmt.Print("\r\033[K")
 }
 
 func (p *progress) runBar(in <-chan int) {

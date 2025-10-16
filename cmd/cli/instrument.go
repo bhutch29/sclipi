@@ -12,7 +12,6 @@ import (
 
 type instrument interface {
 	connect(string, *progress) error
-	reconnect() error
 	command(string) error
 	query(string) (string, error)
 	getSupportedCommands() ([]string, []string, error)
@@ -43,18 +42,6 @@ func (i *scpiInstrument) connect(address string, p *progress) error {
 
 	i.address = address
 	i.connection = conn.(*net.TCPConn)
-	return nil
-}
-
-func (i *scpiInstrument) reconnect() error {
-	_ = i.close()
-	p := &progress{}
-	err := i.connect(i.address, p)
-	if err != nil {
-		return err
-	}
-	p.forward(60)
-	fmt.Println()
 	return nil
 }
 
@@ -243,10 +230,6 @@ type simInstrument struct {
 
 func (i *simInstrument) connect(address string, p *progress) error {
 	p.forward(40)
-	return nil
-}
-
-func (i *simInstrument) reconnect() error{
 	return nil
 }
 

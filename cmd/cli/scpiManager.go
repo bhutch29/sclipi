@@ -78,12 +78,6 @@ func (sm *scpiManager) handleDashCommands(s string) {
 			fmt.Println("Supplied timeout must be an integer")
 		}
 		sm.inst.setTimeout(time.Duration(timeout) * time.Second)
-	} else if s == "-reconnect" {
-		err := sm.inst.reconnect()
-		if err != nil {
-			fmt.Println()
-			fmt.Println(err.Error())
-		}
 	} else {
 		fmt.Println(s + ": command not found")
 	}
@@ -172,7 +166,6 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 			{Text: "-set_timeout", Description: "Set timeout to provided number of seconds"},
 			{Text: "-copy", Description: "Copy most recent SCPI response to clipboard"},
 			{Text: "-copy_all", Description: "Copy entire session to clipboard"},
-			{Text: "-reconnect", Description: "Close and re-open socket connection"},
 			{Text: "quit", Description: "Exit Sclipi"},
 		}
 

@@ -146,7 +146,7 @@ Key protocol features:
 - `executor()`: Routes input to handlers (SCPI commands, dash commands, shell passthrough)
 - `completer()`: Provides context-aware auto-completion using the SCPI command tree
 - Manages command history and clipboard operations
-- Implements special commands: `-history`, `-copy`, `-save_script`, `-run_script`, `-set_timeout`, `-reconnect`
+- Implements special commands: `-history`, `-copy`, `-save_script`, `-run_script`, `-set_timeout`
 
 **`scpiParser.go`**: SCPI command tree builder:
 - Parses `:SYSTem:HELP:HEADers?` format into a navigable tree structure

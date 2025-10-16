@@ -10,7 +10,7 @@ build-cli:
 
 # Build server binary with git version
 build-server:
-    go build -ldflags "-X main.version={{git-version}}" -o scwipi ./cmd/server
+    go build -ldflags "-X main.version={{git-version}}" -o scpi-server ./cmd/server
 
 # Build Angular application
 build-web:
@@ -25,7 +25,7 @@ build-cli-windows:
 
 # Build server for Windows
 build-server-windows:
-    GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version={{git-version}}" -o scwipi.exe ./cmd/server
+    GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version={{git-version}}" -o scpi-server.exe ./cmd/server
 
 # Build both for Windows
 build-windows: build-cli-windows build-server-windows
@@ -57,5 +57,5 @@ serve-web:
 
 # Clean build artifacts
 clean:
-    rm -f sclipi sclipi.exe scwipi scwipi.exe
+    rm -f sclipi sclipi.exe scpi-server scpi-server.exe
     rm -rf web/dist/

@@ -146,7 +146,7 @@ func (i *scpiInstrument) query(cmd string) (res string, err error) {
 func (i *scpiInstrument) parseBlockInfo(blockInfo string) (int, error) {
 	blockInfo = strings.TrimSuffix(blockInfo, "\n")
 	if !strings.HasPrefix(blockInfo, "#") || len(blockInfo) == 0 {
-		return -1, fmt.Errorf("Unrecognized response header found: " + blockInfo)
+		return -1, fmt.Errorf("unrecognized response header found: %s", blockInfo)
 	}
 
 	blockInfo = strings.TrimPrefix(blockInfo, "#")
@@ -158,7 +158,7 @@ func (i *scpiInstrument) parseBlockInfo(blockInfo string) (int, error) {
 	}
 
 	if len(characters[1:]) != numChars {
-		return -1, fmt.Errorf("SCPI block info malformed: " + blockInfo)
+		return -1, fmt.Errorf("SCPI block info malformed: %s", blockInfo)
 	}
 
 	resultString := ""

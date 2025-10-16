@@ -4,7 +4,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Sclipi is a command-line tool for sending SCPI (Standard Commands for Programmable Instruments) commands to test and measurement devices. It provides an interactive shell with auto-completion, history support, and both interactive and non-interactive operation modes.
+Sclipi is a tool for sending SCPI (Standard Commands for Programmable Instruments) commands to test and measurement devices. The project consists of two main components:
+
+1. **CLI (`cmd/cli/`)**: An interactive command-line shell with auto-completion, history support, and both interactive and non-interactive operation modes
+2. **Web Server (`cmd/server/`)**: An HTTP server that serves content/behavior supporting the web interface for remote SCPI device interaction
+
+### Project Structure
+
+```
+sclipi/
+├── cmd/
+│   ├── cli/          # Command-line interface application
+│   └── server/       # HTTP server to support Angular frontend
+├── web/              # Angular web application
+│   ├── src/
+│   │   ├── app/      # Angular components and services
+│   │   ├── index.html
+│   │   ├── main.ts
+│   │   └── styles.scss
+│   └── package.json
+├── justfile          # Build configuration
+├── SCPI.txt          # Sample SCPI command tree for simulation
+└── CLAUDE.md         # This file
+```
 
 ## Build System
 
@@ -12,43 +34,79 @@ This project uses just as its build tool. Build targets are defined in `justfile
 
 ### Common Commands
 
+#### Build Commands
+
 ```bash
-# Run in simulated mode (default target)
+# Run CLI in simulated mode (default target)
 just
 
-# Build the binary with git version
+# Build CLI binary
+just build-cli
+
+# Build server binary
+just build-server
+
+# Build Angular application
+just build-web
+
+# Build all projects (CLI + server + web)
 just build
 
-# Run tests
-just test
-
-# Run tests with coverage
-just cover
-
-# Run benchmarks
-just bench
-
-# Install locally
-just install
-
 # Build for Windows
+just build-cli-windows
+just build-server-windows
 just build-windows
 
 # Clean build artifacts
 just clean
 ```
 
-### Running Tests
+#### Development Commands
 
 ```bash
-# All tests
-go test -v
+# Run CLI in simulated mode
+just simulate
 
-# Specific test file
-go test -v -run TestFunctionName
+# Run HTTP server
+just run-server
 
-# With coverage
-go test -cover
+# Install web dependencies
+just install-web
+
+# Serve Angular app in development mode
+just serve-web
+```
+
+#### Testing Commands
+
+```bash
+# Run all tests (Go + web)
+just test
+
+# Run Go tests only
+just test-go
+
+# Run web tests only
+just test-web
+
+# Run benchmarks
+just bench
+```
+
+### Running Tests Manually
+
+```bash
+# All tests (Go + web)
+just test
+
+# Go tests only
+just test-go
+
+# Angular tests only
+just test-web
+
+# Specific Go test
+go test -v -run TestFunctionName ./cmd/cli
 ```
 
 ### Development with Nix
@@ -63,7 +121,11 @@ nix build
 
 ## Architecture
 
-### Core Components
+### CLI Application (`cmd/cli/`)
+
+The CLI application provides an interactive terminal interface for SCPI device control.
+
+#### Core Components
 
 **`main.go`**: Entry point that orchestrates the application flow:
 - Parses command-line arguments
@@ -106,7 +168,7 @@ Key protocol features:
 
 **`helpers.go`**: Utility functions for file I/O and common operations.
 
-### Data Flow
+#### Data Flow
 
 1. User enters command in interactive prompt (powered by `go-prompt` library)
 2. `scpiManager.completer()` provides suggestions by traversing the SCPI tree
@@ -115,10 +177,106 @@ Key protocol features:
 5. Instrument sends command over TCP, reads response, checks for errors
 6. Response displayed to user and stored in history
 
-### Simulation Mode
+#### Simulation Mode
 
 When run with `-s/--simulate` or address "simulated", reads from `SCPI.txt` (`:SYSTem:HELP:HEADers?` format) to build the command tree without requiring a real instrument connection. Useful for testing and development.
 
+### Web Application (`web/`)
+
+The web application provides a browser-based interface for SCPI device control, built with Angular 20.
+
+#### Technology Stack
+
+- **Angular 20**: Frontend framework with standalone components
+- **TypeScript 5.9**: Type-safe JavaScript
+- **RxJS 7.8**: Reactive programming for async operations
+- **SCSS**: Styling
+- **Karma + Jasmine**: Testing framework
+
+#### Core Files
+
+**`src/main.ts`**: Angular application bootstrap entry point
+
+**`src/app/app.ts`**: Root application component
+
+**`src/app/app.config.ts`**: Application-level configuration and providers
+
+**`src/app/app.routes.ts`**: Client-side routing configuration
+
+**`src/index.html`**: Main HTML template with base href for routing
+
+**`package.json`**: Node dependencies and npm scripts
+
+#### Development Workflow
+
+```bash
+# Install dependencies
+just install-web
+
+# Run development server (http://localhost:4200)
+just serve-web
+
+# Build for production
+just build-web
+
+# Run tests
+just test-web
+```
+
+### HTTP Server (`cmd/server/`)
+
+A lightweight Go HTTP server that serves the Angular application and provides backend API endpoints.
+
+#### Core Components
+
+**`main.go`**: HTTP server implementation
+- Serves on port 8080
+- `/health` endpoint for health checks
+- Graceful shutdown support (SIGINT/SIGTERM)
+- 10-second shutdown timeout
+
+The server is designed to:
+1. Serve the compiled Angular static assets from `web/dist/`
+2. Provide REST API endpoints for SCPI device communication
+3. Handle WebSocket connections for real-time device interaction
+
 ## Version Management
 
-Version is injected at build time via `-ldflags "-X main.version=..."` using git describe output (`git describe --always --long --dirty`).
+Version is injected at build time via `-ldflags "-X main.version=..."` using git describe output (`git describe --always --long --dirty`) for both CLI and server binaries.
+
+## Development Setup
+
+### Go Development
+
+The project uses Go modules. All Go code is located under `cmd/`:
+- `cmd/cli/` - CLI application
+- `cmd/server/` - HTTP server
+
+### Angular Development
+
+The Angular application is in `web/`:
+
+```bash
+# First time setup
+just install-web
+
+# Development
+just serve-web   # Dev server with hot reload
+just test-web    # Run tests
+just build-web   # Production build
+```
+
+### Integrated Development
+
+To run the full stack locally:
+
+```bash
+# Terminal 1: Run the Go server
+just run-server
+
+# Terminal 2: Run Angular dev server with proxy
+just serve-web
+
+# Or build everything together
+just build
+```

@@ -8,7 +8,6 @@ require (
 	github.com/akamensky/argparse v1.4.0
 	github.com/atotto/clipboard v0.1.4
 	github.com/c-bata/go-prompt v0.2.6
-	github.com/magefile/mage v1.15.0
 	github.com/schollz/progressbar v1.0.0
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
 )

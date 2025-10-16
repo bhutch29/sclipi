@@ -8,34 +8,34 @@ Sclipi is a command-line tool for sending SCPI (Standard Commands for Programmab
 
 ## Build System
 
-This project uses [Mage](https://magefile.org/) as its build tool. Mage targets are defined in `magefile.go`.
+This project uses just as its build tool. Build targets are defined in `justfile`.
 
 ### Common Commands
 
 ```bash
 # Run in simulated mode (default target)
-go run github.com/magefile/mage
+just
 
 # Build the binary with git version
-go run github.com/magefile/mage build
+just build
 
 # Run tests
-go run github.com/magefile/mage test
+just test
 
 # Run tests with coverage
-go run github.com/magefile/mage cover
+just cover
 
 # Run benchmarks
-go run github.com/magefile/mage bench
+just bench
 
 # Install locally
-go run github.com/magefile/mage install
+just install
 
 # Build for Windows
-go run github.com/magefile/mage buildWindows
+just build-windows
 
 # Clean build artifacts
-go run github.com/magefile/mage clean
+just clean
 ```
 
 ### Running Tests

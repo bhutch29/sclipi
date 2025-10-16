@@ -12,8 +12,12 @@ build-cli:
 build-server:
     go build -ldflags "-X main.version={{git-version}}" -o scwipi ./cmd/server
 
-# Build both binaries
-build: build-cli build-server
+# Build Angular application
+build-web:
+    cd web && npm run build
+
+# Build all projects/binaries
+build: build-cli build-server build-web
 
 # Build CLI for Windows
 build-cli-windows:
@@ -26,51 +30,30 @@ build-server-windows:
 # Build both for Windows
 build-windows: build-cli-windows build-server-windows
 
-# Install CLI locally
-install-cli:
-    go install -v -ldflags "-X main.version={{git-version}}" ./cmd/cli
-
-# Install server locally
-install-server:
-    go install -v -ldflags "-X main.version={{git-version}}" ./cmd/server
-
-# Install both locally
-install: install-cli install-server
-
-# Run tests
-test:
+test-go:
     go test -v ./...
 
-# Run benchmarks
+test-web:
+    cd web && npm test
+
+test: test-go test-web
+
 bench:
     go test -bench . ./...
-
-# Run tests with coverage
-cover:
-    go test -cover ./...
 
 # Run CLI in simulated mode
 simulate:
     go run ./cmd/cli -s -q
 
-# Run server
 run-server:
     go run ./cmd/server
 
-# Install web dependencies
-web-install:
+install-web:
     cd web && npm install
 
-# Build Angular application
-web-build:
-    cd web && npm run build
-
 # Serve Angular application in development mode
-web-serve:
+serve-web:
     cd web && npm start
-
-# Build server and web application
-build-all: build-server web-build
 
 # Clean build artifacts
 clean:

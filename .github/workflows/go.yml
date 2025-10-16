@@ -15,8 +15,8 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v4
 
-    - name: Build
-      run: go build -v .
+    - name: Build CLI
+      run: go build -v ./cmd/cli
 
     - name: Test
       run: go test -v

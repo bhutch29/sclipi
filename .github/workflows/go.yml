@@ -19,4 +19,4 @@ jobs:
       run: go build -v ./cmd/cli
 
     - name: Test
-      run: go test -v
+      run: go test -v ./...

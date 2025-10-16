@@ -17,6 +17,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
+            "baseHref": "/scpi/",
             "browser": "src/main.ts",
             "polyfills": [
               "zone.js"
@@ -59,6 +60,11 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "host": "0.0.0.0",
+            "proxyConfig": "proxy.conf.js"
+            "servePath": "scpi",
+          },
           "configurations": {
             "production": {
               "buildTarget": "sclipi-web:build:production"

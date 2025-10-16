@@ -1,9 +1,9 @@
 package main
 
 import (
-		"fmt"
     "context"
     "errors"
+    "fmt"
     "log"
     "net/http"
     "os"
@@ -19,11 +19,10 @@ func main() {
         Addr: ":8080",
     }
 
-    http.Handle("/", http.FileServer(http.Dir("./web/dist/sclipi-web/browser")))
-		http.HandleFunc("/health", handleHealth)
+    http.HandleFunc("/api/health", handleHealth)
 
     go func() {
-				log.Println("Serving on port 8080")
+        log.Println("Serving on port 8080")
         if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
             log.Fatalf("HTTP server error: %v", err)
         }
@@ -44,8 +43,7 @@ func main() {
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handling /health")
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "OK\n")
+    log.Println("Handling /health")
+    w.WriteHeader(http.StatusOK)
+    fmt.Fprintf(w, "OK\n")
 }
-

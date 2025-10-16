@@ -19,7 +19,7 @@ func main() {
         Addr: ":8080",
     }
 
-    http.HandleFunc("/api/health", handleHealth)
+    http.HandleFunc("/health", handleHealth)
 
     go func() {
         log.Println("Serving on port 8080")

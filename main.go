@@ -52,6 +52,7 @@ func main() {
 func getPromptOptions(args arguments) []prompt.Option {
 	return []prompt.Option{
 		prompt.OptionShowCompletionAtStart(),
+		prompt.OptionCompletionOnDown(),
 		prompt.OptionInputTextColor(args.TextColor),
 		prompt.OptionSuggestionTextColor(args.SuggestionColor),
 		prompt.OptionSuggestionBGColor(args.SuggestionBgColor),

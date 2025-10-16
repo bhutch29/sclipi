@@ -71,18 +71,33 @@ func printIntroText(silent bool) {
 		return
 	}
 	fmt.Println("Welcome to the SCPI cli!")
-	fmt.Println("Use Tab to navigate auto-completion options")
-	fmt.Println("Use `CTRL-D`, `quit`, or `exit` to exit this program")
+	fmt.Println("Use `CTRL-D` or `quit` to exit this program")
 }
 
 func printHelp() {
-	fmt.Println()
-	fmt.Println("# Sclipi's tab-completion is operated entirely using the Tab key")
-	fmt.Println("#     Press Tab repeatedly to cycle through the available options")
-	fmt.Println("#     Typing will filter the list")
-	fmt.Println("#     Pressing the Right Arrow key or continuing to type will accept the selected option")
-	fmt.Println("#     Up and Down arrow keys cycle through your command history")
-	fmt.Println()
+	fmt.Println();
+	fmt.Println(`# Basics:
+Sclipi is an application for sending SCPI commands and receiving responses.
+SCPI commands start with a colon, type ':' to get started.
+
+# Completion:
+Completion options appear automatically. Typing will filter the list of options.
+Completion is initiated with either the Tab or Down arrow keys.
+Press Tab or Down repeatedly to cycle through the available options.
+Shift-Tab and Up will cycle back up through the options.
+Pressing the Right Arrow key or continuing to type will accept the selected option.
+Just because a completion doesn't appear doesn't mean your command won't work! Some commands are hidden.
+
+# History:
+Sclipi tracks the history of all commands you have ever sent.
+Up and Down arrow keys cycle through your command history.
+
+# Exiting:
+There are 3 ways to exit the application.
+1. Type 'quit' and hit Enter
+2. Type 'exit' and hit Enter
+3. Clear the input text and press Ctrl-D`)
+	fmt.Println();
 }
 
 func getAddress(args arguments, commonOptions []prompt.Option) string {

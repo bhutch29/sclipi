@@ -48,6 +48,9 @@ simulate:
 run-server:
     go run ./cmd/server
 
+watch-server:
+    fd -e go | entr -r just run-server
+
 install-web:
     cd web && npm install
 

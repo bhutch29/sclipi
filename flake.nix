@@ -47,6 +47,7 @@
             gotools
             nodejs
             just
+            entr
           ];
         };
       }

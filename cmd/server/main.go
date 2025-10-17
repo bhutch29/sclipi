@@ -5,6 +5,7 @@ import (
     "errors"
     "fmt"
     "github.com/bhutch29/sclipi/internal/utils"
+    "io"
     "log"
     "net/http"
     "os"
@@ -52,14 +53,31 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 
 func handleIdn(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /idn")
-    inst, err := buildAndConnectInstrument("simulated", "1234", 10 * time.Second, nil)
+
+    body, err := io.ReadAll(r.Body)
     if err != nil {
-	w.WriteHeader(http.StatusInternalServerError)
+        w.WriteHeader(http.StatusBadRequest)
+        return
+    }
+    defer r.Body.Close()
+
+    query := string(body)
+
+    if len(query) == 0 {
+        w.WriteHeader(http.StatusBadRequest)
+        fmt.Fprintf(w, "body cannot be empty")
     }
 
-    response, err := inst.Query("*IDN?");
+    inst, err := buildAndConnectInstrument("simulated", "", 10 * time.Second, nil)
     if err != nil {
 	w.WriteHeader(http.StatusInternalServerError)
+	return
+    }
+
+    response, err := inst.Query(query)
+    if err != nil {
+	w.WriteHeader(http.StatusInternalServerError)
+	return
     }
     w.WriteHeader(http.StatusOK)
     fmt.Fprintf(w, "%s\n", response)

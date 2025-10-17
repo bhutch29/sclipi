@@ -63,6 +63,10 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 
 func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /scpi")
+    if r.Method != http.MethodPost {
+        w.WriteHeader(http.StatusBadRequest)
+        return
+    }
 
     bodyData, err := io.ReadAll(r.Body)
     if err != nil {

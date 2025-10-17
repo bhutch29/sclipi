@@ -10,10 +10,10 @@ import (
 	"testing"
 )
 
-func TestHandleScpiRequest(t *testing.T) {
-    response, status, err := post("/scpi", scpiRequestBody{Type: "query", Scpi: "*IDN?", Simulated: true})
+func TestHandleScpiRequestQuery(t *testing.T) {
+    response, status, err := postScpi(scpiRequestBody{Type: "query", Scpi: "*IDN?", Simulated: true})
     if err != nil {
-        t.Errorf("post failed: %v", err)
+        t.Errorf("postScpi failed: %v", err)
     }
     if status != http.StatusOK {
         t.Errorf("expected status OK, got %s", http.StatusText(status))
@@ -23,9 +23,34 @@ func TestHandleScpiRequest(t *testing.T) {
     }
 }
 
-func post(uri string, body any) (string, int, error) {
-    bodyData, err := json.Marshal(body)
-    req := httptest.NewRequest(http.MethodPost, uri, bytes.NewReader(bodyData))
+func TestHandleScpiRequestCommand(t *testing.T) {
+    response, status, err := postScpi(scpiRequestBody{Type: "command", Scpi: "*IDN?", Simulated: true})
+    if err != nil {
+        t.Errorf("postScpi failed: %v", err)
+    }
+    if status != http.StatusOK {
+        t.Errorf("expected status OK, got %s", http.StatusText(status))
+    }
+    if response != "" {
+        t.Errorf("expected empty response got %v", response)
+    }
+}
+
+func TestHandleScpiRequestMustBePost(t *testing.T) {
+    body := scpiRequestBody{Type: "query", Scpi: "*IDN?", Simulated: true}
+    bodyData, _ := json.Marshal(body)
+    req := httptest.NewRequest(http.MethodGet, "/scpi", bytes.NewReader(bodyData))
+    w := httptest.NewRecorder()
+    handleScpiRequest(w, req)
+    res := w.Result()
+    if res.StatusCode != http.StatusBadRequest {
+        t.Errorf("expected status Bad Request, got %s", res.Status)
+    }
+}
+
+func postScpi(body any) (string, int, error) {
+    bodyData, _ := json.Marshal(body)
+    req := httptest.NewRequest(http.MethodPost, "/scpi", bytes.NewReader(bodyData))
     w := httptest.NewRecorder()
     handleScpiRequest(w, req)
     res := w.Result()

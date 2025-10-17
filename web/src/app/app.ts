@@ -1,5 +1,5 @@
 import { HttpClient, httpResource } from '@angular/common/http';
-import { Component, signal } from '@angular/core';
+import { Component, signal, WritableSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -11,6 +11,8 @@ import { FormsModule } from '@angular/forms';
 export class App {
   public temp = httpResource.text(() => '/api/health');
   public inputText = "";
+  public response: WritableSignal<string> = signal("");
+  public error: WritableSignal<string> = signal("");
 
   constructor(
     private http: HttpClient
@@ -20,8 +22,14 @@ export class App {
 
   public send() {
     this.http.post("/api/scpi", {scpi: this.inputText, simulated: true}, {responseType: 'text'}).subscribe({
-      next: x => console.log(x),
-      error: x => console.error(x.error)
+      next: x => {
+        this.error.set("");
+        this.response.set(x);
+      },
+      error: x => {
+        this.error.set(x.error);
+        this.response.set("");
+      }
     });
   }
 }

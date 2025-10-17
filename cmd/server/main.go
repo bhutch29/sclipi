@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "errors"
     "fmt"
-    "github.com/bhutch29/sclipi/internal/utils"
     "io"
     "log"
     "net/http"
@@ -13,6 +12,8 @@ import (
     "os/signal"
     "syscall"
     "time"
+
+    "github.com/bhutch29/sclipi/internal/utils"
 )
 
 var version = "undefined"
@@ -140,3 +141,4 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
     }
     return body, nil
 }
+

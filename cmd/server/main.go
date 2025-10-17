@@ -2,6 +2,7 @@ package main
 
 import (
     "context"
+    "encoding/json"
     "errors"
     "fmt"
     "github.com/bhutch29/sclipi/internal/utils"
@@ -61,20 +62,57 @@ func handleIdn(w http.ResponseWriter, r *http.Request) {
     }
     defer r.Body.Close()
 
-    query := string(body)
-
-    if len(query) == 0 {
-        w.WriteHeader(http.StatusBadRequest)
-        fmt.Fprintf(w, "body cannot be empty")
+    var req struct {
+        Type string `json:"type"`
+        Scpi string `json:"scpi"`
     }
 
+    if err := json.Unmarshal(body, &req); err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        fmt.Fprintf(w, "invalid JSON: %v", err)
+        return
+    }
+
+    if len(req.Scpi) == 0 {
+        w.WriteHeader(http.StatusBadRequest)
+        fmt.Fprintf(w, "scpi field cannot be empty")
+        return
+    }
+
+    if req.Type == "command" {
+        sendCommand(w, req.Scpi)
+        return
+    }
+
+    if req.Type == "query" {
+        sendQuery(w, req.Scpi)
+        return
+    }
+}
+
+func sendCommand(w http.ResponseWriter, scpi string) {
     inst, err := buildAndConnectInstrument("simulated", "", 10 * time.Second, nil)
     if err != nil {
 	w.WriteHeader(http.StatusInternalServerError)
 	return
     }
 
-    response, err := inst.Query(query)
+    err = inst.Command(scpi)
+    if err != nil {
+	w.WriteHeader(http.StatusInternalServerError)
+	return
+    }
+    w.WriteHeader(http.StatusOK)
+}
+
+func sendQuery(w http.ResponseWriter, scpi string) {
+    inst, err := buildAndConnectInstrument("simulated", "", 10 * time.Second, nil)
+    if err != nil {
+	w.WriteHeader(http.StatusInternalServerError)
+	return
+    }
+
+    response, err := inst.Query(scpi)
     if err != nil {
 	w.WriteHeader(http.StatusInternalServerError)
 	return

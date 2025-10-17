@@ -16,6 +16,7 @@ import (
 )
 
 var version = "undefined"
+var instCache = newInstrumentCache()
 
 type scpiRequestBody struct {
     Type string `json:"type"`
@@ -75,7 +76,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    inst, err := buildAndConnectInstrument(body.Address, "", 10 * time.Second, nil)
+    inst, err := instCache.connectInstrument(body.Address, "", 10 * time.Second, nil)
     if err != nil {
 	w.WriteHeader(http.StatusInternalServerError)
 	return
@@ -125,6 +126,10 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
     }
     if len(body.Address) == 0 {
         return body, errors.New("address field cannot be empty")
+    }
+
+    if body.Type != "command" && body.Type != "query" {
+        return body, errors.New("type must be 'command' or 'query'")
     }
     return body, nil
 }

@@ -1,19 +1,20 @@
 package main
 
 import (
-    "context"
-    "encoding/json"
-    "errors"
-    "fmt"
-    "io"
-    "log"
-    "net/http"
-    "os"
-    "os/signal"
-    "syscall"
-    "time"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
 
-    "github.com/bhutch29/sclipi/internal/utils"
+	"github.com/bhutch29/sclipi/internal/utils"
 )
 
 var version = "undefined"
@@ -94,13 +95,17 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	return
     }
 
-    if body.Type == "command" {
-        sendCommand(w, inst, body.Scpi)
+    if body.Type == "smart" {
+        if (strings.Contains(body.Scpi, "?")) {
+            sendQuery(w, inst, body.Scpi)
+        } else {
+            sendCommand(w, inst, body.Scpi)
+        }
         return
     }
 
-    if body.Type == "query" {
-        sendQuery(w, inst, body.Scpi)
+    if body.Type == "sendOnly" {
+        sendCommand(w, inst, body.Scpi)
         return
     }
 }
@@ -135,10 +140,10 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
     }
 
     if len(body.Type) == 0 {
-        return body, errors.New("type field cannot be empty")
+        body.Type = "smart"
     }
-    if body.Type != "command" && body.Type != "query" {
-        return body, errors.New("type must be 'command' or 'query'")
+    if body.Type != "smart" && body.Type != "sendOnly" {
+        return body, errors.New("type must be 'smart' or 'sendOnly'")
     }
 
     if len(body.Port) == 0 {

@@ -11,7 +11,7 @@ import (
 )
 
 func TestHandleScpiRequestQuery(t *testing.T) {
-    response, status, err := postScpi(scpiRequestBody{Type: "query", Scpi: "*IDN?", Simulated: true})
+    response, status, err := postScpi(scpiRequestBody{Scpi: "*IDN?", Simulated: true})
     if err != nil {
         t.Errorf("postScpi failed: %v", err)
     }
@@ -24,7 +24,7 @@ func TestHandleScpiRequestQuery(t *testing.T) {
 }
 
 func TestHandleScpiRequestCommand(t *testing.T) {
-    response, status, err := postScpi(scpiRequestBody{Type: "command", Scpi: "*IDN?", Simulated: true})
+    response, status, err := postScpi(scpiRequestBody{Scpi: ":FREQ 1000", Simulated: true})
     if err != nil {
         t.Errorf("postScpi failed: %v", err)
     }
@@ -37,7 +37,7 @@ func TestHandleScpiRequestCommand(t *testing.T) {
 }
 
 func TestHandleScpiRequestMustBePost(t *testing.T) {
-    body := scpiRequestBody{Type: "query", Scpi: "*IDN?", Simulated: true}
+    body := scpiRequestBody{Scpi: "*IDN?", Simulated: true}
     bodyData, _ := json.Marshal(body)
     req := httptest.NewRequest(http.MethodGet, "/scpi", bytes.NewReader(bodyData))
     w := httptest.NewRecorder()

@@ -18,7 +18,7 @@ func newInstrumentCache() *instrumentCache {
     }
 }
 
-func (ic *instrumentCache) connectInstrument(address string, port string, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
+func (ic *instrumentCache) get(address string, port string, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
     fullAddress := address + ":" + port
 
     ic.mu.RLock()
@@ -36,7 +36,7 @@ func (ic *instrumentCache) connectInstrument(address string, port string, timeou
         return inst, nil
     }
 
-    inst, err := buildAndConnectInstrument(address, port, timeout, progressFn)
+    inst, err := connectInstrument(address, port, timeout, progressFn)
     if err != nil {
         return nil, err
     }
@@ -45,8 +45,8 @@ func (ic *instrumentCache) connectInstrument(address string, port string, timeou
     return inst, nil
 }
 
-func buildAndConnectInstrument(address string, port string, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
-    log.Printf("Connecting to instrument at address %s\n", address)
+func connectInstrument(address string, port string, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
+    log.Printf("Connecting to instrument at address '%s'\n", address)
     var inst utils.Instrument
     if address == "simulated" {
 	inst = utils.NewSimInstrument(timeout)

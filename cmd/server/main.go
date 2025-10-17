@@ -21,7 +21,8 @@ var instCache = newInstrumentCache()
 type scpiRequestBody struct {
     Type string `json:"type"`
     Scpi string `json:"scpi"`
-    Address string `json:"address"`
+    Port string `json:"port"`
+    Simulated bool `json:"simulated"`
 }
 
 func main() {
@@ -76,9 +77,14 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    inst, err := instCache.connectInstrument(body.Address, "", 10 * time.Second, nil)
+    address := "localhost"
+    if body.Simulated {
+        address = "simulated"
+    }
+    inst, err := instCache.get(address, body.Port, 10 * time.Second, nil)
     if err != nil {
 	w.WriteHeader(http.StatusInternalServerError)
+        fmt.Fprintf(w, "%s\n", err.Error())
 	return
     }
 
@@ -124,12 +130,13 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
     if len(body.Type) == 0 {
         return body, errors.New("type field cannot be empty")
     }
-    if len(body.Address) == 0 {
-        return body, errors.New("address field cannot be empty")
-    }
 
     if body.Type != "command" && body.Type != "query" {
         return body, errors.New("type must be 'command' or 'query'")
+    }
+
+    if len(body.Port) == 0 {
+        body.Port = "5025"
     }
     return body, nil
 }

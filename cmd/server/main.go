@@ -17,6 +17,12 @@ import (
 
 var version = "undefined"
 
+type scpiRequestBody struct {
+    Type string `json:"type"`
+    Scpi string `json:"scpi"`
+    Address string `json:"address"`
+}
+
 func main() {
     server := &http.Server{
         Addr: ":8080",
@@ -55,49 +61,39 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /scpi")
 
-    body, err := io.ReadAll(r.Body)
+    bodyData, err := io.ReadAll(r.Body)
     if err != nil {
         w.WriteHeader(http.StatusBadRequest)
         return
     }
     defer r.Body.Close()
 
-    var req struct {
-        Type string `json:"type"`
-        Scpi string `json:"scpi"`
-    }
-
-    if err := json.Unmarshal(body, &req); err != nil {
+    body, err := validateScpiRequestBody(bodyData)
+    if err != nil {
         w.WriteHeader(http.StatusBadRequest)
-        fmt.Fprintf(w, "invalid JSON: %v", err)
+        fmt.Fprintf(w, "%s\n", err.Error())
         return
     }
 
-    if len(req.Scpi) == 0 {
-        w.WriteHeader(http.StatusBadRequest)
-        fmt.Fprintf(w, "scpi field cannot be empty")
-        return
-    }
-
-    if req.Type == "command" {
-        sendCommand(w, req.Scpi)
-        return
-    }
-
-    if req.Type == "query" {
-        sendQuery(w, req.Scpi)
-        return
-    }
-}
-
-func sendCommand(w http.ResponseWriter, scpi string) {
-    inst, err := buildAndConnectInstrument("simulated", "", 10 * time.Second, nil)
+    inst, err := buildAndConnectInstrument(body.Address, "", 10 * time.Second, nil)
     if err != nil {
 	w.WriteHeader(http.StatusInternalServerError)
 	return
     }
 
-    err = inst.Command(scpi)
+    if body.Type == "command" {
+        sendCommand(w, inst, body.Scpi)
+        return
+    }
+
+    if body.Type == "query" {
+        sendQuery(w, inst, body.Scpi)
+        return
+    }
+}
+
+func sendCommand(w http.ResponseWriter, inst utils.Instrument, scpi string) {
+    err := inst.Command(scpi)
     if err != nil {
 	w.WriteHeader(http.StatusInternalServerError)
 	return
@@ -105,13 +101,7 @@ func sendCommand(w http.ResponseWriter, scpi string) {
     w.WriteHeader(http.StatusOK)
 }
 
-func sendQuery(w http.ResponseWriter, scpi string) {
-    inst, err := buildAndConnectInstrument("simulated", "", 10 * time.Second, nil)
-    if err != nil {
-	w.WriteHeader(http.StatusInternalServerError)
-	return
-    }
-
+func sendQuery(w http.ResponseWriter, inst utils.Instrument, scpi string) {
     response, err := inst.Query(scpi)
     if err != nil {
 	w.WriteHeader(http.StatusInternalServerError)
@@ -134,4 +124,22 @@ func buildAndConnectInstrument(address string, port string, timeout time.Duratio
     }
 
     return inst, nil
+}
+
+func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
+    body := scpiRequestBody{}
+    if err := json.Unmarshal(bodyData, &body); err != nil {
+        return body, errors.New(fmt.Sprintf("invalid JSON: %v", err))
+    }
+
+    if len(body.Scpi) == 0 {
+        return body, errors.New("scpi field cannot be empty")
+    }
+    if len(body.Type) == 0 {
+        return body, errors.New("type field cannot be empty")
+    }
+    if len(body.Address) == 0 {
+        return body, errors.New("address field cannot be empty")
+    }
+    return body, nil
 }

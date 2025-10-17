@@ -24,6 +24,7 @@ type scpiRequestBody struct {
     Scpi string `json:"scpi"`
     Port string `json:"port"`
     Simulated bool `json:"simulated"`
+    TimeoutSeconds int `json:"timeoutSeconds"`
 }
 
 func main() {
@@ -86,7 +87,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
     if body.Simulated {
         address = "simulated"
     }
-    inst, err := instCache.get(address, body.Port, 10 * time.Second, nil)
+    inst, err := instCache.get(address, body.Port, time.Duration(body.TimeoutSeconds) * time.Second, nil)
     if err != nil {
 	w.WriteHeader(http.StatusInternalServerError)
         fmt.Fprintf(w, "%s\n", err.Error())
@@ -142,6 +143,10 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
 
     if len(body.Port) == 0 {
         body.Port = "5025"
+    }
+
+    if body.TimeoutSeconds == 0 {
+        body.TimeoutSeconds = 10
     }
     return body, nil
 }

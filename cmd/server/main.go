@@ -133,10 +133,10 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
     if len(body.Scpi) == 0 {
         return body, errors.New("scpi field cannot be empty")
     }
+
     if len(body.Type) == 0 {
         return body, errors.New("type field cannot be empty")
     }
-
     if body.Type != "command" && body.Type != "query" {
         return body, errors.New("type must be 'command' or 'query'")
     }
@@ -145,6 +145,9 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
         body.Port = "5025"
     }
 
+    if body.TimeoutSeconds < 0 {
+        return body, errors.New("timeoutSeconds must be a positive integer")
+    }
     if body.TimeoutSeconds == 0 {
         body.TimeoutSeconds = 10
     }

@@ -33,6 +33,9 @@ build-windows: build-cli-windows build-server-windows
 test-go:
     go test -v ./...
 
+test-go-watch:
+    fd -e go | entr -r just test-go
+
 test-web:
     cd web && npm test
 

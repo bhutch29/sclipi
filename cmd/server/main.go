@@ -23,7 +23,7 @@ func main() {
     }
 
     http.HandleFunc("/health", handleHealth)
-    http.HandleFunc("/idn", handleIdn)
+    http.HandleFunc("/scpi", handleScpiRequest)
 
     go func() {
         log.Println("Serving on port 8080")
@@ -52,8 +52,8 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "OK\n")
 }
 
-func handleIdn(w http.ResponseWriter, r *http.Request) {
-    log.Println("Handling /idn")
+func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
+    log.Println("Handling /scpi")
 
     body, err := io.ReadAll(r.Body)
     if err != nil {

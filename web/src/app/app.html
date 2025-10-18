@@ -1,44 +1,53 @@
-@if (temp.hasValue()) {
-  Health: {{temp.value()}}
-}
-
-@if (idn.hasValue()) {
-  IDN: {{idn.value().response}}
-} @else {
-  {{idnError()?.error}}
-}
-
-@if (error()) {
-  Error: {{error()}}
-}
-
-<div>
-  <input type="text" [(ngModel)]="inputText" autofocus (keydown.enter)="send()"/>
-  <button (click)="send()">Send</button>
-  <button (click)="systErr()">:SYST:ERR?</button>
+<div class="main">
   <div>
-    <label>
-      <input type="checkbox" [(ngModel)]="simulated"/>
-      Simulated
-    </label>
-    <label>
-      <input type="checkbox" [(ngModel)]="autoSystErr"/>
-      Auto :SYST:ERR?
-    </label>
+    <input type="text" [(ngModel)]="inputText" autofocus (keydown.enter)="send()" />
+    <button (click)="send()">Send</button>
+    <button (click)="systErr()">:SYST:ERR?</button>
+  </div>
+
+  <div class="log" [ngClass]="{'wrap': wrapLog()}">
+    @for (entry of log(); track entry.time) {
+      <div class="entry">
+        {{ entry.time | date: 'medium' }}
+        {{ entry.scpi }}
+        {{ entry.response }}
+        {{ entry.serverError }}
+        <!-- TODO: fix track -->
+        @for (error of entry.errors; track error) {
+          {{ error }}
+        }
+      </div>
+    }
   </div>
 </div>
 
-<div class="log">
-  @for (entry of log(); track entry.time) {
-    <div class="entry">
-      {{entry.time | date:'medium'}}
-      {{entry.scpi}}
-      {{entry.response}}
-      {{entry.serverError}}
-      <!-- TODO: fix track -->
-      @for (error of entry.errors; track error) {
-        {{error}}
-      }
-    </div>
+<div class="right-panel">
+  @if (temp.hasValue()) {
+    <div>Health: {{ temp.value() }}</div>
   }
+
+  @if (idn.hasValue()) {
+    IDN: {{ idn.value().response }}
+  } @else {
+    {{ idnError()?.error }}
+  }
+
+  @if (error()) {
+    Error: {{ error() }}
+  }
+
+  <div class="options">
+    <label>
+      <input type="checkbox" [(ngModel)]="simulated" />
+      Simulated
+    </label>
+    <label>
+      <input type="checkbox" [(ngModel)]="autoSystErr" />
+      Auto :SYST:ERR?
+    </label>
+    <label>
+      <input type="checkbox" [(ngModel)]="wrapLog" />
+      Wrap Log
+    </label>
+  </div>
 </div>

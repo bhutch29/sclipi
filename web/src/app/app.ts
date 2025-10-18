@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
 import { Component, Signal, signal, WritableSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -22,11 +22,12 @@ interface ScpiResponse {
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  imports: [FormsModule, DatePipe]
+  imports: [FormsModule, DatePipe, CommonModule]
 })
 export class App {
   public simulated = signal(false);
   public autoSystErr = signal(false);
+  public wrapLog = signal(false);
   public inputText = signal("");
   public error: WritableSignal<string> = signal("");
   public log: WritableSignal<LogEntry[]> = signal([]);

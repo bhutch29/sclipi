@@ -1,17 +1,34 @@
 :host {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr 250px;
+  gap: 12px;
 }
 
 .log {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-width: 80vw;
+  padding: 8px;
+
+  &:not(.wrap) {
+    text-wrap: nowrap;
+    overflow-x: scroll;
+  }
 }
 
 .entry {
   display: flex;
   flex-direction: row;
   gap: 4px;
+}
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
 }

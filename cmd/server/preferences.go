@@ -10,12 +10,12 @@ import (
 
 type Preferences struct {
 	ScpiPort int `json:"scpiPort"`
+	ScpiAddress string `json:"scpiAddress"`
 }
 
 func getPreferencesPath() (string, error) {
 	path := config.PreferencesFilePath
 
-	// Ensure directory exists
 	prefsDir := filepath.Dir(path)
 	if err := os.MkdirAll(prefsDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create preferences directory: %w", err)
@@ -33,7 +33,7 @@ func loadPreferences() (*Preferences, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil // No preferences file is not an error
+			return nil, nil
 		}
 		return nil, fmt.Errorf("failed to read preferences file: %w", err)
 	}
@@ -53,7 +53,25 @@ func savePreferences(prefs *Preferences) error {
 		return err
 	}
 
-	data, err := json.MarshalIndent(prefs, "", "  ")
+	existing, err := loadPreferences()
+	if err != nil {
+		return err
+	}
+
+	merged := &Preferences{}
+	if existing != nil {
+		*merged = *existing
+	}
+
+	// TODO: update if more preferences are added
+	if prefs.ScpiPort != 0 {
+		merged.ScpiPort = prefs.ScpiPort
+	}
+	if prefs.ScpiAddress != "" {
+		merged.ScpiAddress = prefs.ScpiAddress
+	}
+
+	data, err := json.MarshalIndent(merged, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal preferences: %w", err)
 	}
@@ -62,7 +80,7 @@ func savePreferences(prefs *Preferences) error {
 		return fmt.Errorf("failed to write preferences file: %w", err)
 	}
 
-	log.Printf("Saved preferences: %+v", prefs)
+	log.Printf("Saved preferences: %+v", merged)
 	return nil
 }
 

@@ -9,11 +9,12 @@ import (
 )
 
 type Config struct {
-	ServerPort            int
-	DefaultScpiSocketPort int
-	ScriptStoragePath     string
-	HelpFilePath          string
-	PreferencesFilePath   string
+	ServerPort               int
+	DefaultScpiSocketPort    int
+	DefaultScpiSocketAddress string
+	ScriptStoragePath        string
+	HelpFilePath             string
+	PreferencesFilePath      string
 }
 
 func loadConfig() (*Config, error) {
@@ -25,6 +26,7 @@ func loadConfig() (*Config, error) {
 
 	viper.SetDefault("serverPort", 8080)
 	viper.SetDefault("defaultScpiSocketPort", 5025)
+	viper.SetDefault("defaultScpiSocketAddress", "localhost")
 	viper.SetDefault("scriptStoragePath", "$HOME/.sclipi/scripts")
 	viper.SetDefault("helpFilePath", "TODO")
 	viper.SetDefault("preferencesFilePath", "$HOME/.sclipi/preferences.json")
@@ -43,11 +45,12 @@ func loadConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		ServerPort:            viper.GetInt("serverPort"),
-		DefaultScpiSocketPort: viper.GetInt("defaultScpiSocketPort"),
-		ScriptStoragePath:     os.ExpandEnv(viper.GetString("scriptStoragePath")),
-		HelpFilePath:          os.ExpandEnv(viper.GetString("helpFilePath")),
-		PreferencesFilePath:   os.ExpandEnv(viper.GetString("preferencesFilePath")),
+		ServerPort:               viper.GetInt("serverPort"),
+		DefaultScpiSocketPort:    viper.GetInt("defaultScpiSocketPort"),
+		DefaultScpiSocketAddress: viper.GetString("defaultScpiSocketAddress"),
+		ScriptStoragePath:        os.ExpandEnv(viper.GetString("scriptStoragePath")),
+		HelpFilePath:             os.ExpandEnv(viper.GetString("helpFilePath")),
+		PreferencesFilePath:      os.ExpandEnv(viper.GetString("preferencesFilePath")),
 	}
 
 	log.Printf("Config: %+v", config)

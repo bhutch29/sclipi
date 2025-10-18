@@ -63,6 +63,10 @@
       SCPI Socket Port
     </label>
     <label>
+      <input type="text" [(ngModel)]="address" (blur)="onAddressBlur()" (keydown.enter)="onAddressEnter($event)" />
+      SCPI Socket Address
+    </label>
+    <label>
       <input type="checkbox" [(ngModel)]="autoSystErr" />
       Auto :SYST:ERR?
     </label>
@@ -70,5 +74,6 @@
       <input type="checkbox" [(ngModel)]="wrapLog" />
       Wrap Log
     </label>
+    <button (click)="resetPreferences()">Reset preferences to default</button>
   </div>
 </div>

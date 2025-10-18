@@ -19,6 +19,7 @@ var version = "undefined"
 var instCache = newInstrumentCache()
 var config *Config
 var currentScpiPort int
+var currentScpiAddress string
 
 type scpiRequestBody struct {
     Type string `json:"type"`
@@ -53,6 +54,13 @@ func main() {
         currentScpiPort = config.DefaultScpiSocketPort
         log.Printf("Using default SCPI port: %d", currentScpiPort)
     }
+    if prefs != nil && prefs.ScpiAddress != "" {
+        currentScpiAddress = prefs.ScpiAddress
+        log.Printf("Using saved SCPI port: %v", currentScpiAddress)
+    } else {
+        currentScpiAddress = config.DefaultScpiSocketAddress
+        log.Printf("Using default SCPI port: %v", currentScpiAddress)
+    }
 
     addr := fmt.Sprintf(":%d", config.ServerPort)
     server := &http.Server{
@@ -60,7 +68,8 @@ func main() {
     }
 
     http.HandleFunc("/health", handleHealth)
-    http.HandleFunc("/port", handlePort)
+    http.HandleFunc("/scpiPort", handlePort)
+    http.HandleFunc("/scpiAddress", handleAddress)
     http.HandleFunc("/scpi", handleScpiRequest)
     http.HandleFunc("/preferences", handlePreferences)
 
@@ -91,8 +100,37 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "OK\n")
 }
 
+func handleAddress(w http.ResponseWriter, r *http.Request) {
+    log.Println("Handling /scpiAddress")
+    if r.Method == http.MethodGet {
+        w.WriteHeader(http.StatusOK)
+        fmt.Fprintf(w, "%v\n", currentScpiAddress)
+    } else if r.Method == http.MethodPost {
+        bodyData, err := io.ReadAll(r.Body)
+        if err != nil {
+            w.WriteHeader(http.StatusBadRequest)
+            return
+        }
+        defer r.Body.Close()
+
+        address := string(bodyData)
+        currentScpiAddress = address
+
+        prefs := &Preferences{ScpiAddress: address}
+        if err := savePreferences(prefs); err != nil {
+            log.Printf("Warning: failed to save preferences: %v", err)
+        }
+
+        w.WriteHeader(http.StatusOK)
+        fmt.Fprintf(w, "ScpiAddress updated to %v\n", currentScpiAddress)
+    } else {
+        w.WriteHeader(http.StatusMethodNotAllowed)
+        fmt.Fprintf(w, "/scpiAddress supports GET and POST methods\n")
+    }
+}
+
 func handlePort(w http.ResponseWriter, r *http.Request) {
-    log.Println("Handling /port")
+    log.Println("Handling /scpiPort")
     if r.Method == http.MethodGet {
         w.WriteHeader(http.StatusOK)
         fmt.Fprintf(w, "%d\n", currentScpiPort)
@@ -129,7 +167,7 @@ func handlePort(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintf(w, "Port updated to %d\n", currentScpiPort)
     } else {
         w.WriteHeader(http.StatusMethodNotAllowed)
-        fmt.Fprintf(w, "/port supports GET and POST methods\n")
+        fmt.Fprintf(w, "/scpiPort supports GET and POST methods\n")
     }
 }
 

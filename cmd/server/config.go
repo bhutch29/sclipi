@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Port               int
-	ScriptStoragePath  string
-	HelpFilePath       string
+	ServerPort            int
+	DefaultScpiSocketPort int
+	ScriptStoragePath     string
+	HelpFilePath          string
 }
 
 func loadConfig() (*Config, error) {
@@ -20,7 +21,8 @@ func loadConfig() (*Config, error) {
 	viper.AddConfigPath("$HOME/.sclipi")
 	viper.AddConfigPath("/etc/sclipi")
 
-	viper.SetDefault("port", 8080)
+	viper.SetDefault("serverPort", 8080)
+	viper.SetDefault("defaultScpiSocketPort", 5025)
 	viper.SetDefault("scriptStoragePath", "./scripts")
 	viper.SetDefault("helpFilePath", "./SCPI.txt")
 
@@ -38,10 +40,13 @@ func loadConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		Port:              viper.GetInt("port"),
-		ScriptStoragePath: viper.GetString("scriptStoragePath"),
-		HelpFilePath:      viper.GetString("helpFilePath"),
+		ServerPort:            viper.GetInt("serverPort"),
+		DefaultScpiSocketPort: viper.GetInt("defaultScpiSocketPort"),
+		ScriptStoragePath:     viper.GetString("scriptStoragePath"),
+		HelpFilePath:          viper.GetString("helpFilePath"),
 	}
+
+	log.Printf("Config: %+v", config)
 
 	return config, nil
 }

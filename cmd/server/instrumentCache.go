@@ -1,10 +1,12 @@
 package main
 
 import (
-    "github.com/bhutch29/sclipi/internal/utils"
-    "sync"
-    "time"
-    "log"
+	"log"
+	"strconv"
+	"sync"
+	"time"
+
+	"github.com/bhutch29/sclipi/internal/utils"
 )
 
 type instrumentCache struct {
@@ -18,8 +20,8 @@ func newInstrumentCache() *instrumentCache {
     }
 }
 
-func (ic *instrumentCache) get(address string, port string, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
-    fullAddress := address + ":" + port
+func (ic *instrumentCache) get(address string, port int, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
+    fullAddress := address + ":" + strconv.Itoa(port)
 
     ic.mu.RLock()
     inst, exists := ic.cache[fullAddress]
@@ -45,7 +47,7 @@ func (ic *instrumentCache) get(address string, port string, timeout time.Duratio
     return inst, nil
 }
 
-func connectInstrument(address string, port string, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
+func connectInstrument(address string, port int, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
     log.Printf("Connecting to instrument at address '%s'\n", address)
     var inst utils.Instrument
     if address == "simulated" {
@@ -54,7 +56,7 @@ func connectInstrument(address string, port string, timeout time.Duration, progr
 	inst = utils.NewScpiInstrument(timeout)
     }
 
-    if err := inst.Connect(address+":"+port, progressFn); err != nil {
+    if err := inst.Connect(address+":"+strconv.Itoa(port), progressFn); err != nil {
 	return inst, err
     }
 

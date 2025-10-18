@@ -59,6 +59,10 @@
       Timeout (seconds)
     </label>
     <label>
+      <input type="number" [(ngModel)]="port" />
+      SCPI Socket Port
+    </label>
+    <label>
       <input type="checkbox" [(ngModel)]="autoSystErr" />
       Auto :SYST:ERR?
     </label>

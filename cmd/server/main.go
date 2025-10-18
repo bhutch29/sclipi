@@ -18,11 +18,12 @@ import (
 var version = "undefined"
 var instCache = newInstrumentCache()
 var config *Config
+var currentScpiPort int // TODO: store in a file
 
 type scpiRequestBody struct {
     Type string `json:"type"`
     Scpi string `json:"scpi"`
-    Port string `json:"port"`
+    Port int `json:"port"`
     Simulated bool `json:"simulated"`
     AutoSystError bool `json:"autoSystErr"`
     TimeoutSeconds int `json:"timeoutSeconds"`
@@ -41,16 +42,19 @@ func main() {
         log.Fatalf("Failed to load configuration: %v", err)
     }
 
-    addr := fmt.Sprintf(":%d", config.Port)
+    currentScpiPort = config.DefaultScpiSocketPort
+
+    addr := fmt.Sprintf(":%d", config.ServerPort)
     server := &http.Server{
         Addr: addr,
     }
 
     http.HandleFunc("/health", handleHealth)
+    http.HandleFunc("/port", handlePort)
     http.HandleFunc("/scpi", handleScpiRequest)
 
     go func() {
-        log.Printf("Serving on port %d", config.Port)
+        log.Printf("Serving on port %d", config.ServerPort)
         if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
             log.Fatalf("HTTP server error: %v", err)
         }
@@ -74,6 +78,42 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /health")
     w.WriteHeader(http.StatusOK)
     fmt.Fprintf(w, "OK\n")
+}
+
+func handlePort(w http.ResponseWriter, r *http.Request) {
+    log.Println("Handling /port")
+    if r.Method == http.MethodGet {
+        w.WriteHeader(http.StatusOK)
+        fmt.Fprintf(w, "%d\n", currentScpiPort)
+    } else if r.Method == http.MethodPost {
+        bodyData, err := io.ReadAll(r.Body)
+        if err != nil {
+            w.WriteHeader(http.StatusBadRequest)
+            return
+        }
+        defer r.Body.Close()
+
+        var port int
+        _, err = fmt.Sscanf(string(bodyData), "%d", &port)
+        if err != nil {
+            w.WriteHeader(http.StatusBadRequest)
+            fmt.Fprintf(w, "Invalid port number: must be an integer\n")
+            return
+        }
+
+        if port < 1 || port > 65535 {
+            w.WriteHeader(http.StatusBadRequest)
+            fmt.Fprintf(w, "Invalid port number: must be between 1 and 65535\n")
+            return
+        }
+
+        currentScpiPort = port
+        w.WriteHeader(http.StatusOK)
+        fmt.Fprintf(w, "Port updated to %d\n", currentScpiPort)
+    } else {
+        w.WriteHeader(http.StatusMethodNotAllowed)
+        fmt.Fprintf(w, "/port supports GET and POST methods only\n")
+    }
 }
 
 func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
@@ -176,8 +216,8 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
         return body, errors.New("type must be 'smart' or 'sendOnly'")
     }
 
-    if len(body.Port) == 0 {
-        body.Port = "8100" // TODO
+    if body.Port == 0 {
+        body.Port = config.DefaultScpiSocketPort
     }
 
     if body.TimeoutSeconds < 0 {

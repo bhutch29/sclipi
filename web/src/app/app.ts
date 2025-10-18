@@ -1,8 +1,9 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
-import { Component, computed, ElementRef, Renderer2, Signal, signal, ViewChild, WritableSignal } from '@angular/core';
+import { Component, computed, effect, ElementRef, Renderer2, Signal, signal, ViewChild, WritableSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject, delay, map, merge } from 'rxjs';
+import { LocalStorageService } from './localStorage.service';
 
 interface LogEntry {
   type: 'command' | 'query';
@@ -33,7 +34,7 @@ export class App {
   public error: WritableSignal<string> = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
 
-  private history: string[] = [];
+  private history: WritableSignal<string[]> = signal([]);
   private historyIndex = -1;
   private unsentScpiInput = "";
 
@@ -75,8 +76,19 @@ export class App {
 
   constructor(
     private http: HttpClient,
-    private renderer: Renderer2
+    private renderer: Renderer2,
+    localStorageService: LocalStorageService
   ) {
+    localStorageService.setFromStorage("simulated", this.simulated);
+    localStorageService.setFromStorage("autoSystErr", this.autoSystErr);
+    localStorageService.setFromStorage("wrapLog", this.wrapLog);
+    localStorageService.setFromStorage("history", this.history);
+
+    effect(() => localStorageService.setItem("simulated", this.simulated()));
+    effect(() => localStorageService.setItem("autoSystErr", this.autoSystErr()));
+    effect(() => localStorageService.setItem("wrapLog", this.wrapLog()));
+    effect(() => localStorageService.setItem("history", this.history()));
+
     this.renderer.listen("window", "focus", () => {
       this.scpiInput?.nativeElement.focus();
     });
@@ -119,18 +131,18 @@ export class App {
   }
 
   private addToHistory(scpi: string) {
-    if (this.history[0] !== scpi) {
-      this.history = [scpi, ...this.history];
+    if (this.history()[0] !== scpi) {
+      this.history.update(x => [scpi, ...x]);
     }
   }
 
   public arrowUp(event: Event) {
     event.preventDefault();
-    if (this.history.length > this.historyIndex + 1) {
+    if (this.history().length > this.historyIndex + 1) {
       if (this.historyIndex === -1) {
         this.unsentScpiInput = this.inputText();
       }
-      this.inputText.set(this.history[++this.historyIndex]);
+      this.inputText.set(this.history()[++this.historyIndex]);
     }
   }
 
@@ -141,7 +153,7 @@ export class App {
       this.historyIndex--;
     }
     if (this.historyIndex > 0) {
-      this.inputText.set(this.history[--this.historyIndex]);
+      this.inputText.set(this.history()[--this.historyIndex]);
     }
   }
 

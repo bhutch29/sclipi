@@ -63,11 +63,16 @@ export class App {
 
   public health = httpResource.text(() => '/api/health');
 
-  public idn = httpResource<ScpiResponse>(() => ({
-    url: '/api/scpi',
-    method: 'POST',
-    body: { scpi: '*IDN?', simulated: this.simulated(), port: this.committedPort() },
-  }));
+  public idn = httpResource<ScpiResponse>(() => {
+    if (this.committedPort() === 0) {
+      return undefined;
+    }
+    return {
+      url: '/api/scpi',
+      method: 'POST',
+      body: { scpi: '*IDN?', simulated: this.simulated(), port: this.committedPort() },
+    }
+  });
   public idnFormatted = computed(() => {
     if (this.idn.hasValue()) {
       const [manufacturer, model, serial, version] = this.idn.value().response.split(',');
@@ -104,15 +109,6 @@ export class App {
     effect(() => localStorageService.setItem('wrapLog', this.wrapLog()));
     effect(() => localStorageService.setItem('history', this.history()));
     effect(() => localStorageService.setItem('timeoutSeconds', this.timeoutSeconds()));
-
-    effect(() => {
-      if (this.committedPort() !== 0) {
-        this.http.post('/api/port', this.committedPort(), {responseType: 'text'}).subscribe({
-          next: x => console.log(x),
-          error: x => console.error('Error posting port value', this.committedPort(), x)
-        })
-      }
-    });
 
     this.http.get('/api/port', {responseType: 'text'}).subscribe(x => {
       this.port.set(+x);
@@ -193,11 +189,35 @@ export class App {
   }
 
   public onPortBlur() {
-    this.committedPort.set(this.port());
+    this.setPort(this.port())
   }
 
   public onPortEnter(event: Event) {
     event.preventDefault();
-    this.committedPort.set(this.port());
+    this.setPort(this.port())
+  }
+
+  private setPort(port: number) {
+    if (!Number.isInteger(port)) {
+      console.error('port must be an integer', port);
+      this.port.set(this.committedPort());
+      return;
+    }
+
+    if (port < 1 || port > 65535) {
+      console.error('port must be between 1 and 65535', port);
+      this.port.set(this.committedPort());
+      return;
+    }
+
+    if (this.committedPort() != this.port()) {
+      this.committedPort.set(this.port());
+      if (port !== 0) {
+        this.http.post('/api/port', this.committedPort(), {responseType: 'text'}).subscribe({
+          next: x => console.log(x),
+          error: x => console.error('Error posting port value', this.committedPort(), x)
+        });
+      }
+    }
   }
 }

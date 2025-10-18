@@ -1,6 +1,16 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
-import { Component, computed, effect, ElementRef, Renderer2, Signal, signal, ViewChild, WritableSignal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  Renderer2,
+  Signal,
+  signal,
+  ViewChild,
+  WritableSignal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject, delay, map, merge } from 'rxjs';
 import { LocalStorageService } from './localStorage.service';
@@ -36,7 +46,7 @@ export class App {
 
   private history: WritableSignal<string[]> = signal([]);
   private historyIndex = -1;
-  private unsentScpiInput = "";
+  private unsentScpiInput = '';
 
   public sending$ = new BehaviorSubject(false);
   public showSlowSendIndicator$ = merge(
@@ -58,16 +68,16 @@ export class App {
     if (this.idn.hasValue()) {
       const [manufacturer, model, serial, version] = this.idn.value().response.split(',');
       if (!manufacturer || !model || !serial || !version) {
-        return "";
+        return '';
       }
       return `
       Manufacturer: ${manufacturer}<br>
       Model: ${model}<br>
       Serial: ${serial}<br>
       Version: ${version}<br>
-      `
+      `;
     } else {
-      return "";
+      return '';
     }
   });
   public idnError = this.idn.error as Signal<HttpErrorResponse | undefined>;
@@ -77,19 +87,19 @@ export class App {
   constructor(
     private http: HttpClient,
     private renderer: Renderer2,
-    localStorageService: LocalStorageService
+    localStorageService: LocalStorageService,
   ) {
-    localStorageService.setFromStorage("simulated", this.simulated);
-    localStorageService.setFromStorage("autoSystErr", this.autoSystErr);
-    localStorageService.setFromStorage("wrapLog", this.wrapLog);
-    localStorageService.setFromStorage("history", this.history);
+    localStorageService.setFromStorage('simulated', this.simulated);
+    localStorageService.setFromStorage('autoSystErr', this.autoSystErr);
+    localStorageService.setFromStorage('wrapLog', this.wrapLog);
+    localStorageService.setFromStorage('history', this.history);
 
-    effect(() => localStorageService.setItem("simulated", this.simulated()));
-    effect(() => localStorageService.setItem("autoSystErr", this.autoSystErr()));
-    effect(() => localStorageService.setItem("wrapLog", this.wrapLog()));
-    effect(() => localStorageService.setItem("history", this.history()));
+    effect(() => localStorageService.setItem('simulated', this.simulated()));
+    effect(() => localStorageService.setItem('autoSystErr', this.autoSystErr()));
+    effect(() => localStorageService.setItem('wrapLog', this.wrapLog()));
+    effect(() => localStorageService.setItem('history', this.history()));
 
-    this.renderer.listen("window", "focus", () => {
+    this.renderer.listen('window', 'focus', () => {
       this.scpiInput?.nativeElement.focus();
     });
   }
@@ -132,7 +142,7 @@ export class App {
 
   private addToHistory(scpi: string) {
     if (this.history()[0] !== scpi) {
-      this.history.update(x => [scpi, ...x]);
+      this.history.update((x) => [scpi, ...x]);
     }
   }
 

@@ -1,6 +1,16 @@
 <div class="main">
   <div class="inputs">
-    <input type="text" #scpiInput class="scpi-input" [(ngModel)]="inputText" autofocus (keydown.enter)="send()" (keydown.arrowUp)="arrowUp($event)" (keydown.arrowDown)="arrowDown($event)" />
+    <input
+      type="text"
+      #scpiInput
+      class="scpi-input"
+      [(ngModel)]="inputText"
+      autofocus
+      (keydown.enter)="send()"
+      (keydown.arrowUp)="arrowUp($event)"
+      (keydown.arrowDown)="arrowDown($event)"
+      placeholder="Type colon ':' to start. Enter to submit. Arrow up for history."
+    />
     <button (click)="send()" [disabled]="sending$ | async">Send</button>
     <button (click)="systErr()" [disabled]="sending$ | async">:SYST:ERR?</button>
     @if (showSlowSendIndicator$ | async) {
@@ -8,7 +18,7 @@
     }
   </div>
 
-  <div class="log" [ngClass]="{'wrap': wrapLog()}">
+  <div class="log" [ngClass]="{ wrap: wrapLog() }">
     @for (entry of log(); track entry.time) {
       <div class="entry">
         {{ entry.time | date: 'medium' }}
@@ -31,7 +41,7 @@
 
   @if (idnFormatted()) {
     <div class="idn" [innerHtml]="idnFormatted()"></div>
-  } @else if(idnError()) {
+  } @else if (idnError()) {
     IDN Error: {{ idnError()?.error }}
   }
 

@@ -17,6 +17,7 @@ import (
 
 var version = "undefined"
 var instCache = newInstrumentCache()
+var config *Config
 
 type scpiRequestBody struct {
     Type string `json:"type"`
@@ -34,15 +35,22 @@ type scpiResponse struct {
 }
 
 func main() {
+    var err error
+    config, err = loadConfig()
+    if err != nil {
+        log.Fatalf("Failed to load configuration: %v", err)
+    }
+
+    addr := fmt.Sprintf(":%d", config.Port)
     server := &http.Server{
-        Addr: ":8080",
+        Addr: addr,
     }
 
     http.HandleFunc("/health", handleHealth)
     http.HandleFunc("/scpi", handleScpiRequest)
 
     go func() {
-        log.Println("Serving on port 8080")
+        log.Printf("Serving on port %d", config.Port)
         if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
             log.Fatalf("HTTP server error: %v", err)
         }

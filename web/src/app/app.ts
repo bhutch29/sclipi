@@ -43,6 +43,7 @@ export class App {
   public timeoutSeconds = signal(10);
 
   public port = signal(0);
+  private committedPort = signal(0);
   public inputText = signal('');
   public error: WritableSignal<string> = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
@@ -65,7 +66,7 @@ export class App {
   public idn = httpResource<ScpiResponse>(() => ({
     url: '/api/scpi',
     method: 'POST',
-    body: { scpi: '*IDN?', simulated: this.simulated(), port: this.port() },
+    body: { scpi: '*IDN?', simulated: this.simulated(), port: this.committedPort() },
   }));
   public idnFormatted = computed(() => {
     if (this.idn.hasValue()) {
@@ -105,15 +106,18 @@ export class App {
     effect(() => localStorageService.setItem('timeoutSeconds', this.timeoutSeconds()));
 
     effect(() => {
-      if (this.port() !== 0) {
-        this.http.post('/api/port', this.port(), {responseType: 'text'}).subscribe({
+      if (this.committedPort() !== 0) {
+        this.http.post('/api/port', this.committedPort(), {responseType: 'text'}).subscribe({
           next: x => console.log(x),
-          error: x => console.error('Error posting port value', this.port(), x)
+          error: x => console.error('Error posting port value', this.committedPort(), x)
         })
       }
     });
 
-    this.http.get('/api/port', {responseType: 'text'}).subscribe(x => this.port.set(+x))
+    this.http.get('/api/port', {responseType: 'text'}).subscribe(x => {
+      this.port.set(+x);
+      this.committedPort.set(+x);
+    })
 
     this.renderer.listen('window', 'focus', () => {
       this.scpiInput?.nativeElement.focus();
@@ -186,5 +190,14 @@ export class App {
 
   public systErr() {
     this.sendInternal(':SYST:ERR?');
+  }
+
+  public onPortBlur() {
+    this.committedPort.set(this.port());
+  }
+
+  public onPortEnter(event: Event) {
+    event.preventDefault();
+    this.committedPort.set(this.port());
   }
 }

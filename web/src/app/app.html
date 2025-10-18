@@ -59,7 +59,7 @@
       Timeout (seconds)
     </label>
     <label>
-      <input type="number" [(ngModel)]="port" />
+      <input type="number" [(ngModel)]="port" (blur)="onPortBlur()" (keydown.enter)="onPortEnter($event)" />
       SCPI Socket Port
     </label>
     <label>

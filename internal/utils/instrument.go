@@ -17,6 +17,7 @@ type Instrument interface {
 	Query(string) (string, error)
 	GetSupportedCommands() ([]string, []string, error)
 	SetTimeout(time.Duration)
+	QueryError([]string) ([]string, error)
 	Close() error
 }
 
@@ -58,7 +59,14 @@ func (i *scpiInstrument) Command(command string) error {
 	if err := i.exec(command); err != nil {
 		return fmt.Errorf("failed to execute the command '%s': %s", command, err)
 	}
-	return i.queryError()
+	errors, err := i.QueryError([]string{})
+	if err != nil {
+		return fmt.Errorf("failed to query errors: %s", err)
+	}
+	for _, error := range errors {
+		fmt.Println("Error: " + error)
+	}
+	return nil
 }
 
 func (i *scpiInstrument) exec(cmd string) error {
@@ -70,16 +78,16 @@ func (i *scpiInstrument) exec(cmd string) error {
 	return nil
 }
 
-func (i *scpiInstrument) queryError() error {
+func (i *scpiInstrument) QueryError(errors []string) ([]string, error) {
 	res, err := i.Query("SYST:ERR?")
 	if err != nil {
-		return err
+		return errors, err
 	}
 	if !strings.HasPrefix(res, "+0") {
-		fmt.Println("Error: " + strings.TrimRight(res, "\n"))
-		return i.queryError()
+		errors = append(errors, strings.TrimRight(res, "\n"))
+		return i.QueryError(errors)
 	}
-	return nil
+	return errors, nil
 }
 
 func (i *scpiInstrument) Query(cmd string) (res string, err error) {
@@ -290,6 +298,10 @@ func (i *simInstrument) GetSupportedCommands() ([]string, []string, error) {
 
 func (i *simInstrument) SetTimeout(timeout time.Duration) {
 	i.timeout = timeout
+}
+
+func (i *simInstrument) QueryError(errors []string) ([]string, error) {
+	return errors, nil
 }
 
 func (i *simInstrument) Close() error {

@@ -13,8 +13,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/bhutch29/sclipi/internal/utils"
 )
 
 var version = "undefined"
@@ -25,7 +23,13 @@ type scpiRequestBody struct {
     Scpi string `json:"scpi"`
     Port string `json:"port"`
     Simulated bool `json:"simulated"`
+    AutoSystError bool `json:"autoSystErr"`
     TimeoutSeconds int `json:"timeoutSeconds"`
+}
+
+type scpiResponse struct {
+    Response string `json:"response"`
+    Errors []string `json:"errors"`
 }
 
 func main() {
@@ -96,38 +100,50 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	return
     }
 
+    scpiResponse := scpiResponse{}
     if body.Type == "smart" {
         if (strings.Contains(body.Scpi, "?")) {
-            sendQuery(w, inst, body.Scpi)
+            queryResponse, err := inst.Query(body.Scpi)
+            if (err != nil) {
+                log.Printf("Error sending querying: %v", err)
+                // TODO: return "server errors" in response
+            } else {
+                scpiResponse.Response = queryResponse
+            }
         } else {
-            sendCommand(w, inst, body.Scpi)
+            err := inst.Command(body.Scpi)
+            if err != nil {
+                log.Printf("Error sending command: %v", err)
+                // TODO: return "server errors" in response
+            }
         }
+
+        if body.AutoSystError {
+            errors, err := inst.QueryError([]string{})
+            if err != nil {
+                log.Printf("Error doing auto :syst:err?: %v", err)
+                // TODO: return "server errors" in response
+            } else {
+                scpiResponse.Errors = errors
+            }
+        }
+
+        w.WriteHeader(http.StatusOK)
+        responseData , _ := json.Marshal(scpiResponse)
+        fmt.Fprintf(w, "%s\n", responseData)
+
         return
     }
 
     if body.Type == "sendOnly" {
-        sendCommand(w, inst, body.Scpi)
-        return
+        err := inst.Command(body.Scpi)
+        if err != nil {
+            log.Printf("Error sending command: %v", err)
+            fmt.Fprintf(w, "Error sending command: %v", err)
+	    w.WriteHeader(http.StatusInternalServerError)
+            return
+        }
     }
-}
-
-func sendCommand(w http.ResponseWriter, inst utils.Instrument, scpi string) {
-    err := inst.Command(scpi)
-    if err != nil {
-	w.WriteHeader(http.StatusInternalServerError)
-	return
-    }
-    w.WriteHeader(http.StatusOK)
-}
-
-func sendQuery(w http.ResponseWriter, inst utils.Instrument, scpi string) {
-    response, err := inst.Query(scpi)
-    if err != nil {
-	w.WriteHeader(http.StatusInternalServerError)
-	return
-    }
-    w.WriteHeader(http.StatusOK)
-    fmt.Fprintf(w, "%s\n", response)
 }
 
 func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
@@ -148,7 +164,7 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
     }
 
     if len(body.Port) == 0 {
-        body.Port = "5025"
+        body.Port = "8100" // TODO
     }
 
     if body.TimeoutSeconds < 0 {
@@ -159,4 +175,3 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
     }
     return body, nil
 }
-

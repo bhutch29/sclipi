@@ -1,11 +1,13 @@
 @if (temp.hasValue()) {
   Health: {{temp.value()}}
 }
+
 @if (idn.hasValue()) {
-  IDN: {{idn.value()}}
+  IDN: {{idn.value().response}}
 } @else {
   {{idnError()?.error}}
 }
+
 @if (error()) {
   Error: {{error()}}
 }
@@ -13,6 +15,16 @@
 <div>
   <input type="text" [(ngModel)]="inputText" autofocus (keydown.enter)="send()"/>
   <button (click)="send()">Send</button>
+  <div>
+    <label>
+      <input type="checkbox" [(ngModel)]="simulated"/>
+      Simulated
+    </label>
+    <label>
+      <input type="checkbox" [(ngModel)]="autoSystErr"/>
+      Auto :SYST:ERR?
+    </label>
+  </div>
 </div>
 
 <div class="log">
@@ -21,6 +33,10 @@
       {{entry.time | date:'medium'}}
       {{entry.scpi}}
       {{entry.response}}
+      <!-- TODO: fix track -->
+      @for (error of entry.errors; track error) {
+        {{error}}
+      }
     </div>
   }
 </div>

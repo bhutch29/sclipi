@@ -40,6 +40,7 @@ export class App {
   public simulated = signal(false);
   public autoSystErr = signal(true);
   public wrapLog = signal(true);
+  public timeoutSeconds = signal(10);
   public inputText = signal('');
   public error: WritableSignal<string> = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
@@ -93,11 +94,13 @@ export class App {
     localStorageService.setFromStorage('autoSystErr', this.autoSystErr);
     localStorageService.setFromStorage('wrapLog', this.wrapLog);
     localStorageService.setFromStorage('history', this.history);
+    localStorageService.setFromStorage('timeoutSeconds', this.timeoutSeconds);
 
     effect(() => localStorageService.setItem('simulated', this.simulated()));
     effect(() => localStorageService.setItem('autoSystErr', this.autoSystErr()));
     effect(() => localStorageService.setItem('wrapLog', this.wrapLog()));
     effect(() => localStorageService.setItem('history', this.history()));
+    effect(() => localStorageService.setItem('timeoutSeconds', this.timeoutSeconds()));
 
     this.renderer.listen('window', 'focus', () => {
       this.scpiInput?.nativeElement.focus();
@@ -116,28 +119,28 @@ export class App {
     this.inputText.set('');
     this.addToHistory(scpi);
     const time = Date.now();
-    this.http
-      .post<ScpiResponse>(
-        '/api/scpi',
-        { scpi, simulated: this.simulated(), autoSystErr: this.autoSystErr() },
-        { responseType: 'json' },
-      )
-      .subscribe({
-        next: (x) => {
-          this.error.set('');
-          const type = scpi.includes('?') ? 'query' : 'command';
-          const response = type === 'query' ? x.response : undefined;
-          this.log.update((log) => [
-            ...log,
-            { type, scpi, response, time, errors: x.errors, serverError: x.serverError },
-          ]);
-          this.sending$.next(false);
-        },
-        error: (x) => {
-          this.error.set(x.error);
-          this.sending$.next(false);
-        },
-      });
+    const body = {
+      scpi,
+      simulated: this.simulated(),
+      autoSystErr: this.autoSystErr(),
+      timeoutSeconds: this.timeoutSeconds(),
+    };
+    this.http.post<ScpiResponse>('/api/scpi', body, { responseType: 'json' }).subscribe({
+      next: (x) => {
+        this.error.set('');
+        const type = scpi.includes('?') ? 'query' : 'command';
+        const response = type === 'query' ? x.response : undefined;
+        this.log.update((log) => [
+          ...log,
+          { type, scpi, response, time, errors: x.errors, serverError: x.serverError },
+        ]);
+        this.sending$.next(false);
+      },
+      error: (x) => {
+        this.error.set(x.error);
+        this.sending$.next(false);
+      },
+    });
   }
 
   private addToHistory(scpi: string) {

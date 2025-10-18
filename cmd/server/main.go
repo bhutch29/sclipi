@@ -101,6 +101,8 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	return
     }
 
+    inst.SetTimeout(time.Duration(body.TimeoutSeconds) * time.Second)
+
     scpiResponse := scpiResponse{}
     if body.Type == "smart" {
         if (strings.Contains(body.Scpi, "?")) {
@@ -150,10 +152,12 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
     body := scpiRequestBody{}
     if err := json.Unmarshal(bodyData, &body); err != nil {
+        fmt.Printf("Failed to parse as JSON: %v\n", string(bodyData))
         return body, errors.New(fmt.Sprintf("invalid JSON: %v", err))
     }
 
     if len(body.Scpi) == 0 {
+        fmt.Printf("Received empty SCPI field: %v\n", string(bodyData))
         return body, errors.New("scpi field cannot be empty")
     }
 
@@ -169,6 +173,7 @@ func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
     }
 
     if body.TimeoutSeconds < 0 {
+        fmt.Printf("Received negative timeoutSeconds: %v\n", string(bodyData))
         return body, errors.New("timeoutSeconds must be a positive integer")
     }
     if body.TimeoutSeconds == 0 {

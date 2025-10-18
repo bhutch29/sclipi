@@ -4,16 +4,18 @@ import { Component, Signal, signal, WritableSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 interface LogEntry {
-  type: 'command' | 'query',
+  type: 'command' | 'query'
   scpi: string,
   response?: string
   time: number
   errors: string[]
+  serverError: string
 }
 
 interface ScpiResponse {
-  response: string,
+  response: string
   errors: string[]
+  serverError: string
 }
 
 @Component({
@@ -48,7 +50,7 @@ export class App {
         this.error.set("");
         const type = scpi.includes("?") ? 'query' : 'command';
         const response = type === 'query' ? x.response : undefined;
-        this.log.update(log => [...log, {type, scpi, response, time, errors: x.errors}]);
+        this.log.update(log => [...log, {type, scpi, response, time, errors: x.errors, serverError: x.serverError}]);
       },
       error: x => {
         this.error.set(x.error);

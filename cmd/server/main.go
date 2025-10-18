@@ -30,6 +30,7 @@ type scpiRequestBody struct {
 type scpiResponse struct {
     Response string `json:"response"`
     Errors []string `json:"errors"`
+    ServerError string `json:"serverError"`
 }
 
 func main() {
@@ -105,8 +106,8 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
         if (strings.Contains(body.Scpi, "?")) {
             queryResponse, err := inst.Query(body.Scpi)
             if (err != nil) {
-                log.Printf("Error sending querying: %v", err)
-                // TODO: return "server errors" in response
+                log.Printf("Error sending query: %v", err)
+                scpiResponse.ServerError = fmt.Sprintf("Error sending query: %v", err)
             } else {
                 scpiResponse.Response = queryResponse
             }
@@ -114,7 +115,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
             err := inst.Command(body.Scpi)
             if err != nil {
                 log.Printf("Error sending command: %v", err)
-                // TODO: return "server errors" in response
+                scpiResponse.ServerError = fmt.Sprintf("Error sending query: %v", err)
             }
         }
 
@@ -122,7 +123,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
             errors, err := inst.QueryError([]string{})
             if err != nil {
                 log.Printf("Error doing auto :syst:err?: %v", err)
-                // TODO: return "server errors" in response
+                scpiResponse.ServerError = fmt.Sprintf("Error sending query: %v", err)
             } else {
                 scpiResponse.Errors = errors
             }

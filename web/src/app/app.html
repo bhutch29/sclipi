@@ -33,6 +33,7 @@
       {{entry.time | date:'medium'}}
       {{entry.scpi}}
       {{entry.response}}
+      {{entry.serverError}}
       <!-- TODO: fix track -->
       @for (error of entry.errors; track error) {
         {{error}}

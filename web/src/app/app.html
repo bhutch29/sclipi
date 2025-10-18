@@ -1,6 +1,6 @@
 <div class="main">
   <div class="inputs">
-    <input type="text" #scpiInput [(ngModel)]="inputText" autofocus (keydown.enter)="send()" (keydown.arrowUp)="arrowUp($event)" (keydown.arrowDown)="arrowDown($event)" />
+    <input type="text" #scpiInput class="scpi-input" [(ngModel)]="inputText" autofocus (keydown.enter)="send()" (keydown.arrowUp)="arrowUp($event)" (keydown.arrowDown)="arrowDown($event)" />
     <button (click)="send()" [disabled]="sending$ | async">Send</button>
     <button (click)="systErr()" [disabled]="sending$ | async">:SYST:ERR?</button>
     @if (showSlowSendIndicator$ | async) {
@@ -29,9 +29,9 @@
     <div>Health: Not OK!</div>
   }
 
-  @if (idn.hasValue()) {
-    IDN: {{ idn.value().response }}
-  } @else {
+  @if (idnFormatted()) {
+    <div class="idn" [innerHtml]="idnFormatted()"></div>
+  } @else if(idnError()) {
     IDN Error: {{ idnError()?.error }}
   }
 

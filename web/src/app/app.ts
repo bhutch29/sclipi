@@ -1,6 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
-import { Component, ElementRef, Renderer2, Signal, signal, ViewChild, WritableSignal } from '@angular/core';
+import { Component, computed, ElementRef, Renderer2, Signal, signal, ViewChild, WritableSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject, delay, map, merge } from 'rxjs';
 
@@ -27,8 +27,8 @@ interface ScpiResponse {
 })
 export class App {
   public simulated = signal(false);
-  public autoSystErr = signal(false);
-  public wrapLog = signal(false);
+  public autoSystErr = signal(true);
+  public wrapLog = signal(true);
   public inputText = signal('');
   public error: WritableSignal<string> = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
@@ -53,6 +53,22 @@ export class App {
     method: 'POST',
     body: { scpi: '*IDN?', simulated: this.simulated() },
   }));
+  public idnFormatted = computed(() => {
+    if (this.idn.hasValue()) {
+      const [manufacturer, model, serial, version] = this.idn.value().response.split(',');
+      if (!manufacturer || !model || !serial || !version) {
+        return "";
+      }
+      return `
+      Manufacturer: ${manufacturer}<br>
+      Model: ${model}<br>
+      Serial: ${serial}<br>
+      Version: ${version}<br>
+      `
+    } else {
+      return "";
+    }
+  });
   public idnError = this.idn.error as Signal<HttpErrorResponse | undefined>;
 
   @ViewChild('scpiInput') scpiInput: ElementRef<HTMLInputElement> | undefined;

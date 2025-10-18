@@ -1,6 +1,6 @@
 :host {
   display: grid;
-  grid-template-columns: 1fr 250px;
+  grid-template-columns: 1fr 350px;
   gap: 12px;
 }
 
@@ -9,11 +9,17 @@
   gap: 4px;
 }
 
+.scpi-input {
+  width: 100%;
+  max-width: 500px;
+  min-width: 200px;
+}
+
 .log {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 80vw;
+  max-width: 70vw;
   padding: 8px;
 
   &:not(.wrap) {
@@ -31,6 +37,10 @@
 .right-panel {
   display: flex;
   flex-direction: column;
+}
+
+.idn {
+  margin-bottom: 8px;
 }
 
 .options {

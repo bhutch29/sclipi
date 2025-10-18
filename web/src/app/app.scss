@@ -1,5 +1,6 @@
 :host {
   display: flex;
+  justify-content: space-between;
   gap: 12px;
 }
 
@@ -9,8 +10,8 @@
 }
 
 .scpi-input {
-  width: 100%;
-  max-width: 500px;
+  width: 600px;
+  max-width: 600px;
   min-width: 200px;
 }
 
@@ -39,6 +40,7 @@
 .right-panel {
   display: flex;
   flex-direction: column;
+  min-width: 350px;
 }
 
 .idn {

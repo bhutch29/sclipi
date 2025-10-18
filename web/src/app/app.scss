@@ -1,6 +1,5 @@
 :host {
-  display: grid;
-  grid-template-columns: 1fr 350px;
+  display: flex;
   gap: 12px;
 }
 
@@ -15,11 +14,14 @@
   min-width: 200px;
 }
 
+.main {
+  max-width: 70vw;
+}
+
 .log {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 70vw;
   padding: 8px;
 
   &:not(.wrap) {

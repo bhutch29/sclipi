@@ -1,6 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
-import { Component, Signal, signal, WritableSignal } from '@angular/core';
+import { Component, ElementRef, Signal, signal, ViewChild, WritableSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject, delay, map, merge } from 'rxjs';
 
@@ -33,6 +33,9 @@ export class App {
   public error: WritableSignal<string> = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
 
+  private history: string[] = [];
+  public historyIndex = -1;
+
   public sending$ = new BehaviorSubject(false);
   public showSlowSendIndicator$ = merge(
     this.sending$.pipe(map((x) => (x ? 'sendStart' : 'sendEnd'))),
@@ -51,6 +54,8 @@ export class App {
   }));
   public idnError = this.idn.error as Signal<HttpErrorResponse | undefined>;
 
+  @ViewChild('scpiInput') scpiInput: ElementRef<HTMLInputElement> | undefined;
+
   constructor(private http: HttpClient) {}
 
   public send() {
@@ -63,6 +68,7 @@ export class App {
   private sendInternal(scpi: string) {
     this.sending$.next(true);
     this.inputText.set('');
+    this.addToHistory(scpi);
     const time = Date.now();
     this.http
       .post<ScpiResponse>(
@@ -86,6 +92,30 @@ export class App {
           this.sending$.next(false);
         },
       });
+  }
+
+  private addToHistory(scpi: string) {
+    if (this.history[0] !== scpi) {
+      this.history = [scpi, ...this.history];
+    }
+  }
+
+  public arrowUp(event: Event) {
+    event.preventDefault();
+    if (this.history.length > this.historyIndex + 1) {
+      this.inputText.set(this.history[++this.historyIndex]);
+    }
+  }
+
+  public arrowDown(event: Event) {
+    event.preventDefault();
+    if (this.historyIndex === 0) {
+      this.inputText.set('');
+      this.historyIndex--;
+    }
+    if (this.historyIndex > 0) {
+      this.inputText.set(this.history[--this.historyIndex]);
+    }
   }
 
   public systErr() {

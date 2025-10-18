@@ -1,8 +1,11 @@
 <div class="main">
-  <div>
+  <div class="inputs">
     <input type="text" [(ngModel)]="inputText" autofocus (keydown.enter)="send()" />
-    <button (click)="send()">Send</button>
-    <button (click)="systErr()">:SYST:ERR?</button>
+    <button (click)="send()" [disabled]="sending$ | async">Send</button>
+    <button (click)="systErr()" [disabled]="sending$ | async">:SYST:ERR?</button>
+    @if (showSlowSendIndicator$ | async) {
+      <div>...</div>
+    }
   </div>
 
   <div class="log" [ngClass]="{'wrap': wrapLog()}">

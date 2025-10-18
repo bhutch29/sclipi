@@ -1,6 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
-import { Component, ElementRef, Signal, signal, ViewChild, WritableSignal } from '@angular/core';
+import { Component, ElementRef, Renderer2, Signal, signal, ViewChild, WritableSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject, delay, map, merge } from 'rxjs';
 
@@ -34,7 +34,8 @@ export class App {
   public log: WritableSignal<LogEntry[]> = signal([]);
 
   private history: string[] = [];
-  public historyIndex = -1;
+  private historyIndex = -1;
+  private unsentScpiInput = "";
 
   public sending$ = new BehaviorSubject(false);
   public showSlowSendIndicator$ = merge(
@@ -45,7 +46,7 @@ export class App {
     ),
   ).pipe(map((x) => x === 'sendStartDelay'));
 
-  public temp = httpResource.text(() => '/api/health');
+  public health = httpResource.text(() => '/api/health');
 
   public idn = httpResource<ScpiResponse>(() => ({
     url: '/api/scpi',
@@ -56,7 +57,14 @@ export class App {
 
   @ViewChild('scpiInput') scpiInput: ElementRef<HTMLInputElement> | undefined;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private renderer: Renderer2
+  ) {
+    this.renderer.listen("window", "focus", () => {
+      this.scpiInput?.nativeElement.focus();
+    });
+  }
 
   public send() {
     if (this.sending$.value) {
@@ -103,6 +111,9 @@ export class App {
   public arrowUp(event: Event) {
     event.preventDefault();
     if (this.history.length > this.historyIndex + 1) {
+      if (this.historyIndex === -1) {
+        this.unsentScpiInput = this.inputText();
+      }
       this.inputText.set(this.history[++this.historyIndex]);
     }
   }
@@ -110,7 +121,7 @@ export class App {
   public arrowDown(event: Event) {
     event.preventDefault();
     if (this.historyIndex === 0) {
-      this.inputText.set('');
+      this.inputText.set(this.unsentScpiInput);
       this.historyIndex--;
     }
     if (this.historyIndex > 0) {

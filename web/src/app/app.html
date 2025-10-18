@@ -25,14 +25,14 @@
 </div>
 
 <div class="right-panel">
-  @if (temp.hasValue()) {
-    <div>Health: {{ temp.value() }}</div>
+  @if (health.hasValue() && !health.value()) {
+    <div>Health: Not OK!</div>
   }
 
   @if (idn.hasValue()) {
     IDN: {{ idn.value().response }}
   } @else {
-    {{ idnError()?.error }}
+    IDN Error: {{ idnError()?.error }}
   }
 
   @if (error()) {

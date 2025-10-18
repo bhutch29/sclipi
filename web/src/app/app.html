@@ -15,6 +15,7 @@
 <div>
   <input type="text" [(ngModel)]="inputText" autofocus (keydown.enter)="send()"/>
   <button (click)="send()">Send</button>
+  <button (click)="systErr()">:SYST:ERR?</button>
   <div>
     <label>
       <input type="checkbox" [(ngModel)]="simulated"/>

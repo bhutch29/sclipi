@@ -42,7 +42,10 @@ export class App {
   }
 
   public send() {
-    const scpi = this.inputText();
+    this.sendInternal(this.inputText())
+  }
+
+  private sendInternal(scpi: string) {
     this.inputText.set("");
     const time = Date.now()
     this.http.post<ScpiResponse>("/api/scpi", {scpi, simulated: this.simulated(), autoSystErr: this.autoSystErr()}, {responseType: 'json'}).subscribe({
@@ -56,5 +59,9 @@ export class App {
         this.error.set(x.error);
       }
     });
+  }
+
+  public systErr() {
+    this.sendInternal(":SYST:ERR?")
   }
 }

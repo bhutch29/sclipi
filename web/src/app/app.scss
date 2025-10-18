@@ -1,6 +1,17 @@
 :host {
   display: flex;
   flex-direction: column;
-  width: 300px;
   gap: 8px;
+}
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.entry {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
 }

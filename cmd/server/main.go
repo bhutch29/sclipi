@@ -67,6 +67,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /scpi")
     if r.Method != http.MethodPost {
         w.WriteHeader(http.StatusBadRequest)
+        fmt.Fprintln(w, "/scpi only supports POST");
         return
     }
 

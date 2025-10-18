@@ -1,9 +1,26 @@
-Health: {{temp.value()}}
-<input type="text" [(ngModel)]="inputText"/>
-<button (click)="send()">Send</button>
-@if (response()) {
-  Response: {{response()}}
+@if (temp.hasValue()) {
+  Health: {{temp.value()}}
+}
+@if (idn.hasValue()) {
+  IDN: {{idn.value()}}
+} @else {
+  {{idnError()?.error}}
 }
 @if (error()) {
   Error: {{error()}}
 }
+
+<div>
+  <input type="text" [(ngModel)]="inputText" autofocus (keydown.enter)="send()"/>
+  <button (click)="send()">Send</button>
+</div>
+
+<div class="log">
+  @for (entry of log(); track entry.time) {
+    <div class="entry">
+      {{entry.time | date:'medium'}}
+      {{entry.scpi}}
+      {{entry.response}}
+    </div>
+  }
+</div>

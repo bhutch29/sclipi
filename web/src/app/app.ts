@@ -51,7 +51,7 @@ export class App {
   public idn = httpResource<ScpiResponse>(() => ({
     url: '/api/scpi',
     method: 'POST',
-    body: { scpi: '*IDN?', simulated: true },
+    body: { scpi: '*IDN?', simulated: this.simulated() },
   }));
   public idnError = this.idn.error as Signal<HttpErrorResponse | undefined>;
 

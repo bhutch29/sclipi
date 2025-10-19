@@ -14,6 +14,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject, delay, firstValueFrom, map, merge } from 'rxjs';
 import { LocalStorageService } from './localStorage.service';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 interface LogEntry {
   type: 'command' | 'query';
@@ -39,7 +40,7 @@ const defaultWrapLog = true;
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  imports: [FormsModule, DatePipe, CommonModule],
+  imports: [FormsModule, DatePipe, CommonModule, MatAutocompleteModule],
 })
 export class App {
   public simulated = signal(defaultSimulated);
@@ -56,8 +57,9 @@ export class App {
   public error: WritableSignal<string> = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
 
-  private history: WritableSignal<string[]> = signal([]);
+  public history: WritableSignal<string[]> = signal([]);
   private historyIndex = -1;
+  public autocompleteHistory = computed(() => this.history().filter(x => x.toLowerCase().includes(this.inputText().toLowerCase())).filter((elem, i, self) => i === self.indexOf(elem)));
   private unsentScpiInput = '';
 
   public sending$ = new BehaviorSubject(false);
@@ -168,8 +170,9 @@ export class App {
   }
 
   private addToHistory(scpi: string) {
-    if (this.history()[0] !== scpi) {
-      this.history.update((x) => [scpi, ...x]);
+    const entry = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
+    if (this.history()[0] !== entry) {
+      this.history.update((x) => [entry, ...x]);
     }
   }
 
@@ -276,5 +279,9 @@ export class App {
     this.wrapLog.set(defaultWrapLog);
     this.autoSystErr.set(defaultAutoSystErr);
     this.timeoutSeconds.set(defaultTimeout);
+  }
+
+  public clearHistory() {
+    this.history.set([]);
   }
 }

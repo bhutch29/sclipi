@@ -10,7 +10,16 @@
       (keydown.arrowUp)="arrowUp($event)"
       (keydown.arrowDown)="arrowDown($event)"
       placeholder="Type colon ':' to start. Enter to submit. Arrow up for history."
+      matInput
+      [matAutocomplete]="auto"
     />
+    <mat-autocomplete autoActiveFirstOption autoSelectActiveOption #auto="matAutocomplete">
+      @if (inputText().length !== 0) {
+        @for (option of autocompleteHistory(); track option) {
+          <mat-option [value]="option">{{option}}</mat-option>
+        }
+      }
+    </mat-autocomplete>
     <button (click)="send()" [disabled]="sending$ | async">Send</button>
     <button (click)="systErr()" [disabled]="sending$ | async">:SYST:ERR?</button>
     @if (showSlowSendIndicator$ | async) {
@@ -68,6 +77,7 @@
         Timeout (seconds)
       </label>
       <button (click)="resetClientPreferences()">Reset client preferences to default</button>
+      <button (click)="clearHistory()">Clear History</button>
     </div>
     <div class="server-options">
       <label>

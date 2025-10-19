@@ -62,8 +62,8 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "host": "0.0.0.0",
-            "proxyConfig": "proxy.conf.js"
-            "servePath": "scpi",
+            "proxyConfig": "proxy.conf.js",
+            "servePath": "scpi"
           },
           "configurations": {
             "production": {

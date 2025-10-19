@@ -50,30 +50,45 @@
   }
 
   <div class="options">
-    <label>
-      <input type="checkbox" [(ngModel)]="simulated" />
-      Simulated
-    </label>
-    <label>
-      <input type="number" [(ngModel)]="timeoutSeconds" />
-      Timeout (seconds)
-    </label>
-    <label>
-      <input type="number" [(ngModel)]="port" (blur)="onPortBlur()" (keydown.enter)="onPortEnter($event)" />
-      SCPI Socket Port
-    </label>
-    <label>
-      <input type="text" [(ngModel)]="address" (blur)="onAddressBlur()" (keydown.enter)="onAddressEnter($event)" />
-      SCPI Socket Address
-    </label>
-    <label>
-      <input type="checkbox" [(ngModel)]="autoSystErr" />
-      Auto :SYST:ERR?
-    </label>
-    <label>
-      <input type="checkbox" [(ngModel)]="wrapLog" />
-      Wrap Log
-    </label>
-    <button (click)="resetPreferences()">Reset preferences to default</button>
+    <div class="client-options">
+      <label>
+        <input type="checkbox" [(ngModel)]="simulated" />
+        Simulated
+      </label>
+      <label>
+        <input type="checkbox" [(ngModel)]="wrapLog" />
+        Wrap Log
+      </label>
+      <label>
+        <input type="checkbox" [(ngModel)]="autoSystErr" />
+        Auto :SYST:ERR?
+      </label>
+      <label>
+        <input type="number" [(ngModel)]="timeoutSeconds" />
+        Timeout (seconds)
+      </label>
+      <button (click)="resetClientPreferences()">Reset client preferences to default</button>
+    </div>
+    <div class="server-options">
+      <label>
+        <input
+          type="number"
+          [(ngModel)]="port"
+          (blur)="onPortBlur()"
+          (keydown.enter)="onPortEnter($event)"
+        />
+        SCPI Socket Port
+      </label>
+      <label>
+        <input
+          type="text"
+          [(ngModel)]="address"
+          (blur)="onAddressBlur()"
+          (keydown.enter)="onAddressEnter($event)"
+        />
+        SCPI Socket Address
+      </label>
+      <button (click)="resetServerPreferences()">Reset server preferences to default</button>
+    </div>
   </div>
 </div>

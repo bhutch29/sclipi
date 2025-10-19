@@ -49,8 +49,8 @@ export class App {
 
   public port = signal(0);
   private committedPort = signal(0);
-  public address = signal("");
-  private committedAddress = signal("");
+  public address = signal('');
+  private committedAddress = signal('');
 
   public inputText = signal('');
   public error: WritableSignal<string> = signal('');
@@ -78,8 +78,13 @@ export class App {
     return {
       url: '/api/scpi',
       method: 'POST',
-      body: { scpi: '*IDN?', simulated: this.simulated(), port: this.committedPort(), address: this.committedAddress() },
-    }
+      body: {
+        scpi: '*IDN?',
+        simulated: this.simulated(),
+        port: this.committedPort(),
+        address: this.committedAddress(),
+      },
+    };
   });
   public idnFormatted = computed(() => {
     if (this.idn.hasValue()) {
@@ -142,7 +147,7 @@ export class App {
       simulated: this.simulated(),
       autoSystErr: this.autoSystErr(),
       timeoutSeconds: this.timeoutSeconds(),
-      port: this.port()
+      port: this.port(),
     };
     this.http.post<ScpiResponse>('/api/scpi', body, { responseType: 'json' }).subscribe({
       next: (x) => {
@@ -194,12 +199,12 @@ export class App {
   }
 
   public onPortBlur() {
-    this.setPort(this.port())
+    this.setPort(this.port());
   }
 
   public onPortEnter(event: Event) {
     event.preventDefault();
-    this.setPort(this.port())
+    this.setPort(this.port());
   }
 
   private setPort(port: number) {
@@ -218,48 +223,55 @@ export class App {
     if (this.committedPort() != this.port()) {
       this.committedPort.set(this.port());
       if (port !== 0) {
-        this.http.post('/api/scpiPort', this.committedPort(), {responseType: 'text'}).subscribe({
-          next: x => console.log(x),
-          error: x => console.error('Error posting port value', this.committedPort(), x)
+        this.http.post('/api/scpiPort', this.committedPort(), { responseType: 'text' }).subscribe({
+          next: (x) => console.log(x),
+          error: (x) => console.error('Error posting port value', this.committedPort(), x),
         });
       }
     }
   }
 
   public onAddressBlur() {
-    this.setAddress(this.address())
+    this.setAddress(this.address());
   }
 
   public onAddressEnter(event: Event) {
     event.preventDefault();
-    this.setAddress(this.address())
+    this.setAddress(this.address());
   }
 
   private setAddress(address: string) {
     if (this.committedAddress() != this.address()) {
       this.committedAddress.set(this.address());
       if (address !== '') {
-        this.http.post('/api/scpiAddress', this.committedAddress(), {responseType: 'text'}).subscribe({
-          next: x => console.log(x),
-          error: x => console.error('Error posting address value', this.committedAddress(), x)
-        });
+        this.http
+          .post('/api/scpiAddress', this.committedAddress(), { responseType: 'text' })
+          .subscribe({
+            next: (x) => console.log(x),
+            error: (x) => console.error('Error posting address value', this.committedAddress(), x),
+          });
       }
     }
   }
 
   private async loadPreferences() {
-    const port = await firstValueFrom(this.http.get('/api/scpiPort', {responseType: 'text'}))
+    const port = await firstValueFrom(this.http.get('/api/scpiPort', { responseType: 'text' }));
     this.port.set(+port);
     this.committedPort.set(+port);
 
-    const address = await firstValueFrom(this.http.get('/api/scpiAddress', {responseType: 'text'}));
+    const address = await firstValueFrom(
+      this.http.get('/api/scpiAddress', { responseType: 'text' }),
+    );
     this.address.set(address);
     this.committedAddress.set(address);
   }
 
-  public async resetPreferences() {
-    await firstValueFrom(this.http.delete('/api/preferences', {responseType: 'text'}));
+  public async resetServerPreferences() {
+    await firstValueFrom(this.http.delete('/api/preferences', { responseType: 'text' }));
     await this.loadPreferences();
+  }
+
+  public async resetClientPreferences() {
     this.simulated.set(defaultSimulated);
     this.wrapLog.set(defaultWrapLog);
     this.autoSystErr.set(defaultAutoSystErr);

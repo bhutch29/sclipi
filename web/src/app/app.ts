@@ -38,6 +38,7 @@ const defaultTimeout = 10;
 const defaultSimulated = false;
 const defaultAutoSystErr = true;
 const defaultWrapLog = true;
+const defaultShowDate = false;
 
 @Component({
   selector: 'app-root',
@@ -49,6 +50,7 @@ export class App {
   public simulated = signal(defaultSimulated);
   public autoSystErr = signal(defaultAutoSystErr);
   public wrapLog = signal(defaultWrapLog);
+  public showDate = signal(defaultShowDate);
   public timeoutSeconds = signal(defaultTimeout);
 
   public port = signal(0);
@@ -121,12 +123,14 @@ export class App {
     localStorageService.setFromStorage('wrapLog', this.wrapLog);
     localStorageService.setFromStorage('history', this.history);
     localStorageService.setFromStorage('timeoutSeconds', this.timeoutSeconds);
+    localStorageService.setFromStorage('showDate', this.showDate);
 
     effect(() => localStorageService.setItem('simulated', this.simulated()));
     effect(() => localStorageService.setItem('autoSystErr', this.autoSystErr()));
     effect(() => localStorageService.setItem('wrapLog', this.wrapLog()));
     effect(() => localStorageService.setItem('history', this.history()));
     effect(() => localStorageService.setItem('timeoutSeconds', this.timeoutSeconds()));
+    effect(() => localStorageService.setItem('showDate', this.showDate()));
 
     this.loadPreferences();
 
@@ -288,6 +292,7 @@ export class App {
     this.wrapLog.set(defaultWrapLog);
     this.autoSystErr.set(defaultAutoSystErr);
     this.timeoutSeconds.set(defaultTimeout);
+    this.showDate.set(defaultShowDate);
   }
 
   public clearHistory() {

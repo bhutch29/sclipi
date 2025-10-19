@@ -31,8 +31,12 @@
   <div class="log" [ngClass]="{ wrap: wrapLog() }">
     @for (entry of log(); track entry.time) {
       <div class="entry">
-        {{ entry.time | date: 'medium' }}
-        {{ entry.scpi }}
+        @if (showDate()) {
+          <span class="timestamp">{{ entry.time | date: 'MMM dd, hh:mm:ss a' }}</span>
+        } @else {
+          <span class="timestamp">{{ entry.time | date: 'hh:mm:ss a' }}</span>
+        }
+        <b>{{ entry.scpi }}</b>
         {{ entry.response }}
         {{ entry.serverError }}
         <!-- TODO: fix track -->
@@ -68,6 +72,10 @@
       <label>
         <input type="checkbox" [(ngModel)]="wrapLog" />
         Wrap Log
+      </label>
+      <label>
+        <input type="checkbox" [(ngModel)]="showDate" />
+        Show Date
       </label>
       <label>
         <input type="checkbox" [(ngModel)]="autoSystErr" />

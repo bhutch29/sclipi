@@ -1,6 +1,6 @@
 <div class="main">
   <div class="inputs">
-    <mat-form-field class="scpi-form">
+    <mat-form-field appearance="outline" class="scpi-form">
       <input
         type="text"
         #scpiInput
@@ -21,8 +21,8 @@
         }
       </mat-autocomplete>
     </mat-form-field>
-    <button matButton="tonal" (click)="send()" [disabled]="inputText().length === 0 || (sending$ | async)">Send</button>
-    <button matButton="tonal" (click)="systErr()" [disabled]="inputText().length !== 0 || (sending$ | async)">:SYST:ERR?</button>
+    <button matButton="outlined" (click)="send()" [disabled]="inputText().length === 0 || (sending$ | async)">Send</button>
+    <button matButton="outlined" (click)="systErr()" [disabled]="inputText().length !== 0 || (sending$ | async)">:SYST:ERR?</button>
     @if (showSlowSendIndicator$ | async) {
       <div>...</div>
     }
@@ -39,8 +39,7 @@
         <b>{{ entry.scpi }}</b>
         {{ entry.response }}
         {{ entry.serverError }}
-        <!-- TODO: fix track -->
-        @for (error of entry.errors; track error) {
+        @for (error of entry.errors; track $index) {
           {{ error }}
         }
       </div>

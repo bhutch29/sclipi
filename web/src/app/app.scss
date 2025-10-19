@@ -2,6 +2,7 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
+  margin: 4px;
 }
 
 .inputs {
@@ -9,7 +10,7 @@
   gap: 4px;
 }
 
-.scpi-input {
+.scpi-form {
   width: 600px;
   max-width: 600px;
   min-width: 200px;

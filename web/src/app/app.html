@@ -1,27 +1,28 @@
 <div class="main">
   <div class="inputs">
-    <input
-      type="text"
-      #scpiInput
-      class="scpi-input"
-      [(ngModel)]="inputText"
-      autofocus
-      (keydown.enter)="send()"
-      (keydown.arrowUp)="arrowUp($event)"
-      (keydown.arrowDown)="arrowDown($event)"
-      placeholder="Type colon ':' to start. Enter to submit. Arrow up for history."
-      matInput
-      [matAutocomplete]="auto"
-    />
-    <mat-autocomplete autoActiveFirstOption autoSelectActiveOption #auto="matAutocomplete">
-      @if (inputText().length !== 0) {
-        @for (option of autocompleteHistory(); track option) {
-          <mat-option [value]="option">{{option}}</mat-option>
+    <mat-form-field class="scpi-form">
+      <input
+        type="text"
+        #scpiInput
+        [(ngModel)]="inputText"
+        autofocus
+        (keydown.enter)="send()"
+        (keydown.arrowUp)="arrowUp($event)"
+        (keydown.arrowDown)="arrowDown($event)"
+        placeholder="Type colon ':' to start. Enter to submit. Arrow up for history."
+        matInput
+        [matAutocomplete]="auto"
+      />
+      <mat-autocomplete autoActiveFirstOption autoSelectActiveOption #auto="matAutocomplete">
+        @if (inputText().length !== 0) {
+          @for (option of autocompleteHistory(); track option) {
+            <mat-option [value]="option">{{ option }}</mat-option>
+          }
         }
-      }
-    </mat-autocomplete>
-    <button (click)="send()" [disabled]="sending$ | async">Send</button>
-    <button (click)="systErr()" [disabled]="sending$ | async">:SYST:ERR?</button>
+      </mat-autocomplete>
+    </mat-form-field>
+    <button matButton="tonal" (click)="send()" [disabled]="inputText().length === 0 || (sending$ | async)">Send</button>
+    <button matButton="tonal" (click)="systErr()" [disabled]="inputText().length !== 0 || (sending$ | async)">:SYST:ERR?</button>
     @if (showSlowSendIndicator$ | async) {
       <div>...</div>
     }

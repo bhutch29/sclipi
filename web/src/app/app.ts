@@ -15,6 +15,9 @@ import { FormsModule } from '@angular/forms';
 import { BehaviorSubject, delay, firstValueFrom, map, merge } from 'rxjs';
 import { LocalStorageService } from './localStorage.service';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatButtonModule } from '@angular/material/button';
 
 interface LogEntry {
   type: 'command' | 'query';
@@ -40,7 +43,7 @@ const defaultWrapLog = true;
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  imports: [FormsModule, DatePipe, CommonModule, MatAutocompleteModule],
+  imports: [FormsModule, DatePipe, CommonModule, MatAutocompleteModule, MatInputModule, MatFormFieldModule, MatButtonModule],
 })
 export class App {
   public simulated = signal(defaultSimulated);
@@ -134,6 +137,12 @@ export class App {
 
   public send() {
     if (this.sending$.value) {
+      return;
+    }
+    if (this.inputText().length === 0) {
+      return;
+    }
+    if (this.inputText().length === 1 && (this.inputText()[0] === ':' || this.inputText()[0] === '*')) {
       return;
     }
     this.sendInternal(this.inputText());

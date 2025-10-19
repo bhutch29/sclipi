@@ -13,11 +13,11 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BehaviorSubject, delay, firstValueFrom, map, merge } from 'rxjs';
-import { LocalStorageService } from './localStorage.service';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
+import { LocalStorageService } from '../services/localStorage.service';
 
 interface LogEntry {
   type: 'command' | 'query';

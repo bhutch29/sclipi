@@ -92,7 +92,7 @@ func handleAddress(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /scpiAddress")
     if r.Method == http.MethodGet {
         w.WriteHeader(http.StatusOK)
-        fmt.Fprintf(w, "%v\n", preferences.ScpiAddress)
+        fmt.Fprintf(w, "%v", preferences.ScpiAddress)
     } else if r.Method == http.MethodPost {
         bodyData, err := io.ReadAll(r.Body)
         if err != nil {
@@ -119,7 +119,7 @@ func handlePort(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /scpiPort")
     if r.Method == http.MethodGet {
         w.WriteHeader(http.StatusOK)
-        fmt.Fprintf(w, "%d\n", preferences.ScpiPort)
+        fmt.Fprintf(w, "%d", preferences.ScpiPort)
     } else if r.Method == http.MethodPost {
         bodyData, err := io.ReadAll(r.Body)
         if err != nil {

@@ -20,6 +20,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
 
 interface LogEntry {
   type: 'command' | 'query';
@@ -40,7 +42,7 @@ interface ScpiResponse {
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  imports: [FormsModule, DatePipe, CommonModule, MatAutocompleteModule, MatInputModule, MatFormFieldModule, MatButtonModule, PreferencesComponent],
+  imports: [FormsModule, DatePipe, CommonModule, MatAutocompleteModule, MatInputModule, MatFormFieldModule, MatButtonModule, PreferencesComponent, MatMenuModule, MatIconModule],
 })
 export class App {
   public inputText = signal('');
@@ -190,5 +192,9 @@ export class App {
 
   public clearHistory() {
     this.history.set([]);
+  }
+
+  public onHistoryEntrySelect(entry: string) {
+    console.log(entry);
   }
 }

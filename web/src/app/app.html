@@ -26,6 +26,16 @@
     @if (showSlowSendIndicator$ | async) {
       <div>...</div>
     }
+    <button matButton="outlined" [matMenuTriggerFor]="menu" [disabled]="inputText().length !== 0 || (sending$ | async)">
+      History<mat-icon>arrow_drop_down</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      @for (option of history(); track $index) {
+        <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
+          {{option}}
+        </button>
+      }
+    </mat-menu>
   </div>
 
   <div class="log" [class.wrap]="preferences.wrapLog()">

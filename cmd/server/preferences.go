@@ -43,35 +43,23 @@ func loadPreferences() (*Preferences, error) {
 		return nil, fmt.Errorf("failed to parse preferences file: %w", err)
 	}
 
-	log.Printf("Loaded preferences: %+v", prefs)
+  if prefs.ScpiPort == 0 {
+      prefs.ScpiPort = config.DefaultScpiSocketPort
+  }
+  if prefs.ScpiAddress == "" {
+      prefs.ScpiAddress = config.DefaultScpiSocketAddress
+  }
+
 	return &prefs, nil
 }
 
-func savePreferences(prefs *Preferences) error {
+func (p *Preferences) save() error {
 	path, err := getPreferencesPath()
 	if err != nil {
 		return err
 	}
 
-	existing, err := loadPreferences()
-	if err != nil {
-		return err
-	}
-
-	merged := &Preferences{}
-	if existing != nil {
-		*merged = *existing
-	}
-
-	// TODO: update if more preferences are added
-	if prefs.ScpiPort != 0 {
-		merged.ScpiPort = prefs.ScpiPort
-	}
-	if prefs.ScpiAddress != "" {
-		merged.ScpiAddress = prefs.ScpiAddress
-	}
-
-	data, err := json.MarshalIndent(merged, "", "  ")
+	data, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
 		return fmt.Errorf("failed to marshal preferences: %w", err)
 	}
@@ -80,11 +68,11 @@ func savePreferences(prefs *Preferences) error {
 		return fmt.Errorf("failed to write preferences file: %w", err)
 	}
 
-	log.Printf("Saved preferences: %+v", merged)
+	log.Printf("Saved preferences: %+v", p)
 	return nil
 }
 
-func deletePreferences() error {
+func (p *Preferences) delete() error {
 	path, err := getPreferencesPath()
 	if err != nil {
 		return err
@@ -97,6 +85,9 @@ func deletePreferences() error {
 		return fmt.Errorf("failed to delete preferences file: %w", err)
 	}
 
-	log.Println("Deleted preferences file")
+	p.ScpiPort = config.DefaultScpiSocketPort
+	p.ScpiAddress = config.DefaultScpiSocketAddress
+
+	log.Println("Deleted preferences file and preset preferences")
 	return nil
 }

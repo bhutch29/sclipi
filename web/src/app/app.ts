@@ -125,6 +125,7 @@ export class App {
       autoSystErr: this.preferences.autoSystErr(),
       timeoutSeconds: this.preferences.timeoutSeconds(),
       port: this.preferences.port(),
+      address: this.preferences.address(),
     };
     this.http.post<ScpiResponse>('/api/scpi', body, { responseType: 'json' }).subscribe({
       next: (x) => {

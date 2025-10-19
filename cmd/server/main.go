@@ -18,13 +18,13 @@ import (
 var version = "undefined"
 var instCache = newInstrumentCache()
 var config *Config
-var currentScpiPort int
-var currentScpiAddress string
+var preferences *Preferences
 
 type scpiRequestBody struct {
     Type string `json:"type"`
     Scpi string `json:"scpi"`
     Port int `json:"port"`
+    Address string `json:"address"`
     Simulated bool `json:"simulated"`
     AutoSystError bool `json:"autoSystErr"`
     TimeoutSeconds int `json:"timeoutSeconds"`
@@ -43,23 +43,11 @@ func main() {
         log.Fatalf("Failed to load configuration: %v", err)
     }
 
-    prefs, err := loadPreferences()
+    preferences, err = loadPreferences()
     if err != nil {
-        log.Printf("Warning: failed to load preferences: %v", err)
-    }
-    if prefs != nil && prefs.ScpiPort != 0 {
-        currentScpiPort = prefs.ScpiPort
-        log.Printf("Using saved SCPI port: %d", currentScpiPort)
+        log.Fatalf("Failed to load preferences: %v", err)
     } else {
-        currentScpiPort = config.DefaultScpiSocketPort
-        log.Printf("Using default SCPI port: %d", currentScpiPort)
-    }
-    if prefs != nil && prefs.ScpiAddress != "" {
-        currentScpiAddress = prefs.ScpiAddress
-        log.Printf("Using saved SCPI port: %v", currentScpiAddress)
-    } else {
-        currentScpiAddress = config.DefaultScpiSocketAddress
-        log.Printf("Using default SCPI port: %v", currentScpiAddress)
+	log.Printf("Loaded preferences: %+v", preferences)
     }
 
     addr := fmt.Sprintf(":%d", config.ServerPort)
@@ -104,7 +92,7 @@ func handleAddress(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /scpiAddress")
     if r.Method == http.MethodGet {
         w.WriteHeader(http.StatusOK)
-        fmt.Fprintf(w, "%v\n", currentScpiAddress)
+        fmt.Fprintf(w, "%v\n", preferences.ScpiAddress)
     } else if r.Method == http.MethodPost {
         bodyData, err := io.ReadAll(r.Body)
         if err != nil {
@@ -114,15 +102,13 @@ func handleAddress(w http.ResponseWriter, r *http.Request) {
         defer r.Body.Close()
 
         address := string(bodyData)
-        currentScpiAddress = address
-
-        prefs := &Preferences{ScpiAddress: address}
-        if err := savePreferences(prefs); err != nil {
+        preferences.ScpiAddress = address
+        if err := preferences.save(); err != nil {
             log.Printf("Warning: failed to save preferences: %v", err)
         }
 
         w.WriteHeader(http.StatusOK)
-        fmt.Fprintf(w, "ScpiAddress updated to %v\n", currentScpiAddress)
+        fmt.Fprintf(w, "ScpiAddress updated to %v\n", address)
     } else {
         w.WriteHeader(http.StatusMethodNotAllowed)
         fmt.Fprintf(w, "/scpiAddress supports GET and POST methods\n")
@@ -133,7 +119,7 @@ func handlePort(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /scpiPort")
     if r.Method == http.MethodGet {
         w.WriteHeader(http.StatusOK)
-        fmt.Fprintf(w, "%d\n", currentScpiPort)
+        fmt.Fprintf(w, "%d\n", preferences.ScpiPort)
     } else if r.Method == http.MethodPost {
         bodyData, err := io.ReadAll(r.Body)
         if err != nil {
@@ -156,15 +142,13 @@ func handlePort(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        currentScpiPort = port
-
-        prefs := &Preferences{ScpiPort: port}
-        if err := savePreferences(prefs); err != nil {
+        preferences.ScpiPort = port
+        if err := preferences.save(); err != nil {
             log.Printf("Warning: failed to save preferences: %v", err)
         }
 
         w.WriteHeader(http.StatusOK)
-        fmt.Fprintf(w, "Port updated to %d\n", currentScpiPort)
+        fmt.Fprintf(w, "Port updated to %d\n", port)
     } else {
         w.WriteHeader(http.StatusMethodNotAllowed)
         fmt.Fprintf(w, "/scpiPort supports GET and POST methods\n")
@@ -177,15 +161,14 @@ func handlePreferences(w http.ResponseWriter, r *http.Request) {
         fmt.Fprintf(w, "/preferences only supports DELETE method\n")
     }
 
-    if err := deletePreferences(); err != nil {
+    if err := preferences.delete(); err != nil {
         w.WriteHeader(http.StatusInternalServerError)
         fmt.Fprintf(w, "Failed to delete preferences: %v\n", err)
         return
     }
 
-    currentScpiPort = config.DefaultScpiSocketPort
     w.WriteHeader(http.StatusOK)
-    fmt.Fprintf(w, "Preferences cleared. Port reset to default: %d\n", currentScpiPort)
+    fmt.Fprintln(w, "Preferences cleared");
 }
 
 func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
@@ -210,7 +193,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    address := "localhost"
+    address := body.Address
     if body.Simulated {
         address = "simulated"
     }

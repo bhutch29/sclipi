@@ -12,12 +12,13 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BehaviorSubject, delay, firstValueFrom, map, merge } from 'rxjs';
+import { BehaviorSubject, delay, map, merge } from 'rxjs';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { LocalStorageService } from '../services/localStorage.service';
+import { PreferencesService } from '../services/preferences.service';
 
 interface LogEntry {
   type: 'command' | 'query';
@@ -34,12 +35,6 @@ interface ScpiResponse {
   serverError: string;
 }
 
-const defaultTimeout = 10;
-const defaultSimulated = false;
-const defaultAutoSystErr = true;
-const defaultWrapLog = true;
-const defaultShowDate = false;
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
@@ -47,17 +42,6 @@ const defaultShowDate = false;
   imports: [FormsModule, DatePipe, CommonModule, MatAutocompleteModule, MatInputModule, MatFormFieldModule, MatButtonModule],
 })
 export class App {
-  public simulated = signal(defaultSimulated);
-  public autoSystErr = signal(defaultAutoSystErr);
-  public wrapLog = signal(defaultWrapLog);
-  public showDate = signal(defaultShowDate);
-  public timeoutSeconds = signal(defaultTimeout);
-
-  public port = signal(0);
-  private committedPort = signal(0);
-  public address = signal('');
-  private committedAddress = signal('');
-
   public inputText = signal('');
   public error: WritableSignal<string> = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
@@ -79,7 +63,7 @@ export class App {
   public health = httpResource.text(() => '/api/health');
 
   public idn = httpResource<ScpiResponse>(() => {
-    if (this.committedPort() === 0 || this.committedAddress() === '') {
+    if (this.preferences.committedPort() === 0 || this.preferences.committedAddress() === '') {
       return undefined;
     }
     return {
@@ -87,9 +71,9 @@ export class App {
       method: 'POST',
       body: {
         scpi: '*IDN?',
-        simulated: this.simulated(),
-        port: this.committedPort(),
-        address: this.committedAddress(),
+        simulated: this.preferences.simulated(),
+        port: this.preferences.committedPort(),
+        address: this.preferences.committedAddress(),
       },
     };
   });
@@ -116,23 +100,12 @@ export class App {
   constructor(
     private http: HttpClient,
     private renderer: Renderer2,
+    public preferences: PreferencesService,
     localStorageService: LocalStorageService,
   ) {
-    localStorageService.setFromStorage('simulated', this.simulated);
-    localStorageService.setFromStorage('autoSystErr', this.autoSystErr);
-    localStorageService.setFromStorage('wrapLog', this.wrapLog);
+
     localStorageService.setFromStorage('history', this.history);
-    localStorageService.setFromStorage('timeoutSeconds', this.timeoutSeconds);
-    localStorageService.setFromStorage('showDate', this.showDate);
-
-    effect(() => localStorageService.setItem('simulated', this.simulated()));
-    effect(() => localStorageService.setItem('autoSystErr', this.autoSystErr()));
-    effect(() => localStorageService.setItem('wrapLog', this.wrapLog()));
     effect(() => localStorageService.setItem('history', this.history()));
-    effect(() => localStorageService.setItem('timeoutSeconds', this.timeoutSeconds()));
-    effect(() => localStorageService.setItem('showDate', this.showDate()));
-
-    this.loadPreferences();
 
     this.renderer.listen('window', 'focus', () => {
       this.scpiInput?.nativeElement.focus();
@@ -159,10 +132,10 @@ export class App {
     const time = Date.now();
     const body = {
       scpi,
-      simulated: this.simulated(),
-      autoSystErr: this.autoSystErr(),
-      timeoutSeconds: this.timeoutSeconds(),
-      port: this.port(),
+      simulated: this.preferences.simulated(),
+      autoSystErr: this.preferences.autoSystErr(),
+      timeoutSeconds: this.preferences.timeoutSeconds(),
+      port: this.preferences.port(),
     };
     this.http.post<ScpiResponse>('/api/scpi', body, { responseType: 'json' }).subscribe({
       next: (x) => {
@@ -215,84 +188,59 @@ export class App {
   }
 
   public onPortBlur() {
-    this.setPort(this.port());
+    this.setPort(this.preferences.port());
   }
 
   public onPortEnter(event: Event) {
     event.preventDefault();
-    this.setPort(this.port());
+    this.setPort(this.preferences.port());
   }
 
   private setPort(port: number) {
     if (!Number.isInteger(port)) {
       console.error('port must be an integer', port);
-      this.port.set(this.committedPort());
+      this.preferences.port.set(this.preferences.committedPort());
       return;
     }
 
     if (port < 1 || port > 65535) {
       console.error('port must be between 1 and 65535', port);
-      this.port.set(this.committedPort());
+      this.preferences.port.set(this.preferences.committedPort());
       return;
     }
 
-    if (this.committedPort() != this.port()) {
-      this.committedPort.set(this.port());
+    if (this.preferences.committedPort() != this.preferences.port()) {
+      this.preferences.committedPort.set(this.preferences.port());
       if (port !== 0) {
-        this.http.post('/api/scpiPort', this.committedPort(), { responseType: 'text' }).subscribe({
+        this.http.post('/api/scpiPort', this.preferences.committedPort(), { responseType: 'text' }).subscribe({
           next: (x) => console.log(x),
-          error: (x) => console.error('Error posting port value', this.committedPort(), x),
+          error: (x) => console.error('Error posting port value', this.preferences.committedPort(), x),
         });
       }
     }
   }
 
   public onAddressBlur() {
-    this.setAddress(this.address());
+    this.setAddress(this.preferences.address());
   }
 
   public onAddressEnter(event: Event) {
     event.preventDefault();
-    this.setAddress(this.address());
+    this.setAddress(this.preferences.address());
   }
 
   private setAddress(address: string) {
-    if (this.committedAddress() != this.address()) {
-      this.committedAddress.set(this.address());
+    if (this.preferences.committedAddress() != this.preferences.address()) {
+      this.preferences.committedAddress.set(this.preferences.address());
       if (address !== '') {
         this.http
-          .post('/api/scpiAddress', this.committedAddress(), { responseType: 'text' })
+          .post('/api/scpiAddress', this.preferences.committedAddress(), { responseType: 'text' })
           .subscribe({
             next: (x) => console.log(x),
-            error: (x) => console.error('Error posting address value', this.committedAddress(), x),
+            error: (x) => console.error('Error posting address value', this.preferences.committedAddress(), x),
           });
       }
     }
-  }
-
-  private async loadPreferences() {
-    const port = await firstValueFrom(this.http.get('/api/scpiPort', { responseType: 'text' }));
-    this.port.set(+port);
-    this.committedPort.set(+port);
-
-    const address = await firstValueFrom(
-      this.http.get('/api/scpiAddress', { responseType: 'text' }),
-    );
-    this.address.set(address);
-    this.committedAddress.set(address);
-  }
-
-  public async resetServerPreferences() {
-    await firstValueFrom(this.http.delete('/api/preferences', { responseType: 'text' }));
-    await this.loadPreferences();
-  }
-
-  public async resetClientPreferences() {
-    this.simulated.set(defaultSimulated);
-    this.wrapLog.set(defaultWrapLog);
-    this.autoSystErr.set(defaultAutoSystErr);
-    this.timeoutSeconds.set(defaultTimeout);
-    this.showDate.set(defaultShowDate);
   }
 
   public clearHistory() {

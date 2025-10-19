@@ -63,8 +63,9 @@
     Error: {{ error() }}
   }
 
-  <div class="options">
-    <div class="client-options">
+  <app-preferences></app-preferences>
+  <div class="preferences">
+    <div class="client-preferences">
       <label>
         <input type="checkbox" [(ngModel)]="simulated" />
         Simulated
@@ -88,7 +89,7 @@
       <button (click)="resetClientPreferences()">Reset client preferences to default</button>
       <button (click)="clearHistory()">Clear History</button>
     </div>
-    <div class="server-options">
+    <div class="server-preferences">
       <label>
         <input
           type="number"

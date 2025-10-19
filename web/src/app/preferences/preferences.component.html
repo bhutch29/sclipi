@@ -1,0 +1,44 @@
+<div class="client-preferences">
+  <label>
+    <input type="checkbox" [(ngModel)]="preferences.simulated" />
+    Simulated
+  </label>
+  <label>
+    <input type="checkbox" [(ngModel)]="preferences.wrapLog" />
+    Wrap Log
+  </label>
+  <label>
+    <input type="checkbox" [(ngModel)]="preferences.showDate" />
+    Show Date
+  </label>
+  <label>
+    <input type="checkbox" [(ngModel)]="preferences.autoSystErr" />
+    Auto :SYST:ERR?
+  </label>
+  <label>
+    <input type="number" [(ngModel)]="preferences.timeoutSeconds" />
+    Timeout (seconds)
+  </label>
+  <button (click)="preferences.resetClientPreferences()">Reset client preferences to default</button>
+</div>
+<div class="server-preferences">
+  <label>
+    <input
+      type="number"
+      [(ngModel)]="preferences.port"
+      (blur)="onPortBlur()"
+      (keydown.enter)="onPortEnter($event)"
+    />
+    SCPI Socket Port
+  </label>
+  <label>
+    <input
+      type="text"
+      [(ngModel)]="preferences.address"
+      (blur)="onAddressBlur()"
+      (keydown.enter)="onAddressEnter($event)"
+    />
+    SCPI Socket Address
+  </label>
+  <button (click)="preferences.resetServerPreferences()">Reset server preferences to default</button>
+</div>

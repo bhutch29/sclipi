@@ -28,10 +28,10 @@
     }
   </div>
 
-  <div class="log" [ngClass]="{ wrap: wrapLog() }">
+  <div class="log" [class.wrap]="preferences.wrapLog()">
     @for (entry of log(); track entry.time) {
       <div class="entry">
-        @if (showDate()) {
+        @if (preferences.showDate()) {
           <span class="timestamp">{{ entry.time | date: 'MMM dd, hh:mm:ss a' }}</span>
         } @else {
           <span class="timestamp">{{ entry.time | date: 'hh:mm:ss a' }}</span>
@@ -63,52 +63,6 @@
     Error: {{ error() }}
   }
 
+  <button (click)="clearHistory()">Clear History</button>
   <app-preferences></app-preferences>
-  <div class="preferences">
-    <div class="client-preferences">
-      <label>
-        <input type="checkbox" [(ngModel)]="simulated" />
-        Simulated
-      </label>
-      <label>
-        <input type="checkbox" [(ngModel)]="wrapLog" />
-        Wrap Log
-      </label>
-      <label>
-        <input type="checkbox" [(ngModel)]="showDate" />
-        Show Date
-      </label>
-      <label>
-        <input type="checkbox" [(ngModel)]="autoSystErr" />
-        Auto :SYST:ERR?
-      </label>
-      <label>
-        <input type="number" [(ngModel)]="timeoutSeconds" />
-        Timeout (seconds)
-      </label>
-      <button (click)="resetClientPreferences()">Reset client preferences to default</button>
-      <button (click)="clearHistory()">Clear History</button>
-    </div>
-    <div class="server-preferences">
-      <label>
-        <input
-          type="number"
-          [(ngModel)]="port"
-          (blur)="onPortBlur()"
-          (keydown.enter)="onPortEnter($event)"
-        />
-        SCPI Socket Port
-      </label>
-      <label>
-        <input
-          type="text"
-          [(ngModel)]="address"
-          (blur)="onAddressBlur()"
-          (keydown.enter)="onAddressEnter($event)"
-        />
-        SCPI Socket Address
-      </label>
-      <button (click)="resetServerPreferences()">Reset server preferences to default</button>
-    </div>
-  </div>
 </div>

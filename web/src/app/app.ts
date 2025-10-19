@@ -22,21 +22,7 @@ import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-
-interface LogEntry {
-  type: 'command' | 'query';
-  scpi: string;
-  response?: string;
-  time: number;
-  errors: string[];
-  serverError: string;
-}
-
-interface ScpiResponse {
-  response: string;
-  errors: string[];
-  serverError: string;
-}
+import { LogEntry, ScpiResponse } from './types';
 
 @Component({
   selector: 'app-root',

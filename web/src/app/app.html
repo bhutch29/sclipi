@@ -13,7 +13,7 @@
         matInput
         [matAutocomplete]="auto"
       />
-      <mat-autocomplete autoActiveFirstOption autoSelectActiveOption #auto="matAutocomplete">
+      <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
         @if (inputText().length !== 0) {
           @for (option of autocompleteHistory(); track option) {
             <mat-option [value]="option">{{ option }}</mat-option>

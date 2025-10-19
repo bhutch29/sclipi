@@ -1,0 +1,14 @@
+export interface LogEntry {
+  type: 'command' | 'query';
+  scpi: string;
+  response?: string;
+  time: number;
+  errors: string[];
+  serverError: string;
+}
+
+export interface ScpiResponse {
+  response: string;
+  errors: string[];
+  serverError: string;
+}

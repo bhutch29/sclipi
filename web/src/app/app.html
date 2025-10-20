@@ -27,7 +27,7 @@
         />
         <mat-hint><strong>Colon (:)</strong> for auto-complete. <strong>Enter</strong> to submit. <strong>Arrow Up</strong> for history.</mat-hint>
         <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-          @if (inputText().length !== 0 && historyIndex < 0) {
+          @if (inputText().length !== 0 && history.index < 0) {
             @for (option of autocompleteHistory(); track option) {
               <mat-option [value]="option">{{ option }}</mat-option>
             }
@@ -59,7 +59,7 @@
         History<mat-icon>arrow_drop_down</mat-icon>
       </button>
       <mat-menu #menu="matMenu">
-        @for (option of history(); track $index) {
+        @for (option of history.list(); track $index) {
           <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
             {{ option }}
           </button>
@@ -110,9 +110,6 @@
       }
 
       @if (activeToolbarButtons().includes('settings')) {
-        <div>
-          <button matButton="outlined" (click)="clearHistory()">Clear History</button>
-        </div>
         <app-preferences></app-preferences>
       }
     </div>

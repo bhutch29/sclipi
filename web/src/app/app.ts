@@ -6,7 +6,6 @@ import {
     effect,
     ElementRef,
     Renderer2,
-    Signal,
     signal,
     ViewChild,
     WritableSignal
@@ -14,6 +13,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -21,12 +21,12 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { BehaviorSubject, combineLatest, delay, map } from 'rxjs';
+import { HistoryService } from '../services/history.service';
 import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
 import { LogEntry, ScpiResponse } from './types';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @Component({
   selector: 'app-root',
@@ -55,13 +55,12 @@ export class App {
 
   public activeToolbarButtons: WritableSignal<string[]> = signal([])
 
-  public history: WritableSignal<string[]> = signal([]);
-  public historyIndex = -1;
   public autocompleteHistory = computed(() =>
-    this.history()
+    this.history.list()
       .filter((x) => x.toLowerCase().includes(this.inputText().toLowerCase()))
       .filter((elem, i, self) => i === self.indexOf(elem)),
   );
+
   private unsentScpiInput = '';
 
   public sending$ = new BehaviorSubject(false);
@@ -82,10 +81,9 @@ export class App {
     private renderer: Renderer2,
     public preferences: PreferencesService,
     public idn: IdnService,
+    public history: HistoryService,
     localStorageService: LocalStorageService,
   ) {
-    localStorageService.setFromStorage('history', this.history);
-    effect(() => localStorageService.setItem('history', this.history()));
     localStorageService.setFromStorage('activeToolbarButtons', this.activeToolbarButtons);
     effect(() => localStorageService.setItem('activeToolbarButtons', this.activeToolbarButtons()));
 
@@ -115,7 +113,7 @@ export class App {
     this.inputText.set('');
 
     scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
-    this.addToHistory(scpi);
+    this.history.add(scpi);
 
     const time = Date.now();
     const body = {
@@ -144,30 +142,24 @@ export class App {
     });
   }
 
-  private addToHistory(scpi: string) {
-    if (this.history()[0] !== scpi) {
-      this.history.update((x) => [scpi, ...x]);
-    }
-  }
-
   public arrowUp(event: Event) {
     event.preventDefault();
-    if (this.history().length > this.historyIndex + 1) {
-      if (this.historyIndex === -1) {
+    if (this.history.list().length > this.history.index + 1) {
+      if (this.history.index === -1) {
         this.unsentScpiInput = this.inputText();
       }
-      this.inputText.set(this.history()[++this.historyIndex]);
+      this.inputText.set(this.history.list()[++this.history.index]);
     }
   }
 
   public arrowDown(event: Event) {
     event.preventDefault();
-    if (this.historyIndex === 0) {
+    if (this.history.index === 0) {
       this.inputText.set(this.unsentScpiInput);
-      this.historyIndex--;
+      this.history.index--;
     }
-    if (this.historyIndex > 0) {
-      this.inputText.set(this.history()[--this.historyIndex]);
+    if (this.history.index > 0) {
+      this.inputText.set(this.history.list()[--this.history.index]);
     }
   }
 
@@ -175,11 +167,8 @@ export class App {
     this.sendInternal(':SYST:ERR?');
   }
 
-  public clearHistory() {
-    this.history.set([]);
-  }
-
   public onHistoryEntrySelect(entry: string) {
-    console.log(entry);
+    this.inputText.set(entry);
+    this.send();
   }
 }

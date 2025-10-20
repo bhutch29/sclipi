@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { HistoryService } from '../../services/history.service';
 
 @Component({
   selector: 'app-preferences',
@@ -16,7 +17,8 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 export class PreferencesComponent {
   constructor(
     public preferences: PreferencesService,
-    private http: HttpClient
+    private http: HttpClient,
+    private history: HistoryService
   ) {
   }
 
@@ -74,5 +76,9 @@ export class PreferencesComponent {
           });
       }
     }
+  }
+
+  public clearHistory() {
+    this.history.list.set([]);
   }
 }

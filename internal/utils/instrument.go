@@ -64,7 +64,7 @@ func (i *scpiInstrument) Command(command string) error {
 
 func (i *scpiInstrument) exec(cmd string) error {
 	b := []byte(cmd + "\n")
-	_ = i.connection.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	_ = i.connection.SetWriteDeadline(time.Now().Add(i.timeout * time.Second))
 	if _, err := i.connection.Write(b); err != nil {
 		return err
 	}

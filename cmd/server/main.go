@@ -199,9 +199,9 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
     }
     inst, err := instCache.get(address, body.Port, time.Duration(body.TimeoutSeconds) * time.Second, nil)
     if err != nil {
-	w.WriteHeader(http.StatusInternalServerError)
+	      w.WriteHeader(http.StatusInternalServerError)
         fmt.Fprintf(w, "%s\n", err.Error())
-	return
+	      return
     }
 
     inst.SetTimeout(time.Duration(body.TimeoutSeconds) * time.Second)

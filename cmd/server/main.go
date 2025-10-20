@@ -13,6 +13,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/bhutch29/sclipi/internal/utils"
 )
 
 var version = "undefined"
@@ -171,6 +173,29 @@ func handlePreferences(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, "Preferences cleared");
 }
 
+func executeWithRetry(address string, port int, timeout time.Duration, operation func(utils.Instrument) error) error {
+    inst, err := instCache.get(address, port, timeout, nil)
+    if err != nil {
+        return err
+    }
+
+    inst.SetTimeout(timeout)
+    err = operation(inst)
+
+    if err != nil && errors.Is(err, utils.ErrConnectionClosed) {
+        log.Printf("Connection closed, attempting reconnect")
+        instCache.invalidate(address, port)
+        inst, err = instCache.get(address, port, timeout, nil)
+        if err != nil {
+            return fmt.Errorf("connection lost and reconnection failed: %w", err)
+        }
+        inst.SetTimeout(timeout)
+        return operation(inst)
+    }
+
+    return err
+}
+
 func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
     log.Println("Handling /scpi")
     if r.Method != http.MethodPost {
@@ -197,40 +222,46 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
     if body.Simulated {
         address = "simulated"
     }
-    inst, err := instCache.get(address, body.Port, time.Duration(body.TimeoutSeconds) * time.Second, nil)
-    if err != nil {
-	      w.WriteHeader(http.StatusInternalServerError)
-        fmt.Fprintf(w, "%s\n", err.Error())
-	      return
-    }
 
-    inst.SetTimeout(time.Duration(body.TimeoutSeconds) * time.Second)
+    timeout := time.Duration(body.TimeoutSeconds) * time.Second
 
     scpiResponse := scpiResponse{}
     if body.Type == "smart" {
         if (strings.Contains(body.Scpi, "?")) {
-            queryResponse, err := inst.Query(body.Scpi)
-            if (err != nil) {
+            var queryResponse string
+            err := executeWithRetry(address, body.Port, timeout, func(inst utils.Instrument) error {
+                var err error
+                queryResponse, err = inst.Query(body.Scpi)
+                return err
+            })
+            if err != nil {
                 log.Printf("Error sending query: %v", err)
                 scpiResponse.ServerError = fmt.Sprintf("Error sending query: %v", err)
             } else {
                 scpiResponse.Response = queryResponse
             }
         } else {
-            err := inst.Command(body.Scpi)
+            err := executeWithRetry(address, body.Port, timeout, func(inst utils.Instrument) error {
+                return inst.Command(body.Scpi)
+            })
             if err != nil {
                 log.Printf("Error sending command: %v", err)
-                scpiResponse.ServerError = fmt.Sprintf("Error sending query: %v", err)
+                scpiResponse.ServerError = fmt.Sprintf("Error sending command: %v", err)
             }
         }
 
-        if body.AutoSystError {
-            errors, err := inst.QueryError([]string{})
+        if body.AutoSystError && scpiResponse.ServerError == "" {
+            var systErrors []string
+            err := executeWithRetry(address, body.Port, timeout, func(inst utils.Instrument) error {
+                var err error
+                systErrors, err = inst.QueryError([]string{})
+                return err
+            })
             if err != nil {
                 log.Printf("Error doing auto :syst:err?: %v", err)
-                scpiResponse.ServerError = fmt.Sprintf("Error sending query: %v", err)
+                scpiResponse.ServerError = fmt.Sprintf("Error querying system errors: %v", err)
             } else {
-                scpiResponse.Errors = errors
+                scpiResponse.Errors = systErrors
             }
         }
 
@@ -242,11 +273,13 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
     }
 
     if body.Type == "sendOnly" {
-        err := inst.Command(body.Scpi)
+        err := executeWithRetry(address, body.Port, timeout, func(inst utils.Instrument) error {
+            return inst.Command(body.Scpi)
+        })
         if err != nil {
             log.Printf("Error sending command: %v", err)
             fmt.Fprintf(w, "Error sending command: %v", err)
-	    w.WriteHeader(http.StatusInternalServerError)
+            w.WriteHeader(http.StatusInternalServerError)
             return
         }
     }

@@ -47,6 +47,19 @@ func (ic *instrumentCache) get(address string, port int, timeout time.Duration, 
     return inst, nil
 }
 
+func (ic *instrumentCache) invalidate(address string, port int) {
+    fullAddress := address + ":" + strconv.Itoa(port)
+
+    ic.mu.Lock()
+    defer ic.mu.Unlock()
+
+    if inst, exists := ic.cache[fullAddress]; exists {
+        inst.Close()
+        delete(ic.cache, fullAddress)
+        log.Printf("Invalidated cached connection to %s", fullAddress)
+    }
+}
+
 func connectInstrument(address string, port int, timeout time.Duration, progressFn func(int)) (utils.Instrument, error) {
     log.Printf("Connecting to instrument at address '%s'\n", address)
     var inst utils.Instrument

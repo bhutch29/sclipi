@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"github.com/schollz/progressbar"
 	"net"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"time"
 )
+
+var ErrConnectionClosed = errors.New("connection closed")
 
 type Instrument interface {
 	Connect(string, func(int)) error
@@ -66,9 +69,24 @@ func (i *scpiInstrument) exec(cmd string) error {
 	b := []byte(cmd + "\n")
 	_ = i.connection.SetWriteDeadline(time.Now().Add(i.timeout * time.Second))
 	if _, err := i.connection.Write(b); err != nil {
+		if isConnectionError(err) {
+			return fmt.Errorf("%w: %v", ErrConnectionClosed, err)
+		}
 		return err
 	}
 	return nil
+}
+
+func isConnectionError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "broken pipe") ||
+		strings.Contains(errStr, "connection reset") ||
+		strings.Contains(errStr, "use of closed network connection") ||
+		strings.TrimSpace(errStr) == "EOF" ||
+		errors.Is(err, net.ErrClosed)
 }
 
 func (i *scpiInstrument) QueryError(errors []string) ([]string, error) {
@@ -102,6 +120,9 @@ func (i *scpiInstrument) Query(cmd string) (res string, err error) {
 	if err != nil {
 		queryFailed <- true
 		<-done
+		if isConnectionError(err) {
+			return "", fmt.Errorf("%w: %v", ErrConnectionClosed, err)
+		}
 		return "", err
 	}
 
@@ -124,6 +145,9 @@ func (i *scpiInstrument) Query(cmd string) (res string, err error) {
 			if err != nil {
 				queryFailed <- true
 				<-done
+				if isConnectionError(err) {
+					return "", fmt.Errorf("%w: %v", ErrConnectionClosed, err)
+				}
 				return "", err
 			}
 

@@ -6,7 +6,7 @@ import { PreferencesService } from './preferences.service';
 @Injectable({providedIn: 'root'})
 export class IdnService {
   public idn = httpResource<ScpiResponse>(() => {
-    if (this.preferences.committedPort() === 0 || this.preferences.committedAddress() === '') {
+    if (this.preferences.port() === 0 || this.preferences.address() === '') {
       return undefined;
     }
     return {
@@ -15,8 +15,8 @@ export class IdnService {
       body: {
         scpi: '*IDN?',
         simulated: this.preferences.simulated(),
-        port: this.preferences.committedPort(),
-        address: this.preferences.committedAddress(),
+        port: this.preferences.port(),
+        address: this.preferences.address(),
         timeoutSeconds: this.preferences.timeoutSeconds(),
         autoSystErr: false
       },
@@ -58,6 +58,6 @@ export class IdnService {
       if (!this.idn.hasValue() || this.idn.value().response === "") {
         this.idn.reload();
       }
-    }, 5000);
+    }, 20000);
   }
 }

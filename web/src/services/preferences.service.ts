@@ -15,12 +15,13 @@ export class PreferencesService {
   public autoSystErr = signal(defaultAutoSystErr);
   public wrapLog = signal(defaultWrapLog);
   public showDate = signal(defaultShowDate);
+  public uncommittedTimeoutSeconds = signal(defaultTimeout);
   public timeoutSeconds = signal(defaultTimeout);
 
+  public uncommittedPort = signal(0);
   public port = signal(0);
-  public committedPort = signal(0);
+  public uncommittedAddress = signal('');
   public address = signal('');
-  public committedAddress = signal('');
 
   constructor(
     localStorageService: LocalStorageService,
@@ -29,6 +30,7 @@ export class PreferencesService {
     localStorageService.setFromStorage('simulated', this.simulated);
     localStorageService.setFromStorage('autoSystErr', this.autoSystErr);
     localStorageService.setFromStorage('wrapLog', this.wrapLog);
+    localStorageService.setFromStorage('timeoutSeconds', this.uncommittedTimeoutSeconds);
     localStorageService.setFromStorage('timeoutSeconds', this.timeoutSeconds);
     localStorageService.setFromStorage('showDate', this.showDate);
 
@@ -43,14 +45,14 @@ export class PreferencesService {
 
   private async loadServerPreferences() {
     const port = await firstValueFrom(this.http.get('/api/scpiPort', { responseType: 'text' }));
+    this.uncommittedPort.set(+port);
     this.port.set(+port);
-    this.committedPort.set(+port);
 
     const address = await firstValueFrom(
       this.http.get('/api/scpiAddress', { responseType: 'text' }),
     );
+    this.uncommittedAddress.set(address);
     this.address.set(address);
-    this.committedAddress.set(address);
   }
 
   public async resetServerPreferences() {
@@ -63,6 +65,7 @@ export class PreferencesService {
     this.wrapLog.set(defaultWrapLog);
     this.autoSystErr.set(defaultAutoSystErr);
     this.timeoutSeconds.set(defaultTimeout);
+    this.uncommittedTimeoutSeconds.set(defaultTimeout);
     this.showDate.set(defaultShowDate);
   }
 

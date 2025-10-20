@@ -23,59 +23,68 @@ export class PreferencesComponent {
   }
 
   public onPortBlur() {
-    this.setPort(this.preferences.port());
+    this.setPort(this.preferences.uncommittedPort());
   }
 
   public onPortEnter(event: Event) {
     event.preventDefault();
-    this.setPort(this.preferences.port());
+    this.setPort(this.preferences.uncommittedPort());
   }
 
   private setPort(port: number) {
     if (!Number.isInteger(port)) {
       console.error('port must be an integer', port);
-      this.preferences.port.set(this.preferences.committedPort());
+      this.preferences.uncommittedPort.set(this.preferences.port());
       return;
     }
 
     if (port < 1 || port > 65535) {
       console.error('port must be between 1 and 65535', port);
-      this.preferences.port.set(this.preferences.committedPort());
+      this.preferences.uncommittedPort.set(this.preferences.port());
       return;
     }
 
-    if (this.preferences.committedPort() != this.preferences.port()) {
-      this.preferences.committedPort.set(this.preferences.port());
+    if (this.preferences.port() != port) {
+      this.preferences.port.set(port);
       if (port !== 0) {
-        this.http.post('/api/scpiPort', this.preferences.committedPort(), { responseType: 'text' }).subscribe({
+        this.http.post('/api/scpiPort', port, { responseType: 'text' }).subscribe({
           next: (x) => console.log(x),
-          error: (x) => console.error('Error posting port value', this.preferences.committedPort(), x),
+          error: (x) => console.error('Error posting port value', this.preferences.port(), x),
         });
       }
     }
   }
 
   public onAddressBlur() {
-    this.setAddress(this.preferences.address());
+    this.setAddress(this.preferences.uncommittedAddress());
   }
 
   public onAddressEnter(event: Event) {
     event.preventDefault();
-    this.setAddress(this.preferences.address());
+    this.setAddress(this.preferences.uncommittedAddress());
   }
 
   private setAddress(address: string) {
-    if (this.preferences.committedAddress() != this.preferences.address()) {
-      this.preferences.committedAddress.set(this.preferences.address());
+    if (this.preferences.address() != address) {
+      this.preferences.address.set(address);
       if (address !== '') {
         this.http
-          .post('/api/scpiAddress', this.preferences.committedAddress(), { responseType: 'text' })
+          .post('/api/scpiAddress', address, { responseType: 'text' })
           .subscribe({
             next: (x) => console.log(x),
-            error: (x) => console.error('Error posting address value', this.preferences.committedAddress(), x),
+            error: (x) => console.error('Error posting address value', this.preferences.address(), x),
           });
       }
     }
+  }
+
+  public onTimeoutBlur() {
+    this.preferences.timeoutSeconds.set(this.preferences.uncommittedTimeoutSeconds());
+  }
+
+  public onTimeoutEnter(event: Event) {
+    event.preventDefault();
+    this.preferences.timeoutSeconds.set(this.preferences.uncommittedTimeoutSeconds());
   }
 
   public clearHistory() {

@@ -6,7 +6,13 @@
   <mat-checkbox [(ngModel)]="preferences.simulated">Simulated</mat-checkbox>
   <mat-form-field appearance="outline" subscriptSizing="dynamic">
     <mat-label> Timeout (seconds) </mat-label>
-    <input matInput type="number" [(ngModel)]="preferences.timeoutSeconds" />
+    <input
+      matInput
+      type="number"
+      [(ngModel)]="preferences.uncommittedTimeoutSeconds"
+      (blur)="onTimeoutBlur()"
+      (keydown.enter)="onTimeoutEnter($event)"
+    />
   </mat-form-field>
   <div>
     <button matButton="outlined" (click)="clearHistory()">Clear History</button>
@@ -24,7 +30,7 @@
     <input
       matInput
       type="number"
-      [(ngModel)]="preferences.port"
+      [(ngModel)]="preferences.uncommittedPort"
       (blur)="onPortBlur()"
       (keydown.enter)="onPortEnter($event)"
     />
@@ -34,7 +40,7 @@
     <input
       matInput
       type="text"
-      [(ngModel)]="preferences.address"
+      [(ngModel)]="preferences.uncommittedAddress"
       (blur)="onAddressBlur()"
       (keydown.enter)="onAddressEnter($event)"
     />

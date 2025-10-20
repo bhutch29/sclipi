@@ -24,16 +24,6 @@ var instCache = newInstrumentCache()
 var config *Config
 var preferences *Preferences
 
-type scpiRequestBody struct {
-	Type           string `json:"type"`
-	Scpi           string `json:"scpi"`
-	Port           int    `json:"port"`
-	Address        string `json:"address"`
-	Simulated      bool   `json:"simulated"`
-	AutoSystError  bool   `json:"autoSystErr"`
-	TimeoutSeconds int    `json:"timeoutSeconds"`
-}
-
 type scpiResponse struct {
 	Response    string   `json:"response"`
 	Errors      []string `json:"errors"`
@@ -280,30 +270,77 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	bodyData, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Failed to read request body")
 		return
 	}
 	defer r.Body.Close()
 
-	body, err := validateScpiRequestBody(bodyData)
-	if err != nil {
+	scpi := string(bodyData)
+	if scpi == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "%s\n", err.Error())
+		fmt.Fprintln(w, "Request body (SCPI command) cannot be empty")
 		return
 	}
 
-	address := body.Address
-	if body.Simulated {
+	address := r.URL.Query().Get("address")
+	portString := r.URL.Query().Get("port")
+	simulatedString := r.URL.Query().Get("simulated")
+	autoSystErrorString := r.URL.Query().Get("autoSystErr")
+	timeoutSecondsString := r.URL.Query().Get("timeoutSeconds")
+
+	if address == "" {
+		address = preferences.ScpiAddress
+	}
+
+	port := preferences.ScpiPort
+	if portString != "" {
+		var err error
+		port, err = strconv.Atoi(portString)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, "Parameter port must be a number")
+			return
+		}
+		if port < 1 || port > 65535 {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, "Port must be between 1 and 65535")
+			return
+		}
+	}
+
+	simulated := false
+	if simulatedString != "" {
+		simulated = simulatedString == "true"
+	}
+
+	autoSystError := false
+	if autoSystErrorString != "" {
+		autoSystError = autoSystErrorString == "true"
+	}
+
+	timeoutSeconds := 10
+	if timeoutSecondsString != "" {
+		var err error
+		timeoutSeconds, err = strconv.Atoi(timeoutSecondsString)
+		if err != nil || timeoutSeconds < 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprintln(w, "Parameter timeoutSeconds must be a positive number")
+			return
+		}
+	}
+
+	if simulated {
 		address = "simulated"
 	}
 
-	timeout := time.Duration(body.TimeoutSeconds) * time.Second
+	timeout := time.Duration(timeoutSeconds) * time.Second
 
 	scpiResponse := scpiResponse{}
-	if strings.Contains(body.Scpi, "?") {
+	if strings.Contains(scpi, "?") {
 		var queryResponse string
-		err := executeWithRetry(address, body.Port, timeout, func(inst utils.Instrument) error {
+		err := executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {
 			var err error
-			queryResponse, err = inst.Query(body.Scpi)
+			queryResponse, err = inst.Query(scpi)
 			return err
 		})
 		if err != nil {
@@ -313,8 +350,8 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 			scpiResponse.Response = queryResponse
 		}
 	} else {
-		err := executeWithRetry(address, body.Port, timeout, func(inst utils.Instrument) error {
-			return inst.Command(body.Scpi)
+		err := executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {
+			return inst.Command(scpi)
 		})
 		if err != nil {
 			log.Printf("Error sending command: %v", err)
@@ -322,9 +359,9 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if body.AutoSystError && scpiResponse.ServerError == "" {
+	if autoSystError && scpiResponse.ServerError == "" {
 		var systErrors []string
-		err := executeWithRetry(address, body.Port, timeout, func(inst utils.Instrument) error {
+		err := executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {
 			var err error
 			systErrors, err = inst.QueryError([]string{})
 			return err
@@ -340,30 +377,4 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	responseData, _ := json.Marshal(scpiResponse)
 	fmt.Fprintf(w, "%s\n", responseData)
-}
-
-func validateScpiRequestBody(bodyData []byte) (scpiRequestBody, error) {
-	body := scpiRequestBody{}
-	if err := json.Unmarshal(bodyData, &body); err != nil {
-		fmt.Printf("Failed to parse as JSON: %v\n", string(bodyData))
-		return body, errors.New(fmt.Sprintf("invalid JSON: %v", err))
-	}
-
-	if len(body.Scpi) == 0 {
-		fmt.Printf("Received empty SCPI field: %v\n", string(bodyData))
-		return body, errors.New("scpi field cannot be empty")
-	}
-
-	if body.Port == 0 {
-		body.Port = config.DefaultScpiSocketPort
-	}
-
-	if body.TimeoutSeconds < 0 {
-		fmt.Printf("Received negative timeoutSeconds: %v\n", string(bodyData))
-		return body, errors.New("timeoutSeconds must be a positive integer")
-	}
-	if body.TimeoutSeconds == 0 {
-		body.TimeoutSeconds = 10
-	}
-	return body, nil
 }

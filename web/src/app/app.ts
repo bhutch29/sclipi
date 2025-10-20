@@ -108,6 +108,7 @@ export class App {
       return;
     }
     this.sendInternal(this.inputText());
+    this.history.index = -1;
   }
 
   private sendInternal(scpi: string) {
@@ -123,15 +124,14 @@ export class App {
       ...log,
       { type, scpi, response: undefined, time, elapsed: 0, errors: [], serverError: "" },
     ]);
-    const body = {
-      scpi,
+    const params = {
       simulated: this.preferences.simulated(),
       autoSystErr: this.preferences.autoSystErr(),
       timeoutSeconds: this.preferences.timeoutSeconds(),
       port: this.preferences.port(),
       address: this.preferences.address(),
     };
-    this.http.post<ScpiResponse>('/api/scpi', body, { responseType: 'json' }).subscribe({
+    this.http.post<ScpiResponse>('/api/scpi', scpi, { params, responseType: 'json' }).subscribe({
       next: (x) => {
         const response = type === 'query' ? x.response : undefined;
         this.log.update((log) => {

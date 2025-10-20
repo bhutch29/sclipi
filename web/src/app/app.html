@@ -50,9 +50,6 @@
       >
         :SYST:ERR?
       </button>
-      @if (showSlowSendIndicator$ | async) {
-        <div>...</div>
-      }
       <button
         matButton="outlined"
         matTooltip="Select and run a command from your command history"
@@ -71,7 +68,7 @@
     </div>
 
     <div class="log" [class.wrap]="preferences.wrapLog()">
-      @for (entry of log(); track entry.time) {
+      @for (entry of log(); track entry.time; let i = $index) {
         <div class="entry">
           @if (preferences.showDate()) {
             <span class="timestamp">{{ entry.time | date: 'MMM dd, hh:mm:ss a' }}</span>
@@ -79,6 +76,9 @@
             <span class="timestamp">{{ entry.time | date: 'hh:mm:ss a' }}</span>
           }
           <b>{{ entry.scpi }}</b>
+          @if (i === log().length - 1 && (showSlowSendIndicator$ | async)) {
+            <div>...</div>
+          }
           {{ entry.response }}
           {{ entry.serverError }}
           @for (error of entry.errors; track $index) {
@@ -96,8 +96,8 @@
           <div>Health: Not OK!</div>
         }
 
+        <h2>IDN</h2>
         @if (idn.data(); as data) {
-          <h2>IDN</h2>
           <div class="idn">
             <b>Manufacturer:</b> {{data.manufacturer}}<br>
             <b>Model:</b> {{data.model}}<br>
@@ -106,6 +106,8 @@
           </div>
         } @else if (idn.error()) {
           IDN Error: {{ idn.error()?.error }}
+        } @else {
+          Connection failed. Check your Server Preferences
         }
 
         @if (error()) {

@@ -67,7 +67,7 @@ export class App {
   public showSlowSendIndicator$ = combineLatest([
     this.sending$.pipe(map((x) => (x ? 'start' : 'end'))),
     this.sending$.pipe(
-      delay(1000),
+      delay(500),
       map((x) => (x ? 'start' : 'end')),
     ),
   ]).pipe(map(([sending, sendingDelayed]) => sending === 'start' && sendingDelayed === 'start'));
@@ -116,6 +116,11 @@ export class App {
     this.history.add(scpi);
 
     const time = Date.now();
+    const type = scpi.includes('?') ? 'query' : 'command';
+    this.log.update((log) => [
+      ...log,
+      { type, scpi, response: undefined, time, errors: [], serverError: "" },
+    ]);
     const body = {
       scpi,
       simulated: this.preferences.simulated(),
@@ -127,12 +132,14 @@ export class App {
     this.http.post<ScpiResponse>('/api/scpi', body, { responseType: 'json' }).subscribe({
       next: (x) => {
         this.error.set('');
-        const type = scpi.includes('?') ? 'query' : 'command';
         const response = type === 'query' ? x.response : undefined;
-        this.log.update((log) => [
-          ...log,
-          { type, scpi, response, time, errors: x.errors, serverError: x.serverError },
-        ]);
+        this.log.update((log) => {
+          const lastElement = log[log.length - 1];
+          lastElement.response = response;
+          lastElement.errors = x.errors;
+          lastElement.serverError = x.serverError;
+          return log;
+        });
         this.sending$.next(false);
       },
       error: (x) => {

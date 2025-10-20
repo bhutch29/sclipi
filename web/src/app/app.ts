@@ -20,7 +20,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { BehaviorSubject, delay, map, merge } from 'rxjs';
+import { BehaviorSubject, combineLatest, delay, map } from 'rxjs';
 import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
@@ -65,13 +65,13 @@ export class App {
   private unsentScpiInput = '';
 
   public sending$ = new BehaviorSubject(false);
-  public showSlowSendIndicator$ = merge(
-    this.sending$.pipe(map((x) => (x ? 'sendStart' : 'sendEnd'))),
+  public showSlowSendIndicator$ = combineLatest([
+    this.sending$.pipe(map((x) => (x ? 'start' : 'end'))),
     this.sending$.pipe(
       delay(1000),
-      map((x) => (x ? 'sendStartDelay' : 'sendEndDelay')),
+      map((x) => (x ? 'start' : 'end')),
     ),
-  ).pipe(map((x) => x === 'sendStartDelay'));
+  ]).pipe(map(([sending, sendingDelayed]) => sending === 'start' && sendingDelayed === 'start'));
 
   public health = httpResource.text(() => '/api/health');
 
@@ -131,7 +131,6 @@ export class App {
         this.error.set('');
         const type = scpi.includes('?') ? 'query' : 'command';
         const response = type === 'query' ? x.response : undefined;
-        console.log(x.errors);
         this.log.update((log) => [
           ...log,
           { type, scpi, response, time, errors: x.errors, serverError: x.serverError },

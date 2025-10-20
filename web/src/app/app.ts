@@ -113,7 +113,10 @@ export class App {
   private sendInternal(scpi: string) {
     this.sending$.next(true);
     this.inputText.set('');
+
+    scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
     this.addToHistory(scpi);
+
     const time = Date.now();
     const body = {
       scpi,
@@ -128,6 +131,7 @@ export class App {
         this.error.set('');
         const type = scpi.includes('?') ? 'query' : 'command';
         const response = type === 'query' ? x.response : undefined;
+        console.log(x.errors);
         this.log.update((log) => [
           ...log,
           { type, scpi, response, time, errors: x.errors, serverError: x.serverError },
@@ -142,9 +146,8 @@ export class App {
   }
 
   private addToHistory(scpi: string) {
-    const entry = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
-    if (this.history()[0] !== entry) {
-      this.history.update((x) => [entry, ...x]);
+    if (this.history()[0] !== scpi) {
+      this.history.update((x) => [scpi, ...x]);
     }
   }
 

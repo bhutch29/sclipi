@@ -125,12 +125,28 @@ func (sm *scpiManager) handleScpi(s string) {
 		fmt.Print(r)
 		sm.history.addCommand(s)
 		sm.history.addResponse(r)
+
+		errors, err := sm.inst.QueryError([]string{})
+		if err != nil {
+			fmt.Printf("failed to query errors: %s\n", err)
+		}
+		for _, error := range errors {
+			fmt.Println("Error: " + error)
+		}
 	} else {
 		err := sm.inst.Command(s)
 		if err != nil {
 			fmt.Println(err)
 		}
 		sm.history.addCommand(s)
+
+		errors, err := sm.inst.QueryError([]string{})
+		if err != nil {
+			fmt.Printf("failed to query errors: %s\n", err)
+		}
+		for _, error := range errors {
+			fmt.Println("Error: " + error)
+		}
 	}
 }
 

@@ -59,13 +59,6 @@ func (i *scpiInstrument) Command(command string) error {
 	if err := i.exec(command); err != nil {
 		return fmt.Errorf("failed to execute the command '%s': %s", command, err)
 	}
-	errors, err := i.QueryError([]string{})
-	if err != nil {
-		return fmt.Errorf("failed to query errors: %s", err)
-	}
-	for _, error := range errors {
-		fmt.Println("Error: " + error)
-	}
 	return nil
 }
 

@@ -71,9 +71,9 @@
       @for (entry of log(); track entry.time; let i = $index) {
         <div class="entry">
           @if (preferences.showDate()) {
-            <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''">{{ entry.time | date: 'MMM dd, hh:mm:ss a' }}</span>
+            <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''">{{ entry.time | date: 'MMM dd, hh:mm:ss.SS a' }}</span>
           } @else {
-            <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''">{{ entry.time | date: 'hh:mm:ss a' }}</span>
+            <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''">{{ entry.time | date: 'hh:mm:ss.SS a' }}</span>
           }
           <b>{{ entry.scpi }}</b>
           @if (i === log().length - 1 && (showSlowSendIndicator$ | async)) {
@@ -96,7 +96,7 @@
           <div>Health: Not OK!</div>
         }
 
-        <h2>IDN</h2>
+        <h2>Info</h2>
         @if (idn.data(); as data) {
           <div class="idn">
             <b>Manufacturer:</b> {{data.manufacturer}}<br>
@@ -104,14 +104,11 @@
             <b>Serial:</b> {{data.serial}}<br>
             <b>Version:</b> {{data.version}}<br>
           </div>
-        } @else if (idn.error()) {
-          IDN Error: {{ idn.error()?.error }}
         } @else {
-          Connection failed. Check your Server Preferences
-        }
-
-        @if (error()) {
-          Error: {{ error() }}
+          @if (idn.error()) {
+            <span>IDN Error: {{ idn.error()?.error }}</span>
+          }
+          <span>Connection failed. Check your Server Preferences</span>
         }
       }
 

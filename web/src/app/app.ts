@@ -27,6 +27,7 @@ import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
 import { LogEntry, ScpiResponse } from './types';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-root',
@@ -45,12 +46,12 @@ import { LogEntry, ScpiResponse } from './types';
     MatIconModule,
     MatToolbarModule,
     MatTooltipModule,
-    MatButtonToggleModule
+    MatButtonToggleModule,
+    MatSnackBarModule,
   ],
 })
 export class App {
   public inputText = signal('');
-  public error: WritableSignal<string> = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
 
   public activeToolbarButtons: WritableSignal<string[]> = signal([])
@@ -82,6 +83,7 @@ export class App {
     public preferences: PreferencesService,
     public idn: IdnService,
     public history: HistoryService,
+    private snackBar: MatSnackBar,
     localStorageService: LocalStorageService,
   ) {
     localStorageService.setFromStorage('activeToolbarButtons', this.activeToolbarButtons);
@@ -131,7 +133,6 @@ export class App {
     };
     this.http.post<ScpiResponse>('/api/scpi', body, { responseType: 'json' }).subscribe({
       next: (x) => {
-        this.error.set('');
         const response = type === 'query' ? x.response : undefined;
         this.log.update((log) => {
           const lastElement = log[log.length - 1];
@@ -144,7 +145,13 @@ export class App {
         this.sending$.next(false);
       },
       error: (x) => {
-        this.error.set(x.error);
+        this.log.update((log) => {
+          const lastElement = log[log.length - 1];
+          lastElement.serverError = x.error ?? x.message;
+          lastElement.elapsed = Date.now() - time;
+          return log;
+        });
+        this.snackBar.open(x.error ?? x.message, "Close", {duration: 5000});
         this.sending$.next(false);
       },
     });

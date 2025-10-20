@@ -17,20 +17,21 @@ export class IdnService {
         simulated: this.preferences.simulated(),
         port: this.preferences.committedPort(),
         address: this.preferences.committedAddress(),
+        timeoutSeconds: this.preferences.timeoutSeconds(),
+        autoSystErr: false
       },
     };
   });
 
   public data: Signal<IDN | undefined> = computed(() => {
-    if (this.idn.hasValue()) {
-      const [manufacturer, model, serial, version] = this.idn.value().response.split(',');
-      if (!manufacturer || !model || !serial || !version) {
-        return undefined;
-      }
-      return { manufacturer, model, serial, version };
-    } else {
+    if (!this.idn.hasValue()) {
       return undefined;
     }
+    const [manufacturer, model, serial, version] = this.idn.value().response.split(',');
+    if (!manufacturer || !model || !serial || !version) {
+      return undefined;
+    }
+    return { manufacturer, model, serial, version };
   });
 
   public formatted = computed(() => {
@@ -52,5 +53,11 @@ export class IdnService {
 
   constructor(
     private preferences: PreferencesService
-  ){}
+  ){
+    setInterval(() => {
+      if (!this.idn.hasValue() || this.idn.value().response === "") {
+        this.idn.reload();
+      }
+    }, 5000);
+  }
 }

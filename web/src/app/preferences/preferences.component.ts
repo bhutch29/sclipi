@@ -31,7 +31,12 @@ export class PreferencesComponent {
     this.setPort(this.preferences.uncommittedPort());
   }
 
-  private setPort(port: number) {
+  private setPort(port: number | null) {
+    if (port === null) {
+      this.preferences.uncommittedPort.set(this.preferences.port());
+      return;
+    }
+
     if (!Number.isInteger(port)) {
       console.error('port must be an integer', port);
       this.preferences.uncommittedPort.set(this.preferences.port());
@@ -79,11 +84,31 @@ export class PreferencesComponent {
   }
 
   public onTimeoutBlur() {
-    this.preferences.timeoutSeconds.set(this.preferences.uncommittedTimeoutSeconds());
+    this.setTimeout(this.preferences.uncommittedTimeoutSeconds());
   }
 
   public onTimeoutEnter(event: Event) {
     event.preventDefault();
+    this.setTimeout(this.preferences.uncommittedTimeoutSeconds());
+  }
+
+  private setTimeout(timeout: number | null) {
+    if (timeout === null) {
+      this.preferences.uncommittedTimeoutSeconds.set(this.preferences.timeoutSeconds());
+      return;
+    }
+
+    if (!Number.isInteger(timeout)) {
+      console.error('timeout must be an integer', timeout);
+      this.preferences.uncommittedTimeoutSeconds.set(this.preferences.timeoutSeconds());
+      return;
+    }
+
+    if (timeout <= 0) {
+      this.preferences.uncommittedTimeoutSeconds.set(this.preferences.timeoutSeconds());
+      return;
+    }
+
     this.preferences.timeoutSeconds.set(this.preferences.uncommittedTimeoutSeconds());
   }
 

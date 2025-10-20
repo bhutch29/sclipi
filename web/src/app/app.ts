@@ -1,30 +1,30 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpClient, httpResource } from '@angular/common/http';
 import {
-  Component,
-  computed,
-  effect,
-  ElementRef,
-  Renderer2,
-  Signal,
-  signal,
-  ViewChild,
-  WritableSignal,
+    Component,
+    computed,
+    effect,
+    ElementRef,
+    Renderer2,
+    signal,
+    ViewChild,
+    WritableSignal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BehaviorSubject, delay, map, merge } from 'rxjs';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { BehaviorSubject, delay, map, merge } from 'rxjs';
+import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatIconModule } from '@angular/material/icon';
-import { IDN, LogEntry, ScpiResponse } from './types';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTooltipModule } from '@angular/material/tooltip';
+import { LogEntry, ScpiResponse } from './types';
 
 @Component({
   selector: 'app-root',
@@ -70,57 +70,13 @@ export class App {
 
   public health = httpResource.text(() => '/api/health');
 
-  public idn = httpResource<ScpiResponse>(() => {
-    if (this.preferences.committedPort() === 0 || this.preferences.committedAddress() === '') {
-      return undefined;
-    }
-    return {
-      url: '/api/scpi',
-      method: 'POST',
-      body: {
-        scpi: '*IDN?',
-        simulated: this.preferences.simulated(),
-        port: this.preferences.committedPort(),
-        address: this.preferences.committedAddress(),
-      },
-    };
-  });
-
-  public idnStruct: Signal<IDN | undefined> = computed(() => {
-    if (this.idn.hasValue()) {
-      const [manufacturer, model, serial, version] = this.idn.value().response.split(',');
-      if (!manufacturer || !model || !serial || !version) {
-        return undefined;
-      }
-      return { manufacturer, model, serial, version };
-    } else {
-      return undefined;
-    }
-  });
-
-  public idnFormatted = computed(() => {
-    const x = this.idnStruct();
-    if (x) {
-      return `
-      Manufacturer: ${x.manufacturer}
-      Model: ${x.model}
-      Serial: ${x.serial}
-      Version: ${x.version}
-      `;
-    } else {
-      return '';
-    }
-  });
-
-
-  public idnError = this.idn.error as Signal<HttpErrorResponse | undefined>;
-
   @ViewChild('scpiInput') scpiInput: ElementRef<HTMLInputElement> | undefined;
 
   constructor(
     private http: HttpClient,
     private renderer: Renderer2,
     public preferences: PreferencesService,
+    public idn: IdnService,
     localStorageService: LocalStorageService,
   ) {
     localStorageService.setFromStorage('history', this.history);

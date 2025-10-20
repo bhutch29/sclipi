@@ -1,7 +1,7 @@
 <mat-toolbar>
   <span>Sclipi Web</span>
-  @if (idnStruct()) {
-    <span class="subtitle" [matTooltip]="idnFormatted()" matTooltipClass="tooltip">{{idnStruct()?.model}} {{idnStruct()?.serial}}</span>
+  @if (idn.data(); as data) {
+    <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip">{{data.model}} {{data.serial}}</span>
   }
   <span class="toolbar-spacer"></span>
   <button matIconButton>
@@ -90,15 +90,15 @@
       <div>Health: Not OK!</div>
     }
 
-    @if (idnStruct()) {
+    @if (idn.data(); as data) {
       <div class="idn">
-        Manufacturer: {{idnStruct()?.manufacturer}}<br>
-        Model: {{idnStruct()?.model}}<br>
-        Serial: {{idnStruct()?.serial}}<br>
-        Version: {{idnStruct()?.version}}<br>
+        Manufacturer: {{data.manufacturer}}<br>
+        Model: {{data.model}}<br>
+        Serial: {{data.serial}}<br>
+        Version: {{data.version}}<br>
       </div>
-    } @else if (idnError()) {
-      IDN Error: {{ idnError()?.error }}
+    } @else if (idn.error()) {
+      IDN Error: {{ idn.error()?.error }}
     }
 
     @if (error()) {

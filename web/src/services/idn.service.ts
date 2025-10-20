@@ -12,8 +12,8 @@ export class IdnService {
     return {
       url: '/api/scpi',
       method: 'POST',
-      body: {
-        scpi: '*IDN?',
+      body: '*IDN?',
+      params: {
         simulated: this.preferences.simulated(),
         port: this.preferences.port(),
         address: this.preferences.address(),

@@ -180,7 +180,7 @@ func executeWithRetry(address string, port int, timeout time.Duration, operation
 		instCache.invalidate(address, port)
 		inst, err = instCache.get(address, port, timeout, nil)
 		if err != nil {
-			return fmt.Errorf("connection lost and reconnection failed: %w", err)
+			return err
 		}
 		inst.SetTimeout(timeout)
 		return operation(inst)
@@ -335,31 +335,32 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 
 	timeout := time.Duration(timeoutSeconds) * time.Second
 
+  var executeError error
 	scpiResponse := scpiResponse{}
 	if strings.Contains(scpi, "?") {
 		var queryResponse string
-		err := executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {
+		executeError = executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {
 			var err error
 			queryResponse, err = inst.Query(scpi)
 			return err
 		})
-		if err != nil {
-			log.Printf("Error sending query: %v", err)
-			scpiResponse.ServerError = fmt.Sprintf("Error sending query: %v", err)
+		if executeError != nil {
+			log.Printf("Error sending query: %v", executeError)
+			scpiResponse.ServerError = fmt.Sprintf("Error sending query: %v", executeError)
 		} else {
 			scpiResponse.Response = queryResponse
 		}
 	} else {
-		err := executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {
+		executeError = executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {
 			return inst.Command(scpi)
 		})
-		if err != nil {
-			log.Printf("Error sending command: %v", err)
-			scpiResponse.ServerError = fmt.Sprintf("Error sending command: %v", err)
+		if executeError != nil {
+			log.Printf("Error sending command: %v", executeError)
+			scpiResponse.ServerError = fmt.Sprintf("Error sending command: %v", executeError)
 		}
 	}
 
-	if autoSystError && scpiResponse.ServerError == "" {
+	if autoSystError && !errors.Is(executeError, utils.ErrConnectionClosed) {
 		var systErrors []string
 		err := executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {
 			var err error

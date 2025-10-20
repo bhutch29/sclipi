@@ -1,44 +1,42 @@
 <div class="client-preferences">
-  <label>
-    <input type="checkbox" [(ngModel)]="preferences.simulated" />
-    Simulated
-  </label>
-  <label>
-    <input type="checkbox" [(ngModel)]="preferences.wrapLog" />
-    Wrap Log
-  </label>
-  <label>
-    <input type="checkbox" [(ngModel)]="preferences.showDate" />
-    Show Date
-  </label>
-  <label>
-    <input type="checkbox" [(ngModel)]="preferences.autoSystErr" />
-    Auto :SYST:ERR?
-  </label>
-  <label>
-    <input type="number" [(ngModel)]="preferences.timeoutSeconds" />
-    Timeout (seconds)
-  </label>
-  <button (click)="preferences.resetClientPreferences()">Reset client preferences to default</button>
+  <mat-checkbox [(ngModel)]="preferences.simulated">Simulated</mat-checkbox>
+  <mat-checkbox [(ngModel)]="preferences.wrapLog">Wrap Log</mat-checkbox>
+  <mat-checkbox [(ngModel)]="preferences.showDate">Show Date</mat-checkbox>
+  <mat-checkbox [(ngModel)]="preferences.autoSystErr">Auto :SYST:ERR?</mat-checkbox>
+  <mat-form-field appearance="outline">
+    <mat-label> Timeout (seconds) </mat-label>
+    <input matInput type="number" [(ngModel)]="preferences.timeoutSeconds" />
+  </mat-form-field>
+  <div>
+    <button matButton="outlined" (click)="preferences.resetClientPreferences()">
+      Reset client preferences to default
+    </button>
+  </div>
 </div>
 <div class="server-preferences">
-  <label>
+  <mat-form-field appearance="outline">
+    <mat-label> SCPI Socket Port </mat-label>
     <input
+      matInput
       type="number"
       [(ngModel)]="preferences.port"
       (blur)="onPortBlur()"
       (keydown.enter)="onPortEnter($event)"
     />
-    SCPI Socket Port
-  </label>
-  <label>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label> SCPI Socket Address </mat-label>
     <input
+      matInput
       type="text"
       [(ngModel)]="preferences.address"
       (blur)="onAddressBlur()"
       (keydown.enter)="onAddressEnter($event)"
     />
-    SCPI Socket Address
-  </label>
-  <button (click)="preferences.resetServerPreferences()">Reset server preferences to default</button>
+  </mat-form-field>
+  <div>
+    <button matButton="outlined" (click)="preferences.resetServerPreferences()">
+      Reset server preferences to default
+    </button>
+  </div>
 </div>

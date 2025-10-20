@@ -1,4 +1,11 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
 mat-toolbar {
+  flex: 0 0 auto;
   gap: 16px;
 
   .subtitle {
@@ -20,10 +27,12 @@ mat-toolbar {
 }
 
 .content {
+  min-height: 0;
+  flex: 1 1 auto;
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin: 4px;
+  margin: 8px;
 }
 
 .inputs {
@@ -38,7 +47,10 @@ mat-toolbar {
 }
 
 .main {
+  display: flex;
+  flex-direction: column;
   min-width: 20vw;
+  min-height: 0;
 }
 
 .log {
@@ -46,6 +58,7 @@ mat-toolbar {
   flex-direction: column;
   gap: 8px;
   padding: 8px;
+  overflow-y: auto;
 
   &:not(.wrap) {
     text-wrap: nowrap;
@@ -64,10 +77,11 @@ mat-toolbar {
 }
 
 .right-panel {
-  flex-basis: 350px;
   display: flex;
   flex-direction: column;
   min-width: 350px;
+  padding: 8px;
+  overflow-y: auto;
 }
 
 .idn {

@@ -64,9 +64,9 @@ func connectInstrument(address string, port int, timeout time.Duration, progress
     log.Printf("Connecting to instrument at address '%s'\n", address)
     var inst utils.Instrument
     if address == "simulated" {
-	inst = utils.NewSimInstrument(timeout)
+	inst = utils.NewSimInstrument(timeout, false)
     } else {
-	inst = utils.NewScpiInstrument(timeout)
+	inst = utils.NewScpiInstrument(timeout, false)
     }
 
     if err := inst.Connect(address+":"+strconv.Itoa(port), progressFn); err != nil {

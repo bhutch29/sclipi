@@ -26,14 +26,15 @@ type Instrument interface {
 }
 
 type scpiInstrument struct {
-	address    string
-	connection *net.TCPConn
-	timeout    time.Duration
-  mu         sync.RWMutex
+	address     string
+	connection  *net.TCPConn
+	timeout     time.Duration
+  mu          sync.RWMutex
+  interactive bool
 }
 
-func NewScpiInstrument(timeout time.Duration) Instrument {
-	return &scpiInstrument{timeout: timeout}
+func NewScpiInstrument(timeout time.Duration, interactive bool) Instrument {
+  return &scpiInstrument{timeout: timeout, interactive: interactive}
 }
 
 func (i *scpiInstrument) Connect(address string, progress func(int)) error {
@@ -113,7 +114,7 @@ func (i *scpiInstrument) Query(cmd string) (res string, err error) {
 	queryCompleted := make(chan bool, 1)
 	queryFailed := make(chan bool, 1)
 	done := make(chan bool)
-	go queryProgress(queryCompleted, queryFailed, done, i.timeout)
+	go queryProgress(queryCompleted, queryFailed, done, i.timeout, i.interactive)
 
   i.mu.Lock()
   defer i.mu.Unlock()
@@ -205,7 +206,7 @@ func (i *scpiInstrument) SetTimeout(timeout time.Duration) {
 	i.timeout = timeout
 }
 
-func queryProgress(queryCompleted chan bool, queryFailed chan bool, done chan bool, timeout time.Duration) {
+func queryProgress(queryCompleted chan bool, queryFailed chan bool, done chan bool, timeout time.Duration, interactive bool) {
 	select {
 	case <-queryCompleted:
 		done <- true
@@ -217,20 +218,26 @@ func queryProgress(queryCompleted chan bool, queryFailed chan bool, done chan bo
 		break
 	}
 
-	bar := progressbar.New(100)
-	_ = bar.Add(10)
-	percent := 10
+  var bar *progressbar.ProgressBar
+  var percent int
+  if interactive {
+	  bar = progressbar.New(100)
+	  _ = bar.Add(10)
+	  percent = 10
+  }
 
 loop:
 	for {
 		select {
 		case <-queryCompleted:
-			_ = bar.Add(100 - percent)
+      if interactive {
+			  _ = bar.Add(100 - percent)
+      }
 			break loop
 		case <-queryFailed:
 			break loop
 		case <-time.After(timeout / 10):
-			if percent < 90 {
+			if interactive && percent < 90 {
 				_ = bar.Add(10)
 				percent += 10
 			}
@@ -266,10 +273,11 @@ func (i *scpiInstrument) Close() error {
 
 type simInstrument struct {
 	timeout time.Duration
+  interactive bool
 }
 
-func NewSimInstrument(timeout time.Duration) Instrument {
-	return &simInstrument{timeout: timeout}
+func NewSimInstrument(timeout time.Duration, interactive bool) Instrument {
+  return &simInstrument{timeout: timeout, interactive: interactive}
 }
 
 func (i *simInstrument) Connect(address string, progress func(int)) error {
@@ -288,7 +296,7 @@ func (i *simInstrument) Query(query string) (string, error) {
 		queryCompleted := make(chan bool, 1)
 		queryFailed := make(chan bool, 1)
 		done := make(chan bool)
-		go queryProgress(queryCompleted, queryFailed, done, i.timeout)
+		go queryProgress(queryCompleted, queryFailed, done, i.timeout, i.interactive)
 		if query == "*ID?" {
 			queryFailed <- true
 		} else {

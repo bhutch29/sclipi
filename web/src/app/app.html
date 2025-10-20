@@ -4,9 +4,10 @@
     <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip">{{data.model}} {{data.serial}}</span>
   }
   <span class="toolbar-spacer"></span>
-  <button matIconButton>
-    <mat-icon>settings</mat-icon>
-  </button>
+  <mat-button-toggle-group name="toolbar-buttons" [(ngModel)]="activeToolbarButtons" multiple>
+    <mat-button-toggle value="idn"><mat-icon>info</mat-icon></mat-button-toggle>
+    <mat-button-toggle value="settings"><mat-icon>settings</mat-icon></mat-button-toggle>
+  </mat-button-toggle-group>
 </mat-toolbar>
 <div class="content">
   <div class="main">
@@ -85,27 +86,33 @@
     </div>
   </div>
 
-  <div class="right-panel">
-    @if (health.hasValue() && !health.value()) {
-      <div>Health: Not OK!</div>
-    }
+  @if (activeToolbarButtons().length > 0) {
+    <div class="right-panel">
+      @if (activeToolbarButtons().includes('idn')) {
+        @if (health.hasValue() && !health.value()) {
+          <div>Health: Not OK!</div>
+        }
 
-    @if (idn.data(); as data) {
-      <div class="idn">
-        Manufacturer: {{data.manufacturer}}<br>
-        Model: {{data.model}}<br>
-        Serial: {{data.serial}}<br>
-        Version: {{data.version}}<br>
-      </div>
-    } @else if (idn.error()) {
-      IDN Error: {{ idn.error()?.error }}
-    }
+        @if (idn.data(); as data) {
+          <div class="idn">
+            Manufacturer: {{data.manufacturer}}<br>
+            Model: {{data.model}}<br>
+            Serial: {{data.serial}}<br>
+            Version: {{data.version}}<br>
+          </div>
+        } @else if (idn.error()) {
+          IDN Error: {{ idn.error()?.error }}
+        }
 
-    @if (error()) {
-      Error: {{ error() }}
-    }
+        @if (error()) {
+          Error: {{ error() }}
+        }
+      }
 
-    <button (click)="clearHistory()">Clear History</button>
-    <app-preferences></app-preferences>
-  </div>
+      @if (activeToolbarButtons().includes('settings')) {
+        <button (click)="clearHistory()">Clear History</button>
+        <app-preferences></app-preferences>
+      }
+    </div>
+  }
 </div>

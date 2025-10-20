@@ -38,7 +38,7 @@ mat-toolbar {
 }
 
 .main {
-  max-width: 70vw;
+  min-width: 20vw;
 }
 
 .log {
@@ -64,6 +64,7 @@ mat-toolbar {
 }
 
 .right-panel {
+  flex-basis: 350px;
   display: flex;
   flex-direction: column;
   min-width: 350px;
@@ -71,4 +72,10 @@ mat-toolbar {
 
 .idn {
   margin-bottom: 8px;
+}
+
+mat-hint {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }

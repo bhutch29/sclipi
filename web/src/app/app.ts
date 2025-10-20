@@ -6,6 +6,7 @@ import {
     effect,
     ElementRef,
     Renderer2,
+    Signal,
     signal,
     ViewChild,
     WritableSignal
@@ -25,6 +26,7 @@ import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
 import { LogEntry, ScpiResponse } from './types';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @Component({
   selector: 'app-root',
@@ -42,13 +44,16 @@ import { LogEntry, ScpiResponse } from './types';
     MatMenuModule,
     MatIconModule,
     MatToolbarModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatButtonToggleModule
   ],
 })
 export class App {
   public inputText = signal('');
   public error: WritableSignal<string> = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
+
+  public activeToolbarButtons: WritableSignal<string[]> = signal([])
 
   public history: WritableSignal<string[]> = signal([]);
   public historyIndex = -1;
@@ -81,6 +86,8 @@ export class App {
   ) {
     localStorageService.setFromStorage('history', this.history);
     effect(() => localStorageService.setItem('history', this.history()));
+    localStorageService.setFromStorage('activeToolbarButtons', this.activeToolbarButtons);
+    effect(() => localStorageService.setItem('activeToolbarButtons', this.activeToolbarButtons()));
 
     this.renderer.listen('window', 'focus', () => {
       this.scpiInput?.nativeElement.focus();

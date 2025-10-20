@@ -44,6 +44,7 @@
       </button>
       <button
         matButton="outlined"
+        matTooltip="Send :SYST:ERR? query to check for errors"
         (click)="systErr()"
         [disabled]="inputText().length !== 0 || (sending$ | async)"
       >
@@ -54,6 +55,7 @@
       }
       <button
         matButton="outlined"
+        matTooltip="Select and run a command from your command history"
         [matMenuTriggerFor]="menu"
         [disabled]="inputText().length !== 0 || (sending$ | async)"
       >

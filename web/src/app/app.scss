@@ -1,4 +1,25 @@
-:host {
+mat-toolbar {
+  gap: 16px;
+
+  .subtitle {
+    font-size: var(--mat-sys-title-medium-size);
+  }
+
+  .toolbar-spacer {
+    flex: 1 1 auto;
+  }
+}
+
+::ng-deep .tooltip {
+  white-space: pre-line;
+  text-wrap: nowrap;
+
+  .mat-mdc-tooltip-surface {
+    max-width: unset !important;
+  }
+}
+
+.content {
   display: flex;
   justify-content: space-between;
   gap: 12px;

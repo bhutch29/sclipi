@@ -1,77 +1,111 @@
-<div class="main">
-  <div class="inputs">
-    <mat-form-field appearance="outline" class="scpi-form">
-      <input
-        type="text"
-        #scpiInput
-        [(ngModel)]="inputText"
-        autofocus
-        (keydown.enter)="send()"
-        (keydown.arrowUp)="arrowUp($event)"
-        (keydown.arrowDown)="arrowDown($event)"
-        placeholder="Type colon ':' to start. Enter to submit. Arrow up for history."
-        matInput
-        [matAutocomplete]="auto"
-      />
-      <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
-        @if (inputText().length !== 0) {
-          @for (option of autocompleteHistory(); track option) {
-            <mat-option [value]="option">{{ option }}</mat-option>
+<mat-toolbar>
+  <span>Sclipi Web</span>
+  @if (idnStruct()) {
+    <span class="subtitle" [matTooltip]="idnFormatted()" matTooltipClass="tooltip">{{idnStruct()?.model}} {{idnStruct()?.serial}}</span>
+  }
+  <span class="toolbar-spacer"></span>
+  <button matIconButton>
+    <mat-icon>settings</mat-icon>
+  </button>
+</mat-toolbar>
+<div class="content">
+  <div class="main">
+    <div class="inputs">
+      <mat-form-field appearance="outline" class="scpi-form">
+        <mat-label>SCPI Command/Query</mat-label>
+        <input
+          type="text"
+          #scpiInput
+          [(ngModel)]="inputText"
+          autofocus
+          (keydown.enter)="send()"
+          (keydown.arrowUp)="arrowUp($event)"
+          (keydown.arrowDown)="arrowDown($event)"
+          matInput
+          [matAutocomplete]="auto"
+        />
+        <mat-hint><strong>Colon (:)</strong> for auto-complete. <strong>Enter</strong> to submit. <strong>Arrow Up</strong> for history.</mat-hint>
+        <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+          @if (inputText().length !== 0 && historyIndex < 0) {
+            @for (option of autocompleteHistory(); track option) {
+              <mat-option [value]="option">{{ option }}</mat-option>
+            }
           }
-        }
-      </mat-autocomplete>
-    </mat-form-field>
-    <button matButton="outlined" (click)="send()" [disabled]="inputText().length === 0 || (sending$ | async)">Send</button>
-    <button matButton="outlined" (click)="systErr()" [disabled]="inputText().length !== 0 || (sending$ | async)">:SYST:ERR?</button>
-    @if (showSlowSendIndicator$ | async) {
-      <div>...</div>
-    }
-    <button matButton="outlined" [matMenuTriggerFor]="menu" [disabled]="inputText().length !== 0 || (sending$ | async)">
-      History<mat-icon>arrow_drop_down</mat-icon>
-    </button>
-    <mat-menu #menu="matMenu">
-      @for (option of history(); track $index) {
-        <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
-          {{option}}
-        </button>
+        </mat-autocomplete>
+      </mat-form-field>
+      <button
+        matButton="outlined"
+        (click)="send()"
+        [disabled]="inputText().length === 0 || (sending$ | async)"
+      >
+        Send
+      </button>
+      <button
+        matButton="outlined"
+        (click)="systErr()"
+        [disabled]="inputText().length !== 0 || (sending$ | async)"
+      >
+        :SYST:ERR?
+      </button>
+      @if (showSlowSendIndicator$ | async) {
+        <div>...</div>
       }
-    </mat-menu>
+      <button
+        matButton="outlined"
+        [matMenuTriggerFor]="menu"
+        [disabled]="inputText().length !== 0 || (sending$ | async)"
+      >
+        History<mat-icon>arrow_drop_down</mat-icon>
+      </button>
+      <mat-menu #menu="matMenu">
+        @for (option of history(); track $index) {
+          <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
+            {{ option }}
+          </button>
+        }
+      </mat-menu>
+    </div>
+
+    <div class="log" [class.wrap]="preferences.wrapLog()">
+      @for (entry of log(); track entry.time) {
+        <div class="entry">
+          @if (preferences.showDate()) {
+            <span class="timestamp">{{ entry.time | date: 'MMM dd, hh:mm:ss a' }}</span>
+          } @else {
+            <span class="timestamp">{{ entry.time | date: 'hh:mm:ss a' }}</span>
+          }
+          <b>{{ entry.scpi }}</b>
+          {{ entry.response }}
+          {{ entry.serverError }}
+          @for (error of entry.errors; track $index) {
+            {{ error }}
+          }
+        </div>
+      }
+    </div>
   </div>
 
-  <div class="log" [class.wrap]="preferences.wrapLog()">
-    @for (entry of log(); track entry.time) {
-      <div class="entry">
-        @if (preferences.showDate()) {
-          <span class="timestamp">{{ entry.time | date: 'MMM dd, hh:mm:ss a' }}</span>
-        } @else {
-          <span class="timestamp">{{ entry.time | date: 'hh:mm:ss a' }}</span>
-        }
-        <b>{{ entry.scpi }}</b>
-        {{ entry.response }}
-        {{ entry.serverError }}
-        @for (error of entry.errors; track $index) {
-          {{ error }}
-        }
-      </div>
+  <div class="right-panel">
+    @if (health.hasValue() && !health.value()) {
+      <div>Health: Not OK!</div>
     }
+
+    @if (idnStruct()) {
+      <div class="idn">
+        Manufacturer: {{idnStruct()?.manufacturer}}<br>
+        Model: {{idnStruct()?.model}}<br>
+        Serial: {{idnStruct()?.serial}}<br>
+        Version: {{idnStruct()?.version}}<br>
+      </div>
+    } @else if (idnError()) {
+      IDN Error: {{ idnError()?.error }}
+    }
+
+    @if (error()) {
+      Error: {{ error() }}
+    }
+
+    <button (click)="clearHistory()">Clear History</button>
+    <app-preferences></app-preferences>
   </div>
-</div>
-
-<div class="right-panel">
-  @if (health.hasValue() && !health.value()) {
-    <div>Health: Not OK!</div>
-  }
-
-  @if (idnFormatted()) {
-    <div class="idn" [innerHtml]="idnFormatted()"></div>
-  } @else if (idnError()) {
-    IDN Error: {{ idnError()?.error }}
-  }
-
-  @if (error()) {
-    Error: {{ error() }}
-  }
-
-  <button (click)="clearHistory()">Clear History</button>
-  <app-preferences></app-preferences>
 </div>

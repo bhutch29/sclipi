@@ -22,13 +22,28 @@ import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
-import { LogEntry, ScpiResponse } from './types';
+import { IDN, LogEntry, ScpiResponse } from './types';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  imports: [FormsModule, DatePipe, CommonModule, MatAutocompleteModule, MatInputModule, MatFormFieldModule, MatButtonModule, PreferencesComponent, MatMenuModule, MatIconModule],
+  imports: [
+    FormsModule,
+    DatePipe,
+    CommonModule,
+    MatAutocompleteModule,
+    MatInputModule,
+    MatFormFieldModule,
+    MatButtonModule,
+    PreferencesComponent,
+    MatMenuModule,
+    MatIconModule,
+    MatToolbarModule,
+    MatTooltipModule
+  ],
 })
 export class App {
   public inputText = signal('');
@@ -36,8 +51,12 @@ export class App {
   public log: WritableSignal<LogEntry[]> = signal([]);
 
   public history: WritableSignal<string[]> = signal([]);
-  private historyIndex = -1;
-  public autocompleteHistory = computed(() => this.history().filter(x => x.toLowerCase().includes(this.inputText().toLowerCase())).filter((elem, i, self) => i === self.indexOf(elem)));
+  public historyIndex = -1;
+  public autocompleteHistory = computed(() =>
+    this.history()
+      .filter((x) => x.toLowerCase().includes(this.inputText().toLowerCase()))
+      .filter((elem, i, self) => i === self.indexOf(elem)),
+  );
   private unsentScpiInput = '';
 
   public sending$ = new BehaviorSubject(false);
@@ -66,22 +85,34 @@ export class App {
       },
     };
   });
-  public idnFormatted = computed(() => {
+
+  public idnStruct: Signal<IDN | undefined> = computed(() => {
     if (this.idn.hasValue()) {
       const [manufacturer, model, serial, version] = this.idn.value().response.split(',');
       if (!manufacturer || !model || !serial || !version) {
-        return '';
+        return undefined;
       }
+      return { manufacturer, model, serial, version };
+    } else {
+      return undefined;
+    }
+  });
+
+  public idnFormatted = computed(() => {
+    const x = this.idnStruct();
+    if (x) {
       return `
-      Manufacturer: ${manufacturer}<br>
-      Model: ${model}<br>
-      Serial: ${serial}<br>
-      Version: ${version}<br>
+      Manufacturer: ${x.manufacturer}
+      Model: ${x.model}
+      Serial: ${x.serial}
+      Version: ${x.version}
       `;
     } else {
       return '';
     }
   });
+
+
   public idnError = this.idn.error as Signal<HttpErrorResponse | undefined>;
 
   @ViewChild('scpiInput') scpiInput: ElementRef<HTMLInputElement> | undefined;
@@ -92,7 +123,6 @@ export class App {
     public preferences: PreferencesService,
     localStorageService: LocalStorageService,
   ) {
-
     localStorageService.setFromStorage('history', this.history);
     effect(() => localStorageService.setItem('history', this.history()));
 
@@ -108,7 +138,10 @@ export class App {
     if (this.inputText().length === 0) {
       return;
     }
-    if (this.inputText().length === 1 && (this.inputText()[0] === ':' || this.inputText()[0] === '*')) {
+    if (
+      this.inputText().length === 1 &&
+      (this.inputText()[0] === ':' || this.inputText()[0] === '*')
+    ) {
       return;
     }
     this.sendInternal(this.inputText());

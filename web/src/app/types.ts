@@ -12,3 +12,10 @@ export interface ScpiResponse {
   errors: string[];
   serverError: string;
 }
+
+export interface IDN {
+  manufacturer: string;
+  model: string;
+  serial: string;
+  version: string;
+}

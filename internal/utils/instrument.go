@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -28,6 +29,7 @@ type scpiInstrument struct {
 	address    string
 	connection *net.TCPConn
 	timeout    time.Duration
+  mu         sync.RWMutex
 }
 
 func NewScpiInstrument(timeout time.Duration) Instrument {
@@ -66,8 +68,10 @@ func (i *scpiInstrument) Command(command string) error {
 }
 
 func (i *scpiInstrument) exec(cmd string) error {
+  i.mu.Lock()
+  defer i.mu.Unlock()
 	b := []byte(cmd + "\n")
-	_ = i.connection.SetWriteDeadline(time.Now().Add(i.timeout * time.Second))
+	_ = i.connection.SetWriteDeadline(time.Now().Add(i.timeout))
 	if _, err := i.connection.Write(b); err != nil {
 		if isConnectionError(err) {
 			return fmt.Errorf("%w: %v", ErrConnectionClosed, err)
@@ -111,6 +115,8 @@ func (i *scpiInstrument) Query(cmd string) (res string, err error) {
 	done := make(chan bool)
 	go queryProgress(queryCompleted, queryFailed, done, i.timeout)
 
+  i.mu.Lock()
+  defer i.mu.Unlock()
 	_ = i.connection.SetReadDeadline(time.Now().Add(i.timeout))
 
 	b := bufio.NewReader(i.connection)

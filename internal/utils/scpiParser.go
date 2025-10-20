@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"log"
@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-type scpiNode struct {
+type ScpiNode struct {
 	Content  nodeInfo
-	Children []scpiNode
+	Children []ScpiNode
 }
 
 type nodeInfo struct {
@@ -19,8 +19,8 @@ type nodeInfo struct {
 	Suffixed bool
 }
 
-func parseScpi(lines []string) scpiNode {
-	head := scpiNode{}
+func parseScpi(lines []string) ScpiNode {
+	head := ScpiNode{}
 	commands := splitScpiCommands(lines)
 
 	// writeCommandsToFile(commands)
@@ -32,7 +32,7 @@ func parseScpi(lines []string) scpiNode {
 	return head
 }
 
-func createScpiTreeBranch(command []nodeInfo, head *scpiNode) {
+func createScpiTreeBranch(command []nodeInfo, head *ScpiNode) {
 	if len(command) == 0 {
 		return
 	}
@@ -42,14 +42,14 @@ func createScpiTreeBranch(command []nodeInfo, head *scpiNode) {
 		}
 		createScpiTreeBranch(command[1:], &head.Children[index])
 	} else {
-		head.Children = append(head.Children, scpiNode{Content: command[0]})
+		head.Children = append(head.Children, ScpiNode{Content: command[0]})
 		if len(command) > 1 {
 			createScpiTreeBranch(command[1:], &head.Children[len(head.Children)-1])
 		}
 	}
 }
 
-func scpiNodeExists(nodes []scpiNode, info nodeInfo) (bool, int) {
+func scpiNodeExists(nodes []ScpiNode, info nodeInfo) (bool, int) {
 	for i, node := range nodes {
 		if node.Content == info {
 			return true, i

@@ -1,7 +1,6 @@
-package main
+package utils
 
 import (
-	"github.com/bhutch29/sclipi/internal/utils"
 	"strings"
 	"testing"
 )
@@ -9,7 +8,7 @@ import (
 func BenchmarkVxgScpi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		head := scpiNode{}
-		lines, _ := utils.ReadLinesFromPath("benchmark_SCPI.txt")
+		lines, _ := ReadLinesFromPath("benchmark_SCPI.txt")
 		commands := splitScpiCommands(lines)
 
 		for _, command := range commands {
@@ -167,6 +166,6 @@ func TestScpiParserIrregularSuffix(t *testing.T) {
 }
 
 func TestGenerateTree(t *testing.T) {
-	lines, _ := utils.ReadLinesFromPath("SCPI.txt")
+	lines, _ := ReadLinesFromPath("SCPI.txt")
 	parseScpi(lines) //TODO: Generate real tests
 }

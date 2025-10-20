@@ -17,8 +17,8 @@ import (
 type scpiManager struct {
 	inst      utils.Instrument
 	history   history
-	colonTree scpiNode
-	starTree  scpiNode
+	colonTree ScpiNode
+	starTree  ScpiNode
 }
 
 func newScpiManager(i utils.Instrument) scpiManager {
@@ -194,17 +194,17 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 
 func (sm *scpiManager) getTree(i utils.Instrument) {
 	if len(sm.colonTree.Children) == 0 {
-		colonCommands, starCommands, err := i.GetSupportedCommands()
+		colonTree, starTree, err := i.GetSupportedCommandsTree()
 		if err != nil {
 			log.Fatal(err)
 		} else {
-			sm.colonTree = parseScpi(colonCommands)
-			sm.starTree = parseScpi(starCommands)
+			sm.colonTree = colonTree
+			sm.starTree = starTree
 		}
 	}
 }
 
-func (sm *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
+func (sm *scpiManager) getCurrentNode(tree ScpiNode, inputs []string) ScpiNode {
 	current := tree
 	next := tree
 	for i, item := range inputs {
@@ -213,7 +213,7 @@ func (sm *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
 			next = node
 			continue
 		} else if i < len(inputs)-1 { // Colon pressed twice in a row, return nothing
-			return scpiNode{}
+			return ScpiNode{}
 		}
 		current = next // item not found
 		break
@@ -222,7 +222,7 @@ func (sm *scpiManager) getCurrentNode(tree scpiNode, inputs []string) scpiNode {
 	return current
 }
 
-func (sm *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
+func (sm *scpiManager) suggestsFromNode(node ScpiNode) []prompt.Suggest {
 	var s []prompt.Suggest
 	for _, item := range node.Children {
 		if item.Content.Suffixed {
@@ -246,7 +246,7 @@ func (sm *scpiManager) suggestsFromNode(node scpiNode) []prompt.Suggest {
 	return s
 }
 
-func (sm *scpiManager) getSuggestDescription(suggest *prompt.Suggest, node scpiNode) {
+func (sm *scpiManager) getSuggestDescription(suggest *prompt.Suggest, node ScpiNode) {
 	if len(node.Children) == 0 {
 		if strings.HasSuffix(node.Content.Text, "?") {
 			suggest.Description = "Query"
@@ -256,7 +256,7 @@ func (sm *scpiManager) getSuggestDescription(suggest *prompt.Suggest, node scpiN
 	}
 }
 
-func (sm *scpiManager) getNodeChildByContent(parent scpiNode, input string) (bool, scpiNode) {
+func (sm *scpiManager) getNodeChildByContent(parent ScpiNode, input string) (bool, ScpiNode) {
 	for _, node := range parent.Children {
 		if node.Content.Suffixed {
 			input = strings.TrimSuffix(input, "?")
@@ -271,7 +271,7 @@ func (sm *scpiManager) getNodeChildByContent(parent scpiNode, input string) (boo
 			return true, node
 		}
 	}
-	return false, scpiNode{}
+	return false, ScpiNode{}
 }
 
 func (sm *scpiManager) runScript(file string) {

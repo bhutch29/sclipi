@@ -34,10 +34,6 @@ func (ic *instrumentCache) get(address string, port int, timeout time.Duration, 
     ic.mu.Lock()
     defer ic.mu.Unlock()
 
-    if inst, exists := ic.cache[fullAddress]; exists {
-        return inst, nil
-    }
-
     inst, err := connectInstrument(address, port, timeout, progressFn)
     if err != nil {
         return nil, err

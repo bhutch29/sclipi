@@ -4,13 +4,15 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/schollz/progressbar"
+  "hash/fnv"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/schollz/progressbar"
 )
 
 var ErrConnectionClosed = errors.New("connection closed")
@@ -19,7 +21,7 @@ type Instrument interface {
 	Connect(string, func(int)) error
 	Command(string) error
 	Query(string) (string, error)
-	GetSupportedCommands() ([]string, []string, error)
+	GetSupportedCommandsTree() (ScpiNode, ScpiNode, error)
 	SetTimeout(time.Duration)
 	QueryError([]string) ([]string, error)
 	Close() error
@@ -31,6 +33,9 @@ type scpiInstrument struct {
 	timeout     time.Duration
   mu          sync.RWMutex
   interactive bool
+  headersHash uint32
+  starTree    ScpiNode
+  colonTree   ScpiNode
 }
 
 func NewScpiInstrument(timeout time.Duration, interactive bool) Instrument {
@@ -248,7 +253,7 @@ loop:
 	done <- true
 }
 
-func (i *scpiInstrument) GetSupportedCommands() ([]string, []string, error) {
+func (i *scpiInstrument) getSupportedCommands() ([]string, []string, uint32, error) {
 	r, err := i.Query(":SYST:HELP:HEAD?")
 	commands := strings.Split(r, "\n")
 
@@ -264,7 +269,22 @@ func (i *scpiInstrument) GetSupportedCommands() ([]string, []string, error) {
 		}
 	}
 
-	return colonCommands, starCommands, err
+  hash := hash(r);
+
+	return colonCommands, starCommands, hash, err
+}
+
+func (i *scpiInstrument) GetSupportedCommandsTree() (ScpiNode, ScpiNode, error) {
+  starCommands, colonCommands, hash, err := i.getSupportedCommands()
+  if err != nil {
+    return ScpiNode{}, ScpiNode{}, err
+  }
+  if (hash != i.headersHash) {
+    i.starTree = parseScpi(starCommands);
+    i.colonTree = parseScpi(colonCommands);
+    i.headersHash = hash
+  }
+  return i.starTree, i.colonTree, nil
 }
 
 func (i *scpiInstrument) Close() error {
@@ -307,10 +327,10 @@ func (i *simInstrument) Query(query string) (string, error) {
 	return query + "\n", nil
 }
 
-func (i *simInstrument) GetSupportedCommands() ([]string, []string, error) {
+func (i *simInstrument) getSupportedCommands() ([]string, []string, uint32, error) {
 	commands, err := readLinesFromPath("SCPI.txt")
 	if err != nil {
-		return []string{}, []string{}, err
+		return []string{}, []string{}, 0, err
 	}
 
 	var colonCommands []string
@@ -324,7 +344,19 @@ func (i *simInstrument) GetSupportedCommands() ([]string, []string, error) {
 			}
 		}
 	}
-	return colonCommands, starCommands, nil
+
+  fakeHash := uint32(1234)
+	return colonCommands, starCommands, fakeHash, nil
+}
+
+func (i *simInstrument) GetSupportedCommandsTree() (ScpiNode, ScpiNode, error) {
+  starCommands, colonCommands, _, err := i.getSupportedCommands()
+  if err != nil {
+    return ScpiNode{}, ScpiNode{}, err
+  }
+  starTree := parseScpi(starCommands);
+  colonTree := parseScpi(colonCommands);
+  return starTree, colonTree, nil
 }
 
 func (i *simInstrument) SetTimeout(timeout time.Duration) {
@@ -352,4 +384,10 @@ func readLinesFromPath(path string) ([]string, error) {
 		lines = append(lines, scanner.Text())
 	}
 	return lines, scanner.Err()
+}
+
+func hash(s string) uint32 {
+  h := fnv.New32a()
+  h.Write([]byte(s))
+  return h.Sum32()
 }

@@ -1,16 +1,16 @@
 <div class="client-preferences">
   <h2>Client Preferences</h2>
-  <div>
-    <button matButton="outlined" (click)="clearHistory()">Clear History</button>
-  </div>
   <mat-checkbox [(ngModel)]="preferences.simulated">Simulated</mat-checkbox>
   <mat-checkbox [(ngModel)]="preferences.wrapLog">Wrap Log</mat-checkbox>
   <mat-checkbox [(ngModel)]="preferences.showDate">Show Date</mat-checkbox>
   <mat-checkbox [(ngModel)]="preferences.autoSystErr">Auto :SYST:ERR?</mat-checkbox>
-  <mat-form-field appearance="outline">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
     <mat-label> Timeout (seconds) </mat-label>
     <input matInput type="number" [(ngModel)]="preferences.timeoutSeconds" />
   </mat-form-field>
+  <div>
+    <button matButton="outlined" (click)="clearHistory()">Clear History</button>
+  </div>
   <div>
     <button matButton="outlined" (click)="preferences.resetClientPreferences()">
       Reset client preferences to default
@@ -19,7 +19,7 @@
 </div>
 <div class="server-preferences">
   <h2>Server Preferences</h2>
-  <mat-form-field appearance="outline">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
     <mat-label> SCPI Socket Port </mat-label>
     <input
       matInput
@@ -29,7 +29,7 @@
       (keydown.enter)="onPortEnter($event)"
     />
   </mat-form-field>
-  <mat-form-field appearance="outline">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
     <mat-label> SCPI Socket Address </mat-label>
     <input
       matInput

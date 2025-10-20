@@ -5,9 +5,10 @@
   }
   <span class="toolbar-spacer"></span>
   <mat-button-toggle-group name="toolbar-buttons" [(ngModel)]="activeToolbarButtons" multiple>
-    <mat-button-toggle value="idn"><mat-icon>info</mat-icon></mat-button-toggle>
-    <mat-button-toggle value="settings"><mat-icon>settings</mat-icon></mat-button-toggle>
+    <mat-button-toggle value="idn" matTooltip="IDN Information"><mat-icon>info</mat-icon></mat-button-toggle>
+    <mat-button-toggle value="settings" matTooltip="Preferences"><mat-icon>settings</mat-icon></mat-button-toggle>
   </mat-button-toggle-group>
+  <button matIconButton matTooltip="Help"><mat-icon>help</mat-icon></button>
 </mat-toolbar>
 <div class="content">
   <div class="main">
@@ -96,10 +97,10 @@
         @if (idn.data(); as data) {
           <h2>IDN</h2>
           <div class="idn">
-            Manufacturer: {{data.manufacturer}}<br>
-            Model: {{data.model}}<br>
-            Serial: {{data.serial}}<br>
-            Version: {{data.version}}<br>
+            <b>Manufacturer:</b> {{data.manufacturer}}<br>
+            <b>Model:</b> {{data.model}}<br>
+            <b>Serial:</b> {{data.serial}}<br>
+            <b>Version:</b> {{data.version}}<br>
           </div>
         } @else if (idn.error()) {
           IDN Error: {{ idn.error()?.error }}

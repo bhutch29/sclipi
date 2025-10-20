@@ -119,7 +119,7 @@ export class App {
     const type = scpi.includes('?') ? 'query' : 'command';
     this.log.update((log) => [
       ...log,
-      { type, scpi, response: undefined, time, errors: [], serverError: "" },
+      { type, scpi, response: undefined, time, elapsed: 0, errors: [], serverError: "" },
     ]);
     const body = {
       scpi,
@@ -138,6 +138,7 @@ export class App {
           lastElement.response = response;
           lastElement.errors = x.errors;
           lastElement.serverError = x.serverError;
+          lastElement.elapsed = Date.now() - time;
           return log;
         });
         this.sending$.next(false);

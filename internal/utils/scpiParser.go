@@ -8,15 +8,15 @@ import (
 )
 
 type ScpiNode struct {
-	Content  nodeInfo
-	Children []ScpiNode
+  Content  nodeInfo `json:"content"`
+  Children []ScpiNode `json:"children"`
 }
 
 type nodeInfo struct {
-	Text     string
-	Start    int
-	Stop     int
-	Suffixed bool
+  Text     string `json:"text"`
+  Start    int `json:"start"`
+  Stop     int `json:"stop"`
+  Suffixed bool `json:"suffixed"`
 }
 
 func parseScpi(lines []string) ScpiNode {

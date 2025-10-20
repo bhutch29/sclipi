@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -61,6 +63,7 @@ func main() {
 	http.HandleFunc("/scpiPort", handlePort)
 	http.HandleFunc("/scpiAddress", handleAddress)
 	http.HandleFunc("/scpi", handleScpiRequest)
+	http.HandleFunc("/commands", handleCommandsRequest)
 	http.HandleFunc("/preferences", handlePreferences)
 
 	go func() {
@@ -194,6 +197,76 @@ func executeWithRetry(address string, port int, timeout time.Duration, operation
 	}
 
 	return err
+}
+
+func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprintln(w, "/commands only supports GET")
+		return
+	}
+
+	address := r.URL.Query().Get("address")
+	portString := r.URL.Query().Get("port")
+
+	if address == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Missing required parameter: address")
+		return
+	}
+
+	if portString == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Missing required parameter: port")
+		return
+	}
+
+  port, err := strconv.Atoi(portString);
+  if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, "Required parameter port must be a number")
+		return
+  }
+
+	log.Printf("Handling /commands request for address=%s, port=%d", address, port)
+
+	inst, err := instCache.get(address, port, 10 * time.Second, nil)
+	if err != nil {
+	  w.WriteHeader(http.StatusInternalServerError)
+    fmt.Fprintf(w, "Failed to get instrument: %v", err)
+    return
+	}
+
+  starTree, colonTree, err := inst.GetSupportedCommandsTree()
+  if err != nil {
+	  w.WriteHeader(http.StatusInternalServerError)
+    fmt.Fprintf(w, "Failed to get commands: %v", err)
+    return
+  }
+
+  type result struct {
+    StarTree utils.ScpiNode `json:"starTree"`
+    ColonTree utils.ScpiNode `json:"colonTree"`
+  }
+
+  responseData, err := json.Marshal(result{StarTree: starTree, ColonTree: colonTree})
+  if err != nil {
+	  w.WriteHeader(http.StatusInternalServerError)
+    fmt.Fprintf(w, "Failed to read commands: %v", err)
+    return
+  }
+
+	w.Header().Set("Content-Encoding", "gzip")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	gzipWriter := gzip.NewWriter(w)
+	defer gzipWriter.Close()
+
+	_, err = gzipWriter.Write(responseData)
+	if err != nil {
+		log.Printf("Error writing gzipped response: %v", err)
+	}
 }
 
 func handleScpiRequest(w http.ResponseWriter, r *http.Request) {

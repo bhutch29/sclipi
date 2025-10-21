@@ -271,7 +271,7 @@ func (i *scpiInstrument) getSupportedCommands() ([]string, []string, uint32, err
 
   hash := hash(r);
 
-	return colonCommands, starCommands, hash, err
+	return starCommands, colonCommands, hash, err
 }
 
 func (i *scpiInstrument) GetSupportedCommandsTree() (ScpiNode, ScpiNode, error) {
@@ -346,7 +346,7 @@ func (i *simInstrument) getSupportedCommands() ([]string, []string, uint32, erro
 	}
 
   fakeHash := uint32(1234)
-	return colonCommands, starCommands, fakeHash, nil
+	return starCommands, colonCommands, fakeHash, nil
 }
 
 func (i *simInstrument) GetSupportedCommandsTree() (ScpiNode, ScpiNode, error) {

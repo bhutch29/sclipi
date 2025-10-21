@@ -32,20 +32,16 @@ func parseScpi(lines []string) ScpiNode {
 	return head
 }
 
+// TODO: here is where I would merge differing start/end points together
 func createScpiTreeBranch(command []nodeInfo, head *ScpiNode) {
-	if len(command) == 0 {
+	if len(command) == 0 || len(command) == 1 {
 		return
 	}
 	if exists, index := scpiNodeExists(head.Children, command[0]); exists {
-		if len(command) == 1 {
-			return
-		}
 		createScpiTreeBranch(command[1:], &head.Children[index])
 	} else {
 		head.Children = append(head.Children, ScpiNode{Content: command[0]})
-		if len(command) > 1 {
-			createScpiTreeBranch(command[1:], &head.Children[len(head.Children)-1])
-		}
+		createScpiTreeBranch(command[1:], &head.Children[len(head.Children)-1])
 	}
 }
 

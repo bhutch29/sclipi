@@ -29,7 +29,7 @@
         <mat-hint><strong>Colon (:)</strong> for auto-complete. <strong>Enter</strong> to submit. <strong>Arrow Up</strong> for history.</mat-hint>
         <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
           @if (inputText().length !== 0 && history.index < 0) {
-            @for (option of autocompleteHistory(); track option) {
+            @for (option of autocomplete(); track option) {
               <mat-option [value]="option">{{ option }}</mat-option>
             }
           }

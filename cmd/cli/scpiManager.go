@@ -17,8 +17,8 @@ import (
 type scpiManager struct {
 	inst      utils.Instrument
 	history   history
-	colonTree ScpiNode
-	starTree  ScpiNode
+	colonTree utils.ScpiNode
+	starTree  utils.ScpiNode
 }
 
 func newScpiManager(i utils.Instrument) scpiManager {
@@ -204,7 +204,7 @@ func (sm *scpiManager) getTree(i utils.Instrument) {
 	}
 }
 
-func (sm *scpiManager) getCurrentNode(tree ScpiNode, inputs []string) ScpiNode {
+func (sm *scpiManager) getCurrentNode(tree utils.ScpiNode, inputs []string) utils.ScpiNode {
 	current := tree
 	next := tree
 	for i, item := range inputs {
@@ -213,7 +213,7 @@ func (sm *scpiManager) getCurrentNode(tree ScpiNode, inputs []string) ScpiNode {
 			next = node
 			continue
 		} else if i < len(inputs)-1 { // Colon pressed twice in a row, return nothing
-			return ScpiNode{}
+			return utils.ScpiNode{}
 		}
 		current = next // item not found
 		break
@@ -222,7 +222,7 @@ func (sm *scpiManager) getCurrentNode(tree ScpiNode, inputs []string) ScpiNode {
 	return current
 }
 
-func (sm *scpiManager) suggestsFromNode(node ScpiNode) []prompt.Suggest {
+func (sm *scpiManager) suggestsFromNode(node utils.ScpiNode) []prompt.Suggest {
 	var s []prompt.Suggest
 	for _, item := range node.Children {
 		if item.Content.Suffixed {
@@ -246,7 +246,7 @@ func (sm *scpiManager) suggestsFromNode(node ScpiNode) []prompt.Suggest {
 	return s
 }
 
-func (sm *scpiManager) getSuggestDescription(suggest *prompt.Suggest, node ScpiNode) {
+func (sm *scpiManager) getSuggestDescription(suggest *prompt.Suggest, node utils.ScpiNode) {
 	if len(node.Children) == 0 {
 		if strings.HasSuffix(node.Content.Text, "?") {
 			suggest.Description = "Query"
@@ -256,7 +256,7 @@ func (sm *scpiManager) getSuggestDescription(suggest *prompt.Suggest, node ScpiN
 	}
 }
 
-func (sm *scpiManager) getNodeChildByContent(parent ScpiNode, input string) (bool, ScpiNode) {
+func (sm *scpiManager) getNodeChildByContent(parent utils.ScpiNode, input string) (bool, utils.ScpiNode) {
 	for _, node := range parent.Children {
 		if node.Content.Suffixed {
 			input = strings.TrimSuffix(input, "?")
@@ -271,7 +271,7 @@ func (sm *scpiManager) getNodeChildByContent(parent ScpiNode, input string) (boo
 			return true, node
 		}
 	}
-	return false, ScpiNode{}
+	return false, utils.ScpiNode{}
 }
 
 func (sm *scpiManager) runScript(file string) {

@@ -26,7 +26,7 @@ import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
-import { LogEntry, ScpiResponse } from './types';
+import { Commands, LogEntry, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
@@ -56,11 +56,19 @@ export class App {
 
   public activeToolbarButtons: WritableSignal<string[]> = signal([])
 
-  public autocompleteHistory = computed(() =>
-    this.history.list()
-      .filter((x) => x.toLowerCase().includes(this.inputText().toLowerCase()))
-      .filter((elem, i, self) => i === self.indexOf(elem)),
-  );
+  public autocomplete = computed(() => {
+    if (!this.commands.hasValue()) {
+      return [];
+    }
+    if (this.inputText().startsWith("*")) {
+      return this.commands.value().starTree.children.map(x => x.content.text);
+    } else {
+      const inputCommands = this.inputText().split(":").slice(1);
+      const initial = this.commands.value().colonTree.children;
+      console.log(initial);
+      return initial.map(x => x.content.text).filter(x => x.toLowerCase().includes(inputCommands[0].toLowerCase()));
+    }
+  });
 
   private unsentScpiInput = '';
 
@@ -74,6 +82,20 @@ export class App {
   ]).pipe(map(([sending, sendingDelayed]) => sending === 'start' && sendingDelayed === 'start'));
 
   public health = httpResource.text(() => '/api/health');
+
+  public commands = httpResource<Commands>(() => {
+    if (this.preferences.port() === 0 || this.preferences.address() === '') {
+      return undefined;
+    }
+    return {
+      url: '/api/commands',
+      method: 'GET',
+      params: {
+        port: this.preferences.port(),
+        address: this.preferences.address(),
+      },
+    };
+  });
 
   @ViewChild('scpiInput') scpiInput: ElementRef<HTMLInputElement> | undefined;
 

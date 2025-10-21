@@ -20,3 +20,20 @@ export interface IDN {
   serial: string;
   version: string;
 }
+
+export interface ScpiNode {
+  content: NodeInfo;
+  children: ScpiNode[];
+}
+
+export interface NodeInfo {
+  text: string;
+  start: number;
+  stop: number;
+  suffixed: boolean;
+}
+
+export interface Commands {
+  starTree: ScpiNode;
+  colonTree: ScpiNode;
+}

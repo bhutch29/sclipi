@@ -3,11 +3,12 @@ package utils
 import (
 	"strings"
 	"testing"
+
 )
 
 func BenchmarkVxgScpi(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		head := scpiNode{}
+		head := ScpiNode{}
 		lines, _ := ReadLinesFromPath("benchmark_SCPI.txt")
 		commands := splitScpiCommands(lines)
 

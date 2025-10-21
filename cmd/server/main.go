@@ -308,15 +308,8 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	simulated := false
-	if simulatedString != "" {
-		simulated = simulatedString == "true"
-	}
-
-	autoSystError := false
-	if autoSystErrorString != "" {
-		autoSystError = autoSystErrorString == "true"
-	}
+  simulated := simulatedString == "true"
+	autoSystError := autoSystErrorString == "true"
 
 	timeoutSeconds := 10
 	if timeoutSecondsString != "" {

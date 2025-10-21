@@ -128,9 +128,9 @@ func getAddress(args arguments, commonOptions []prompt.Option) string {
 func buildAndConnectInstrument(address string, port string, timeout time.Duration, bar *progress) (utils.Instrument, error) {
 	var inst utils.Instrument
 	if address == "simulated" {
-		inst = utils.NewSimInstrument(timeout)
+		inst = utils.NewSimInstrument(timeout, true)
 	} else {
-		inst = utils.NewScpiInstrument(timeout)
+		inst = utils.NewScpiInstrument(timeout, true)
 	}
 
 	if err := inst.Connect(address+":"+port, bar.forward); err != nil {

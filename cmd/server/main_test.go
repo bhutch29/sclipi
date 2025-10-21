@@ -11,8 +11,8 @@ import (
 
 func TestHandleScpiRequestQuery(t *testing.T) {
 	var err error
-	config, err = loadConfig()
-	preferences, err = loadPreferences()
+  config = &Config{}
+	preferences = &Preferences{}
 	response, status, err := postScpi("*IDN?")
 	if err != nil {
 		t.Errorf("postScpi failed: %v", err)

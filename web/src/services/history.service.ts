@@ -4,7 +4,7 @@ import { LocalStorageService } from './localStorage.service';
 @Injectable({providedIn: 'root'})
 export class HistoryService {
   public list: WritableSignal<string[]> = signal([]);
-  public index = -1;
+  public index: WritableSignal<number> = signal(-1);
 
   constructor(
     localStorageService: LocalStorageService

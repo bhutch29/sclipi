@@ -60,13 +60,15 @@ export class App {
     if (!this.commands.hasValue()) {
       return [];
     }
+    if (this.history.index() >= 0) {
+      return [];
+    }
     if (this.inputText().startsWith("*")) {
       return this.commands.value().starTree.children.map(x => x.content.text);
     } else {
       const inputCommands = this.inputText().split(":").slice(1);
       const initial = this.commands.value().colonTree.children;
-      console.log(initial);
-      return initial.map(x => x.content.text).filter(x => x.toLowerCase().includes(inputCommands[0].toLowerCase()));
+      return initial.map(x => x.content.text).filter(x => x.toLowerCase().includes(inputCommands[0]?.toLowerCase()));
     }
   });
 
@@ -130,7 +132,7 @@ export class App {
       return;
     }
     this.sendInternal(this.inputText());
-    this.history.index = -1;
+    this.history.index.set(-1);
   }
 
   private sendInternal(scpi: string) {
@@ -179,24 +181,31 @@ export class App {
     });
   }
 
+  // FYI: preventDefault and listening to options observables doesn't work here
+  // MatAutocomplete runs before we get a chance here.
   public arrowUp(event: Event) {
     event.preventDefault();
-    if (this.history.list().length > this.history.index + 1) {
-      if (this.history.index === -1) {
+    if (this.history.index() === -1 && this.inputText() !== "") {
+      return;
+    }
+    if (this.history.list().length > this.history.index() + 1) {
+      if (this.history.index() === -1) {
         this.unsentScpiInput = this.inputText();
       }
-      this.inputText.set(this.history.list()[++this.history.index]);
+      this.history.index.update(x => x + 1)
+      this.inputText.set(this.history.list()[this.history.index()]);
     }
   }
 
   public arrowDown(event: Event) {
     event.preventDefault();
-    if (this.history.index === 0) {
+    if (this.history.index() === 0) {
       this.inputText.set(this.unsentScpiInput);
-      this.history.index--;
+      this.history.index.update(x => x - 1);
     }
-    if (this.history.index > 0) {
-      this.inputText.set(this.history.list()[--this.history.index]);
+    if (this.history.index() > 0) {
+      this.history.index.update(x => x - 1)
+      this.inputText.set(this.history.list()[this.history.index()]);
     }
   }
 

@@ -2,10 +2,10 @@
   <span>Sclipi Web</span>
   <mat-divider [vertical]="true"></mat-divider>
   @if (idn.data(); as data) {
-    <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip">{{data.model}} {{data.serial}}</span>
+    <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip">{{data.model}} - {{data.serial}}</span>
   }
   <span class="toolbar-spacer"></span>
-  <mat-button-toggle-group name="toolbar-buttons" [(ngModel)]="activeToolbarButtons" multiple>
+  <mat-button-toggle-group name="toolbar-buttons" [(ngModel)]="activeToolbarButtons" multiple hideMultipleSelectionIndicator>
     <mat-button-toggle value="idn" matTooltip="IDN Information"><mat-icon>info</mat-icon></mat-button-toggle>
     <mat-button-toggle value="settings" matTooltip="Preferences"><mat-icon>settings</mat-icon></mat-button-toggle>
   </mat-button-toggle-group>
@@ -125,6 +125,10 @@
               }
               <span>Connection failed. Check your Server Preferences</span>
             }
+          }
+
+          @if (activeToolbarButtons().includes('idn') && activeToolbarButtons().includes('settings')) {
+            <mat-divider></mat-divider>
           }
 
           @if (activeToolbarButtons().includes('settings')) {

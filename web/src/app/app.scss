@@ -36,7 +36,7 @@ mat-toolbar {
 
 .inputs {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .scpi-form {
@@ -46,7 +46,7 @@ mat-toolbar {
 }
 
 .main {
-  padding: 8px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   min-width: 20vw;

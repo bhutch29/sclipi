@@ -38,27 +38,36 @@
         </mat-autocomplete>
       </mat-form-field>
       <button
-        matButton="outlined"
+        class="send-button"
+        matFab extended
         (click)="send()"
         [disabled]="inputText().length === 0 || (sending$ | async)"
       >
+        @if (sending$ | async) {
+          <mat-icon>schedule_send</mat-icon>
+        } @else {
+          <mat-icon>send</mat-icon>
+        }
         Send
       </button>
       <button
-        matButton="outlined"
+        matFab extended
         matTooltip="Send :SYST:ERR? query to check for errors"
         (click)="systErr()"
         [disabled]="inputText().length !== 0 || (sending$ | async)"
       >
+        <mat-icon>question_mark</mat-icon>
         :SYST:ERR?
       </button>
       <button
-        matButton="outlined"
+        matFab extended
         matTooltip="Select and run a command from your command history"
         [matMenuTriggerFor]="menu"
         [disabled]="inputText().length !== 0 || (sending$ | async)"
       >
-        History<mat-icon>arrow_drop_down</mat-icon>
+        <mat-icon>history</mat-icon>
+        <mat-icon>arrow_drop_down</mat-icon>
+        History
       </button>
       <mat-menu #menu="matMenu">
         @for (option of history.list(); track $index) {

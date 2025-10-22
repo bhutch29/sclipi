@@ -54,9 +54,14 @@ mat-toolbar {
 }
 
 .log {
+  margin-top: 12px;
+  padding: 2px;
+  min-height: 150px;
+  background-color: var(--mat-sys-neutral10);
+  border: 1px solid var(--mat-sys-outline);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   overflow-y: auto;
 
   &:not(.wrap) {
@@ -98,6 +103,12 @@ mat-hint {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+
+  /* strong,span { */
+  /*   padding: 1px; */
+  /*   border-radius: 2px; */
+  /*   background-color: var(--mat-sys-on-secondary); */
+  /* } */
 }
 
 mat-divider {

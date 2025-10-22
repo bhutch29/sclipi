@@ -27,7 +27,7 @@
           matInput
           [matAutocomplete]="auto"
         />
-        <mat-hint><strong>Colon (:)</strong> for auto-complete. <strong>Enter</strong> to submit. <strong>Arrow Up</strong> for history.</mat-hint>
+        <mat-hint>Type <strong>:</strong> or <strong>*</strong> for auto-complete. <strong>Enter</strong> to submit. <strong>Arrow Up</strong> for history.</mat-hint>
         <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
           @if (inputText().length !== 0 && history.index() < 0) {
             <!-- TODO: better track -->
@@ -69,9 +69,9 @@
       </mat-menu>
     </div>
 
-    <div class="log" [class.wrap]="preferences.wrapLog()">
+    <div #logContainer class="log" [class.wrap]="preferences.wrapLog()">
       @for (entry of log(); track entry.time; let i = $index) {
-        <div class="entry">
+        <div #entry class="entry">
           @if (preferences.showDate()) {
             <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''">{{ entry.time | date: 'MMM dd, hh:mm:ss.SS a' }}</span>
           } @else {

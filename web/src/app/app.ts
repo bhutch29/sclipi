@@ -5,9 +5,11 @@ import {
     computed,
     effect,
     ElementRef,
+    QueryList,
     Renderer2,
     signal,
     ViewChild,
+    ViewChildren,
     WritableSignal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -58,6 +60,8 @@ export class App {
 
   public activeToolbarButtons: WritableSignal<string[]> = signal([])
 
+  private isScrolledToBottom = true;
+
   public autocomplete = computed(() => {
     if (!this.commands.hasValue()) {
       return [];
@@ -102,6 +106,8 @@ export class App {
   });
 
   @ViewChild('scpiInput') scpiInput: ElementRef<HTMLInputElement> | undefined;
+  @ViewChild('logContainer') logContainer: ElementRef<any> | undefined;
+  @ViewChildren('entry') public entryElements?: QueryList<any>;
 
   constructor(
     private http: HttpClient,
@@ -118,6 +124,20 @@ export class App {
     this.renderer.listen('window', 'focus', () => {
       this.scpiInput?.nativeElement.focus();
     });
+  }
+
+  ngAfterViewInit() {
+    this.entryElements?.changes.subscribe(() => {
+      if (this.isScrolledToBottom) {
+        this.scrollToBottom();
+      }
+    });
+  }
+
+  private scrollToBottom() {
+    if (this.logContainer) {
+      this.logContainer.nativeElement.scrollTop = Number.MAX_SAFE_INTEGER;
+    }
   }
 
   public send() {
@@ -140,6 +160,8 @@ export class App {
   private sendInternal(scpi: string) {
     this.sending$.next(true);
     this.inputText.set('');
+
+    this.isScrolledToBottom = this.logContainer?.nativeElement.scrollHeight - this.logContainer?.nativeElement.clientHeight <= this.logContainer?.nativeElement.scrollTop + 1; // allows for 1px inaccuracy
 
     scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
     this.history.add(scpi);

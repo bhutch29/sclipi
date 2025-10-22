@@ -110,6 +110,7 @@ export class App {
   @ViewChild('scpiInput') scpiInput: ElementRef<HTMLInputElement> | undefined;
   @ViewChild('logContainer') logContainer: ElementRef<any> | undefined;
   @ViewChildren('entry') public entryElements?: QueryList<any>;
+  @ViewChild('autocompleteRef') public autocompleteRef?: AutocompleteTrigger;
 
   constructor(
     private http: HttpClient,

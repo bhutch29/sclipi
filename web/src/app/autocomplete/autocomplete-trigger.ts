@@ -416,15 +416,16 @@ export class AutocompleteTrigger
 
     this._valueOnLastKeydown = this._element.nativeElement.value;
 
-    if (this.activeOption && keyCode === ENTER && this.panelOpen && !hasModifier) {
+    if (this.activeOption && (keyCode === ENTER || keyCode === TAB) && this.panelOpen && !hasModifier) {
       this.activeOption._selectViaInteraction();
       this._resetActiveItem();
       event.preventDefault();
+      event.stopImmediatePropagation();
     } else if (this.autocomplete) {
       const prevActiveItem = this.autocomplete._keyManager.activeItem;
       const isArrowKey = keyCode === UP_ARROW || keyCode === DOWN_ARROW;
 
-      if (keyCode === TAB || (isArrowKey && !hasModifier && this.panelOpen)) {
+      if (isArrowKey && !hasModifier && this.panelOpen) {
         this.autocomplete._keyManager.onKeydown(event);
       } else if (isArrowKey && this._canOpen()) {
         this._openPanelInternal(this._valueOnLastKeydown);
@@ -778,6 +779,7 @@ export class AutocompleteTrigger
       // We need to stop propagation, otherwise the event will eventually
       // reach the input itself and cause the overlay to be reopened.
       event.stopPropagation();
+      event.stopImmediatePropagation();
       event.preventDefault();
     }
   };

@@ -26,6 +26,7 @@
           (keydown.arrowDown)="arrowDown($event)"
           matInput
           [autocomplete]="auto"
+          #autocompleteRef="autocompleteTrigger"
         />
         <mat-hint>Type <strong>:</strong> or <strong>*</strong> for auto-complete. <strong>Enter</strong> to submit. <strong>Arrow Up</strong> for history.</mat-hint>
         <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">

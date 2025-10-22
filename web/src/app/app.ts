@@ -31,6 +31,7 @@ import { PreferencesComponent } from './preferences/preferences.component';
 import { Commands, LogEntry, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
+import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
 
 @Component({
   selector: 'app-root',
@@ -52,6 +53,7 @@ import { MatDividerModule } from '@angular/material/divider';
     MatButtonToggleModule,
     MatSnackBarModule,
     MatDividerModule,
+    AutocompleteTrigger
   ],
 })
 export class App {
@@ -205,8 +207,6 @@ export class App {
     });
   }
 
-  // FYI: preventDefault and listening to options observables doesn't work here
-  // MatAutocomplete runs before we get a chance here.
   public arrowUp(event: Event) {
     event.preventDefault();
     if (this.history.index() === -1 && this.inputText() !== "") {

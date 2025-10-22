@@ -87,7 +87,7 @@ mat-toolbar {
   overflow-y: auto;
 
   .right-panel-background {
-    background-color: var(--mat-sys-primary-container);
+    background-color: var(--mat-sys-on-primary);
 
     .right-panel-content {
       padding: 8px;
@@ -113,4 +113,8 @@ mat-hint {
 
 mat-divider {
   height: 70%;
+}
+
+mat-toolbar {
+  background-color: var(--mat-sys-on-secondary-fixed);
 }

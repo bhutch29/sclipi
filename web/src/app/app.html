@@ -1,5 +1,6 @@
 <mat-toolbar>
   <span>Sclipi Web</span>
+  <mat-divider [vertical]="true"></mat-divider>
   @if (idn.data(); as data) {
     <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip">{{data.model}} {{data.serial}}</span>
   }
@@ -92,30 +93,34 @@
 
   @if (activeToolbarButtons().length > 0) {
     <div class="right-panel">
-      @if (activeToolbarButtons().includes('idn')) {
-        @if (health.hasValue() && !health.value()) {
-          <div>Health: Not OK!</div>
-        }
+      <div class="right-panel-background">
+        <div class="right-panel-content">
+          @if (activeToolbarButtons().includes('idn')) {
+            @if (health.hasValue() && !health.value()) {
+              <div>Health: Not OK!</div>
+            }
 
-        <h2>Info</h2>
-        @if (idn.data(); as data) {
-          <div class="idn">
-            <b>Manufacturer:</b> {{data.manufacturer}}<br>
-            <b>Model:</b> {{data.model}}<br>
-            <b>Serial:</b> {{data.serial}}<br>
-            <b>Version:</b> {{data.version}}<br>
-          </div>
-        } @else {
-          @if (idn.error()) {
-            <span>IDN Error: {{ idn.error()?.error }}</span>
+            <h2>Info</h2>
+            @if (idn.data(); as data) {
+              <div class="idn">
+                <b>Manufacturer:</b> {{data.manufacturer}}<br>
+                <b>Model:</b> {{data.model}}<br>
+                <b>Serial:</b> {{data.serial}}<br>
+                <b>Version:</b> {{data.version}}<br>
+              </div>
+            } @else {
+              @if (idn.error()) {
+                <span>IDN Error: {{ idn.error()?.error }}</span>
+              }
+              <span>Connection failed. Check your Server Preferences</span>
+            }
           }
-          <span>Connection failed. Check your Server Preferences</span>
-        }
-      }
 
-      @if (activeToolbarButtons().includes('settings')) {
-        <app-preferences></app-preferences>
-      }
+          @if (activeToolbarButtons().includes('settings')) {
+            <app-preferences></app-preferences>
+          }
+        </div>
+      </div>
     </div>
   }
 </div>

@@ -32,7 +32,6 @@ mat-toolbar {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin: 8px;
 }
 
 .inputs {
@@ -47,6 +46,7 @@ mat-toolbar {
 }
 
 .main {
+  padding: 8px;
   display: flex;
   flex-direction: column;
   min-width: 20vw;
@@ -57,7 +57,6 @@ mat-toolbar {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 8px;
   overflow-y: auto;
 
   &:not(.wrap) {
@@ -80,8 +79,15 @@ mat-toolbar {
   display: flex;
   flex-direction: column;
   min-width: 350px;
-  padding: 8px;
   overflow-y: auto;
+
+  .right-panel-background {
+    background-color: var(--mat-sys-primary-container);
+
+    .right-panel-content {
+      padding: 8px;
+    }
+  }
 }
 
 .idn {
@@ -92,4 +98,8 @@ mat-hint {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+}
+
+mat-divider {
+  height: 70%;
 }

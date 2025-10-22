@@ -28,6 +28,7 @@ import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
 import { Commands, LogEntry, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-root',
@@ -48,6 +49,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
     MatTooltipModule,
     MatButtonToggleModule,
     MatSnackBarModule,
+    MatDividerModule,
   ],
 })
 export class App {

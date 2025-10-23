@@ -44,11 +44,24 @@ func createScpiTreeBranch(command []nodeInfo, head *ScpiNode) {
     }
 		createScpiTreeBranch(command[1:], &head.Children[index])
 	} else {
-		head.Children = append(head.Children, ScpiNode{Content: command[0]})
+		insertIndex := findSortedInsertIndex(head.Children, command[0])
+		head.Children = slices.Insert(head.Children, insertIndex, ScpiNode{Content: command[0]})
     if len(command) > 1 {
-		  createScpiTreeBranch(command[1:], &head.Children[len(head.Children)-1])
+		  createScpiTreeBranch(command[1:], &head.Children[insertIndex])
     }
 	}
+}
+
+func findSortedInsertIndex(nodes []ScpiNode, info nodeInfo) int {
+	for i, node := range nodes {
+		if info.Text < node.Content.Text {
+			return i
+		}
+		if info.Text == node.Content.Text && !info.Suffixed && node.Content.Suffixed {
+			return i
+		}
+	}
+	return len(nodes)
 }
 
 func scpiNodeExists(nodes []ScpiNode, info nodeInfo) (bool, int) {

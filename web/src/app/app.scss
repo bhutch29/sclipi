@@ -37,6 +37,19 @@ mat-toolbar {
 .inputs {
   display: flex;
   gap: 8px;
+
+  .start-keys {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    button {
+      height: 26px;
+      width: 26px;
+      border: none;
+      border-radius: 4px;
+    }
+  }
 }
 
 .scpi-form {

@@ -14,6 +14,10 @@
 <div class="content">
   <div class="main">
     <div class="inputs">
+      <div class="start-keys">
+        <button (click)="insertCharacter(':')" [disabled]="inputText().length > 1">:</button>
+        <button (click)="insertCharacter('*')" [disabled]="inputText().length > 1">*</button>
+      </div>
       <mat-form-field appearance="outline" class="scpi-form">
         <mat-label>SCPI Command/Query</mat-label>
         <input

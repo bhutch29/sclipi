@@ -304,4 +304,9 @@ export class App {
       return '';
     }
   };
+
+  public insertCharacter(character: string) {
+    this.inputText.set(character);
+    this.scpiInput?.nativeElement.focus();
+  }
 }

@@ -33,6 +33,7 @@ import { Commands, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
+import { range } from './utils';
 
 @Component({
   selector: 'app-root',
@@ -65,7 +66,7 @@ export class App {
 
   private isScrolledToBottom = true;
 
-  public autocomplete: Signal<ScpiNode[]> = computed(() => {
+  public autocomplete: Signal<Array<ScpiNode | string>> = computed(() => {
     if (!this.commands.hasValue()) {
       return [];
     }
@@ -79,22 +80,29 @@ export class App {
       });
     } else {
       const inputSegments = this.inputText().split(":").slice(1);
-      const initial = this.commands.value().colonTree;
-      let current = initial;
+      const initialNode = this.commands.value().colonTree;
+      let currentNode = initialNode;
       let matched = 0;
-      for (const segment of inputSegments.slice(0, -1)) {
-        if (!current.children) {
+
+      const compare = (node: string, typed: string) => {
+         const fullMatch = () => typed.toLowerCase() === node.toLowerCase();
+         const shortMatch = () => typed.toLowerCase() === this.getShortMnemonic(node).toLowerCase();
+         const noCardinalityMatch = () => this.stripCardinality(typed).toLowerCase() === node.toLowerCase();
+         return fullMatch() || shortMatch() || noCardinalityMatch();
+      };
+
+      for (const segment of inputSegments) {
+        if (segment === '') {
+          continue;
+        }
+
+        if (!currentNode.children) {
           break;
         }
-        const compare = (node: string, typed: string) => {
-          if (typed.toLowerCase() === this.getShortMnemonic(node).toLowerCase()) {
-            return true;
-          }
-          return node.toLowerCase() === typed.toLowerCase();
-        };
-        const index = current.children.findIndex((value: ScpiNode) => compare(value.content.text, segment));
+
+        const index = currentNode.children.findIndex((value: ScpiNode) => compare(value.content.text, segment));
         if (index !== -1) {
-          current = current.children[index];
+          currentNode = currentNode.children[index];
           matched++;
         }
       }
@@ -104,11 +112,26 @@ export class App {
         return [];
       }
 
-      return current.children?.filter(x => x.content.text.toLowerCase().startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()));
+      // TODO: handle cases where suffixed and unsuffixed nodes both exist
+      const currentInputSegment = inputSegments[inputSegments.length - 1];
+      const currentInputFinishesNode = currentInputSegment !== '' && currentInputSegment === currentNode.content.text;
+      const showSuffixes = currentInputFinishesNode && currentNode.content.suffixed;
+      if (showSuffixes) {
+        console.log('here', currentNode.content);
+        const blah = range(currentNode.content.start, currentNode.content.stop).map(x => `${x}`);
+        console.log(blah)
+        return blah;
+      }
+      return currentNode.children?.filter(x => x.content.text.toLowerCase().startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()));
     }
   });
 
   private autocompleteValueTransform = (previous: string, selected: MatOption<any>): MatOption<any> => {
+    if (typeof selected.value === 'string') {
+      selected.value = previous + selected.value + ':';
+      return selected;
+    }
+
     // Have to capture copies of these early.
     // We modify the object further down in a hacky way by replacing the Object in `selected.value` with a string.
     const selectedScpiNode = selected.value as ScpiNode;
@@ -124,7 +147,9 @@ export class App {
     }
 
     const appendColonToUnfinishedMnemonics = (node: ScpiNode, option: MatOption<any>): MatOption<any> => {
-      if (node.children && node.children.length !== 0) {
+      const noChildren = node.children && node.children.length !== 0;
+      const noSuffix = !node.content.suffixed;
+      if (noChildren && noSuffix) {
         option.value += ":";
       }
       return option;
@@ -144,6 +169,18 @@ export class App {
       selected.value = trimmed + selectedText;
     }
     return appendColonToUnfinishedMnemonics(selectedScpiNode, selected);
+  }
+
+  public getDisplayValue = (node: ScpiNode): string => {
+    let result = '';
+    if (!node.content.text.startsWith('*')) {
+      result += ':';
+    }
+    result += node.content.text;
+    if (node.content.suffixed) {
+      result += `{${node.content.start}:${node.content.stop}}`;
+    }
+    return result;
   }
 
   private unsentScpiInput = '';
@@ -313,7 +350,7 @@ export class App {
     this.send();
   }
 
-  public getShortMnemonic(input: string) {
+  private getShortMnemonic(input: string): string {
     const match = input.match(/^[A-Z]+/);
     const isQuery = input.endsWith('?')
     if (match && isQuery) {
@@ -324,6 +361,18 @@ export class App {
       return '';
     }
   };
+
+  private stripCardinality(input: string): string {
+    const match = input.match(/^[a-zA-Z]+/);
+    const isQuery = input.endsWith('?')
+    if (match && isQuery) {
+      return match[0] + '?';
+    } else if (match && !isQuery) {
+      return match[0];
+    } else {
+      return '';
+    }
+  }
 
   public insertCharacter(character: string) {
     this.inputText.set(character);

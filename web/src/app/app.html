@@ -38,22 +38,19 @@
             <!-- TODO: better track -->
             @for (option of autocomplete(); track $index) {
               <mat-option [value]="option">
-                @if (option.content.text.startsWith('*')) {
-                  {{ option.content.text }}
+                @if (typeof option === 'string') {
+                  {{ option }}
                 } @else {
-                  :{{ option.content.text }}
-                }
-                @if (option.content.suffixed) {
-                 <!-- TODO -->
+                  {{ getDisplayValue(option) }}
                 }
                 <mat-icon>
-                @if (!option.children || option.children.length === 0) {
-                  @if (option.content.text.endsWith('?')) {
-                    question_mark
-                  } @else {
-                    send
+                  @if (typeof option !== 'string' && (!option.children || option.children.length === 0)) {
+                    @if (option.content.text.endsWith('?')) {
+                      question_mark
+                    } @else {
+                      send
+                    }
                   }
-                }
                 </mat-icon>
               </mat-option>
             }

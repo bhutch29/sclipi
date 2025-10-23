@@ -73,6 +73,9 @@ export class App {
     if (this.history.index() >= 0) {
       return [];
     }
+    if (this.inputText().endsWith('?') || this.inputText().endsWith(' ')) {
+      return [];
+    }
 
     if (this.inputText().startsWith("*")) {
       return this.commands.value().starTree.children.filter(command => {
@@ -127,8 +130,7 @@ export class App {
         return [];
       }
 
-      // TODO: handle cases where suffixed and unsuffixed nodes both exist
-      // :AM{1:2}<click> should show cardinality options. :BB{1:1} works because there is no :BB
+      // TODO: :AM{1:2}<click> should show cardinality options. :BB{1:1} works because there is no :BB
 
       const currentInputSegment = inputSegments[inputSegments.length - 1];
       const currentInputFinishesNode = currentInputSegment !== '' && currentInputSegment === finishedNode.content.text;

@@ -674,6 +674,7 @@ export class AutocompleteTrigger
     const panel = this.autocomplete;
     let toSelect = event ? event.source : this._pendingAutoselectedOption;
 
+    let reopenPanel = false;
     if (toSelect) {
       const previous = this._previousValue ? `${this._previousValue}` : "";
       toSelect = this.valueTransform(previous, toSelect);
@@ -685,6 +686,9 @@ export class AutocompleteTrigger
       this._onChange(toSelect.value);
       panel._emitSelectEvent(toSelect);
       this._element.nativeElement.focus();
+      if (typeof toSelect.value === 'string' && toSelect.value.endsWith(':')) {
+        reopenPanel = true;
+      }
     } else if (
       panel.requireSelection &&
       this._element.nativeElement.value !== this._valueOnAttach
@@ -695,6 +699,9 @@ export class AutocompleteTrigger
     }
 
     this.closePanel();
+    if (reopenPanel) {
+      this.openPanel();
+    }
   }
 
   /**

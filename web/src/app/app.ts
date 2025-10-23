@@ -74,13 +74,15 @@ export class App {
     }
 
     if (this.inputText().startsWith("*")) {
-      return this.commands.value().starTree.children;
+      return this.commands.value().starTree.children.filter(command => {
+        return command.content.text.slice(1).toLowerCase().startsWith(this.inputText().slice(1).toLowerCase());
+      });
     } else {
-      const inputCommands = this.inputText().split(":").slice(1);
+      const inputSegments = this.inputText().split(":").slice(1);
       const initial = this.commands.value().colonTree;
       let current = initial;
       let matched = 0;
-      for (const command of inputCommands.slice(0, -1)) {
+      for (const segment of inputSegments.slice(0, -1)) {
         if (!current.children) {
           break;
         }
@@ -90,19 +92,19 @@ export class App {
           }
           return node.toLowerCase() === typed.toLowerCase();
         };
-        const index = current.children.findIndex((value: ScpiNode) => compare(value.content.text, command));
+        const index = current.children.findIndex((value: ScpiNode) => compare(value.content.text, segment));
         if (index !== -1) {
           current = current.children[index];
           matched++;
         }
       }
 
-      if (matched < inputCommands.length - 1) {
+      if (matched < inputSegments.length - 1) {
         // one or more completed mnemonic segments had no match, show no autocomplete options
         return [];
       }
 
-      return current.children?.filter(x => x.content.text.toLowerCase().startsWith(inputCommands[inputCommands.length - 1]?.toLowerCase()));
+      return current.children?.filter(x => x.content.text.toLowerCase().startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()));
     }
   });
 
@@ -111,6 +113,12 @@ export class App {
     // We modify the object further down in a hacky way by replacing the Object in `selected.value` with a string.
     const selectedScpiNode = selected.value as ScpiNode;
     const selectedText = selectedScpiNode.content.text;
+
+    if (selectedText.startsWith('*')) {
+      selected.value = selected.viewValue;
+      return selected;
+    }
+
     if (this.preferences.preferShortScpi()) {
       selected.value = this.getShortMnemonic(selected.value);
     }

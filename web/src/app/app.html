@@ -33,7 +33,21 @@
           @if (inputText().length !== 0 && history.index() < 0) {
             <!-- TODO: better track -->
             @for (option of autocomplete(); track $index) {
-              <mat-option [value]="option">{{ option }}</mat-option>
+              <mat-option [value]="option.content.text">
+                {{ option.content.text }}
+                @if (option.content.suffixed) {
+                 <!-- TODO -->
+                }
+                <mat-icon>
+                @if (!option.children || option.children.length === 0) {
+                  @if (option.content.text.endsWith('?')) {
+                    question_mark
+                  } @else {
+                    send
+                  }
+                }
+                </mat-icon>
+              </mat-option>
             }
           }
         </mat-autocomplete>

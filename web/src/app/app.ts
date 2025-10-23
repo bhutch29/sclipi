@@ -7,6 +7,7 @@ import {
     ElementRef,
     QueryList,
     Renderer2,
+    Signal,
     signal,
     ViewChild,
     ViewChildren,
@@ -28,7 +29,7 @@ import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
-import { Commands, LogEntry, ScpiResponse } from './types';
+import { Commands, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
@@ -64,7 +65,7 @@ export class App {
 
   private isScrolledToBottom = true;
 
-  public autocomplete = computed(() => {
+  public autocomplete: Signal<ScpiNode[]> = computed(() => {
     if (!this.commands.hasValue()) {
       return [];
     }
@@ -73,11 +74,11 @@ export class App {
     }
 
     if (this.inputText().startsWith("*")) {
-      return this.commands.value().starTree.children.map(x => x.content.text);
+      return this.commands.value().starTree.children;
     } else {
       const inputCommands = this.inputText().split(":").slice(1);
       const initial = this.commands.value().colonTree.children;
-      return initial.map(x => x.content.text).filter(x => x.toLowerCase().includes(inputCommands[0]?.toLowerCase()));
+      return initial.filter(x => x.content.text.toLowerCase().includes(inputCommands[0]?.toLowerCase()));
     }
   });
 

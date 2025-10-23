@@ -29,7 +29,7 @@ import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
-import { Commands, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
+import { Commands, LogEntry, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
@@ -96,11 +96,13 @@ export class App {
           matched++;
         }
       }
+
       if (matched < inputCommands.length - 1) {
         // one or more completed mnemonic segments had no match, show no autocomplete options
         return [];
       }
-      return current.children?.filter(x => x.content.text.toLowerCase().includes(inputCommands[inputCommands.length - 1]?.toLowerCase()));
+
+      return current.children?.filter(x => x.content.text.toLowerCase().startsWith(inputCommands[inputCommands.length - 1]?.toLowerCase()));
     }
   });
 

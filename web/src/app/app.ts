@@ -188,7 +188,11 @@ export class App {
       result += node.content.text;
     }
     if (node.content.suffixed) {
-      result += `{${node.content.start}:${node.content.stop}}`;
+      if (node.content.start === node.content.stop) {
+        result += `{${node.content.start}}`;
+      } else {
+        result += `{${node.content.start}:${node.content.stop}}`;
+      }
     }
     if (isQuery) {
       result += '?';

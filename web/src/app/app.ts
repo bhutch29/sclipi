@@ -181,9 +181,17 @@ export class App {
     if (!node.content.text.startsWith('*')) {
       result += ':';
     }
-    result += node.content.text;
+    const isQuery = node.content.text.endsWith('?')
+    if (isQuery) {
+      result += node.content.text.slice(0, -1);
+    } else {
+      result += node.content.text;
+    }
     if (node.content.suffixed) {
       result += `{${node.content.start}:${node.content.stop}}`;
+    }
+    if (isQuery) {
+      result += '?';
     }
     return result;
   }

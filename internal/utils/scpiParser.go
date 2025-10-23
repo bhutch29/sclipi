@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"slices"
 )
 
 type ScpiNode struct {
@@ -23,8 +24,6 @@ func parseScpi(lines []string) ScpiNode {
 	head := ScpiNode{}
 	commands := splitScpiCommands(lines)
 
-	// writeCommandsToFile(commands)
-
 	for _, command := range commands {
 		createScpiTreeBranch(command, &head)
 	}
@@ -32,12 +31,17 @@ func parseScpi(lines []string) ScpiNode {
 	return head
 }
 
-// TODO: here is where I would merge differing start/end points together
 func createScpiTreeBranch(command []nodeInfo, head *ScpiNode) {
 	if len(command) == 0 {
 		return
 	}
 	if exists, index := scpiNodeExists(head.Children, command[0]); exists {
+    if command[0].Start < head.Children[index].Content.Start {
+      head.Children[index].Content.Start = command[0].Start
+    }
+    if command[0].Stop > head.Children[index].Content.Stop {
+      head.Children[index].Content.Stop = command[0].Stop
+    }
 		createScpiTreeBranch(command[1:], &head.Children[index])
 	} else {
 		head.Children = append(head.Children, ScpiNode{Content: command[0]})
@@ -49,7 +53,7 @@ func createScpiTreeBranch(command []nodeInfo, head *ScpiNode) {
 
 func scpiNodeExists(nodes []ScpiNode, info nodeInfo) (bool, int) {
 	for i, node := range nodes {
-		if node.Content == info {
+		if node.Content.Text == info.Text && node.Content.Suffixed == info.Suffixed {
 			return true, i
 		}
 	}
@@ -72,9 +76,7 @@ func splitScpiCommands(lines []string) [][]nodeInfo {
 		sss := handleOptionals(removeSquareBraces(ss), getOptionalIndexes(ss))
 		sss = handleQueries(sss)
 		sss = handleBars(sss)
-		// now := time.Now()
 		nodeInfos := finishSuffixes(sss)
-		// fmt.Println(time.Since(now))
 
 		commands = append(commands, nodeInfos...)
 	}
@@ -256,7 +258,7 @@ func deleteIndexFromSliceRetainingQueryInfo(command []string, index int) []strin
 			newCommand[index-1] += "?/qonly/"
 		}
 	}
-	return append(newCommand[:index], newCommand[index+1:]...)
+	return slices.Delete(newCommand, index, index+1)
 }
 
 func removeIndexAndDecrement(indexes []int, i int) []int {

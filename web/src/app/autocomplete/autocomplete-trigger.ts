@@ -174,6 +174,8 @@ export class AutocompleteTrigger
   /** `View -> model callback called when autocomplete has been touched` */
   _onTouched = () => {};
 
+  valueTransform: (previous: string, seleted: string) => string = (previous: string, value: string) => {return value};
+
   /** The autocomplete panel to be attached to this trigger. */
   @Input('autocomplete') autocomplete!: MatAutocomplete;
 
@@ -673,7 +675,9 @@ export class AutocompleteTrigger
     const toSelect = event ? event.source : this._pendingAutoselectedOption;
 
     if (toSelect) {
-      this._clearPreviousSelectedOption(toSelect);
+      const previous = this._previousValue ? `${this._previousValue}` : "";
+      toSelect.value = this.valueTransform(previous, toSelect.viewValue);
+      this._clearPreviousSelectedOption(null);
       this._assignOptionValue(toSelect.value);
       // TODO(crisbeto): this should wait until the animation is done, otherwise the value
       // gets reset while the panel is still animating which looks glitchy. It'll likely break

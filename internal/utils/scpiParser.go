@@ -34,14 +34,16 @@ func parseScpi(lines []string) ScpiNode {
 
 // TODO: here is where I would merge differing start/end points together
 func createScpiTreeBranch(command []nodeInfo, head *ScpiNode) {
-	if len(command) == 0 || len(command) == 1 {
+	if len(command) == 0 {
 		return
 	}
 	if exists, index := scpiNodeExists(head.Children, command[0]); exists {
 		createScpiTreeBranch(command[1:], &head.Children[index])
 	} else {
 		head.Children = append(head.Children, ScpiNode{Content: command[0]})
-		createScpiTreeBranch(command[1:], &head.Children[len(head.Children)-1])
+    if len(command) > 1 {
+		  createScpiTreeBranch(command[1:], &head.Children[len(head.Children)-1])
+    }
 	}
 }
 

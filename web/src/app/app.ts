@@ -71,6 +71,7 @@ export class App {
     if (this.history.index() >= 0) {
       return [];
     }
+
     if (this.inputText().startsWith("*")) {
       return this.commands.value().starTree.children.map(x => x.content.text);
     } else {
@@ -79,6 +80,21 @@ export class App {
       return initial.map(x => x.content.text).filter(x => x.toLowerCase().includes(inputCommands[0]?.toLowerCase()));
     }
   });
+
+  private autocompleteValueTransform = (previous: string, selected: string) => {
+    if (previous === ':') {
+      return previous + selected;
+    }
+    if (previous === '*') {
+      return selected;
+    }
+    const previousSplit = previous.split(':');
+    if (previousSplit.length === 1) {
+      return previous + selected;
+    }
+    const trimmed = previousSplit.slice(0, -1).join(':') + ':';
+    return trimmed + selected;
+  }
 
   private unsentScpiInput = '';
 
@@ -135,6 +151,10 @@ export class App {
         this.scrollToBottom();
       }
     });
+
+    if (this.autocompleteRef) {
+      this.autocompleteRef.valueTransform = this.autocompleteValueTransform;
+    }
   }
 
   private scrollToBottom() {

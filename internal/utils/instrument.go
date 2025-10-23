@@ -280,8 +280,8 @@ func (i *scpiInstrument) GetSupportedCommandsTree() (ScpiNode, ScpiNode, error) 
     return ScpiNode{}, ScpiNode{}, err
   }
   if (hash != i.headersHash) {
-    i.starTree = parseScpi(starCommands);
-    i.colonTree = parseScpi(colonCommands);
+    i.starTree = parseScpi(starCommands)
+    i.colonTree = parseScpi(colonCommands)
     i.headersHash = hash
   }
   return i.starTree, i.colonTree, nil

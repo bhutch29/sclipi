@@ -29,7 +29,7 @@
           #autocompleteRef="autocompleteTrigger"
         />
         <mat-hint>Type <strong>:</strong> or <strong>*</strong> for auto-complete. <strong>Enter</strong> to submit. <strong>Arrow Up</strong> for history.</mat-hint>
-        <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+        <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" hideSingleSelectionIndicator>
           @if (inputText().length !== 0 && history.index() < 0) {
             <!-- TODO: better track -->
             @for (option of autocomplete(); track $index) {

@@ -79,21 +79,37 @@ export class App {
       const inputCommands = this.inputText().split(":").slice(1);
       const initial = this.commands.value().colonTree;
       let current = initial;
-      for (const command of inputCommands) {
+      let matched = 0;
+      for (const command of inputCommands.slice(0, -1)) {
         if (!current.children) {
           break;
         }
-        const index = current.children.findIndex((value: ScpiNode) => value.content.text.toLowerCase() === command.toLowerCase());
+        const compare = (node: string, typed: string) => {
+          if (this.getShortMnemonic(typed).length === typed.length) {
+            return this.getShortMnemonic(node) === this.getShortMnemonic(typed);
+          }
+          return node.toLowerCase() === typed.toLowerCase();
+        };
+        const index = current.children.findIndex((value: ScpiNode) => compare(value.content.text, command));
         if (index !== -1) {
           current = current.children[index];
+          matched++;
         }
+      }
+      if (matched < inputCommands.length - 1) {
+        // one or more completed mnemonic segments had no match, show no autocomplete options
+        return [];
       }
       return current.children?.filter(x => x.content.text.toLowerCase().includes(inputCommands[inputCommands.length - 1]?.toLowerCase()));
     }
   });
 
   private autocompleteValueTransform = (previous: string, selected: string) => {
+    console.log(selected);
     selected = selected.startsWith(':') ? selected.slice(1) : selected;
+    if (this.preferences.preferShortScpi()) {
+      selected = this.getShortMnemonic(selected);
+    }
     if (previous === ':') {
       return previous + selected;
     }
@@ -274,4 +290,16 @@ export class App {
     this.inputText.set(entry);
     this.send();
   }
+
+  public getShortMnemonic(input: string) {
+    const match = input.match(/^[A-Z]+/);
+    const isQuery = input.endsWith('?')
+    if (match && isQuery) {
+      return match[0] + '?';
+    } else if (match && !isQuery) {
+      return match[0];
+    } else {
+      return '';
+    }
+  };
 }

@@ -677,6 +677,7 @@ export class AutocompleteTrigger
     let reopenPanel = false;
     if (toSelect) {
       const previous = this._previousValue ? `${this._previousValue}` : "";
+      const valueBeforeTransform = toSelect.value;
       toSelect = this.valueTransform(previous, toSelect);
       this._clearPreviousSelectedOption(null);
       this._assignOptionValue(toSelect.value);
@@ -686,7 +687,7 @@ export class AutocompleteTrigger
       this._onChange(toSelect.value);
       panel._emitSelectEvent(toSelect);
       this._element.nativeElement.focus();
-      if (typeof toSelect.value === 'string' && toSelect.value.endsWith(':')) {
+      if (valueBeforeTransform.content?.suffixed || typeof toSelect.value === 'string' && toSelect.value.endsWith(':')) {
         reopenPanel = true;
       }
     } else if (

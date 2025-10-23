@@ -33,7 +33,7 @@ import { Commands, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
-import { range } from './utils';
+import { cardinalityOf, getShortMnemonic, range, stripCardinality } from './utils';
 
 @Component({
   selector: 'app-root',
@@ -81,15 +81,23 @@ export class App {
     } else {
       const inputSegments = this.inputText().split(":").slice(1);
       const initialNode = this.commands.value().colonTree;
-      let currentNode = initialNode;
+      let currentNodes = [initialNode];
       let finishedNode = initialNode;
       let matched = 0;
 
       const compare = (node: NodeInfo, typed: string) => {
-         const fullMatch = () => typed.toLowerCase() === node.text.toLowerCase();
-         const shortMatch = () => typed.toLowerCase() === this.getShortMnemonic(node.text).toLowerCase();
-         const noCardinalityMatch = () => node.suffixed && this.stripCardinality(typed).toLowerCase() === node.text.toLowerCase();
-         return fullMatch() || shortMatch() || noCardinalityMatch();
+        const cardinality = cardinalityOf(typed);
+        const hasCardinality = cardinality !== undefined;
+        const cardinalityMismatch = () => hasCardinality && !node.suffixed;
+        const cardinalityOutOfRange = () => hasCardinality && node.suffixed && (cardinality < node.start || cardinality > node.stop);
+        if (cardinalityMismatch() || cardinalityOutOfRange()) {
+          return false;
+        }
+
+        const fullMatch = () => typed.toLowerCase() === node.text.toLowerCase();
+        const shortMatch = () => typed.toLowerCase() === getShortMnemonic(node.text).toLowerCase();
+        const noCardinalityMatch = () => node.suffixed && stripCardinality(typed).toLowerCase() === node.text.toLowerCase();
+        return fullMatch() || shortMatch() || noCardinalityMatch();
       };
 
       for (const [segmentIndex, segment] of inputSegments.entries()) {
@@ -97,18 +105,18 @@ export class App {
           continue;
         }
 
-        if (!currentNode.children) {
+        if (!finishedNode.children) {
           break;
         }
 
-        const index = currentNode.children.findIndex((value: ScpiNode) => compare(value.content, segment));
-        if (index !== -1) {
-          finishedNode = currentNode.children[index];
+        const lastSegment = segmentIndex !== inputSegments.length - 1;
 
-          const lastSegment = segmentIndex !== inputSegments.length - 1;
+        const matchingNodes = finishedNode.children.filter(x => compare(x.content, segment));
+        if (matchingNodes.length > 0) {
           if (lastSegment) {
-            currentNode = currentNode.children[index];
+            currentNodes = matchingNodes
           }
+          finishedNode = matchingNodes[0]; // TODO: explain why this is ok
 
           matched++;
         }
@@ -120,6 +128,7 @@ export class App {
       }
 
       // TODO: handle cases where suffixed and unsuffixed nodes both exist
+      // :AM{1:2}<click> should show cardinality options. :BB{1:1} works because there is no :BB
 
       const currentInputSegment = inputSegments[inputSegments.length - 1];
       const currentInputFinishesNode = currentInputSegment !== '' && currentInputSegment === finishedNode.content.text;
@@ -127,10 +136,18 @@ export class App {
       if (showSuffixes) {
         return range(finishedNode.content.start, finishedNode.content.stop).map(x => `${x}`);
       }
-      return currentNode.children?.filter(x => x.content.text.toLowerCase().startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()));
+
+      const allChildren: ScpiNode[] = [];
+      for (const node of currentNodes) {
+        if (node.children) {
+          allChildren.push(...node.children);
+        }
+      }
+      return allChildren.filter(x => x.content.text.toLowerCase().startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()));
     }
   });
 
+  // TODO: handle selecting :AM{1:2}?, currently inserts :AM?
   private autocompleteValueTransform = (previous: string, selected: MatOption<any>): MatOption<any> => {
     if (typeof selected.value === 'string') {
       selected.value = previous + selected.value + ':';
@@ -148,7 +165,7 @@ export class App {
     }
 
     if (this.preferences.preferShortScpi()) {
-      selected.value = this.getShortMnemonic(selected.value);
+      selected.value = getShortMnemonic(selected.value);
     }
 
     const appendColonToUnfinishedMnemonics = (node: ScpiNode, option: MatOption<any>): MatOption<any> => {
@@ -365,30 +382,6 @@ export class App {
   public onHistoryEntrySelect(entry: string) {
     this.inputText.set(entry);
     this.send();
-  }
-
-  private getShortMnemonic(input: string): string {
-    const match = input.match(/^[A-Z]+/);
-    const isQuery = input.endsWith('?')
-    if (match && isQuery) {
-      return match[0] + '?';
-    } else if (match && !isQuery) {
-      return match[0];
-    } else {
-      return '';
-    }
-  };
-
-  private stripCardinality(input: string): string {
-    const match = input.match(/^[a-zA-Z]+/);
-    const isQuery = input.endsWith('?')
-    if (match && isQuery) {
-      return match[0] + '?';
-    } else if (match && !isQuery) {
-      return match[0];
-    } else {
-      return '';
-    }
   }
 
   public insertCharacter(character: string) {

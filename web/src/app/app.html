@@ -25,9 +25,8 @@
           #scpiInput
           [(ngModel)]="inputText"
           autofocus
+          (keydown)="onInputKeydown($event)"
           (keydown.enter)="send()"
-          (keydown.arrowUp)="arrowUp($event)"
-          (keydown.arrowDown)="arrowDown($event)"
           matInput
           [autocomplete]="auto"
           #autocompleteRef="autocompleteTrigger"
@@ -44,11 +43,17 @@
                   {{ getDisplayValue(option) }}
                 }
                 <mat-icon>
-                  @if (typeof option !== 'string' && (!option.children || option.children.length === 0)) {
-                    @if (option.content.text.endsWith('?')) {
+                  @if (typeof option === 'string') {
+                    @if (option.endsWith('?')) {
                       question_mark
-                    } @else {
-                      send
+                    }
+                  } @else {
+                    @if ((!option.children || option.children.length === 0)) {
+                      @if (option.content.text.endsWith('?')) {
+                        question_mark
+                      } @else {
+                        send
+                      }
                     }
                   }
                 </mat-icon>

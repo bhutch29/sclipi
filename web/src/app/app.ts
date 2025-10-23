@@ -62,6 +62,7 @@ export class App {
   public inputText = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
   private lastSelectedAutocompletionHasSuffix = signal(false);
+  private lastSelectedAutocompletionIsQuery = signal(false);
 
   public activeToolbarButtons: WritableSignal<string[]> = signal([])
 
@@ -132,13 +133,17 @@ export class App {
         return [];
       }
 
-      // TODO: :AM{1:2}?<click> currently inserts :AM?. Do something better? How to make this work mouse-only?
-
       const currentInputSegment = inputSegments[inputSegments.length - 1];
       const currentInputFinishesNode = currentInputSegment !== '' && currentInputSegment === finishedNode.content.text;
       const showSuffixes = currentInputFinishesNode && finishedNode.content.suffixed;
       if (showSuffixes) {
-        return range(finishedNode.content.start, finishedNode.content.stop).map(x => `${x}`);
+        return range(finishedNode.content.start, finishedNode.content.stop).map(x => {
+          if (this.lastSelectedAutocompletionIsQuery()) {
+            return `${x}?`;
+          } else {
+            return `${x}`;
+          }
+        });
       }
 
       const allChildren: ScpiNode[] = [];
@@ -153,7 +158,11 @@ export class App {
 
   private autocompleteValueTransform = (previous: string, selected: MatOption<any>): MatOption<any> => {
     if (typeof selected.value === 'string') {
-      selected.value = previous + selected.value + ':';
+      if (selected.value.endsWith('?')) {
+        selected.value = previous + selected.value;
+      } else {
+        selected.value = previous + selected.value + ':';
+      }
       return selected;
     }
 
@@ -193,7 +202,14 @@ export class App {
       const trimmed = previousSplit.slice(0, -1).join(':') + ':';
       selected.value = trimmed + selectedText;
     }
+
     this.lastSelectedAutocompletionHasSuffix.set(selectedScpiNode.content.suffixed);
+    this.lastSelectedAutocompletionIsQuery.set(selectedScpiNode.content.text.endsWith('?'));
+
+    if (this.lastSelectedAutocompletionHasSuffix() && this.lastSelectedAutocompletionIsQuery()) {
+      selected.value = selected.value.slice(0, -1); // Remove ?, will be added back by auto-completion options
+    }
+
     return appendColonToUnfinishedMnemonics(selectedScpiNode, selected);
   }
 
@@ -351,6 +367,22 @@ export class App {
         this.sending$.next(false);
       },
     });
+  }
+
+  public onInputKeydown(event: KeyboardEvent) {
+    if (event.key === 'ArrowDown') {
+      this.arrowDown(event);
+    } else if (event.key === 'ArrowUp') {
+      this.arrowUp(event);
+    }
+    // Not handling Enter here, for some reason it affects whether `stopImmediatePropagation` works in autocomplete-trigger
+
+    const isNumber = /^[0-9]$/.test(event.key);
+    const isArrow = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key);
+    if (!(isNumber || isArrow || event.key === 'Backspace' || event.key === 'Enter')) {
+      this.lastSelectedAutocompletionHasSuffix.set(false);
+      this.lastSelectedAutocompletionIsQuery.set(false);
+    }
   }
 
   public arrowUp(event: Event) {

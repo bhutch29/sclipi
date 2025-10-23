@@ -61,6 +61,7 @@ import { cardinalityOf, getShortMnemonic, range, stripCardinality } from './util
 export class App {
   public inputText = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
+  private lastSelectedAutocompletionHasSuffix = signal(false);
 
   public activeToolbarButtons: WritableSignal<string[]> = signal([])
 
@@ -119,7 +120,8 @@ export class App {
           if (lastSegment) {
             currentNodes = matchingNodes
           }
-          finishedNode = matchingNodes[0]; // TODO: explain why this is ok
+          // This works because non-suffixed always come before suffixed nodes, and we only ever expect these 2 in the list
+          finishedNode = this.lastSelectedAutocompletionHasSuffix() ? matchingNodes[matchingNodes.length - 1] : matchingNodes[0];
 
           matched++;
         }
@@ -130,7 +132,7 @@ export class App {
         return [];
       }
 
-      // TODO: :AM{1:2}<click> should show cardinality options. :BB{1:1} works because there is no :BB
+      // TODO: :AM{1:2}?<click> currently inserts :AM?. Do something better? How to make this work mouse-only?
 
       const currentInputSegment = inputSegments[inputSegments.length - 1];
       const currentInputFinishesNode = currentInputSegment !== '' && currentInputSegment === finishedNode.content.text;
@@ -149,7 +151,6 @@ export class App {
     }
   });
 
-  // TODO: handle selecting :AM{1:2}?, currently inserts :AM?
   private autocompleteValueTransform = (previous: string, selected: MatOption<any>): MatOption<any> => {
     if (typeof selected.value === 'string') {
       selected.value = previous + selected.value + ':';
@@ -192,6 +193,7 @@ export class App {
       const trimmed = previousSplit.slice(0, -1).join(':') + ':';
       selected.value = trimmed + selectedText;
     }
+    this.lastSelectedAutocompletionHasSuffix.set(selectedScpiNode.content.suffixed);
     return appendColonToUnfinishedMnemonics(selectedScpiNode, selected);
   }
 

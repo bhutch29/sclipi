@@ -34,7 +34,11 @@
             <!-- TODO: better track -->
             @for (option of autocomplete(); track $index) {
               <mat-option [value]="option.content.text">
-                {{ option.content.text }}
+                @if (option.content.text.startsWith('*')) {
+                  {{ option.content.text }}
+                } @else {
+                  :{{ option.content.text }}
+                }
                 @if (option.content.suffixed) {
                  <!-- TODO -->
                 }

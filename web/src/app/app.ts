@@ -77,12 +77,23 @@ export class App {
       return this.commands.value().starTree.children;
     } else {
       const inputCommands = this.inputText().split(":").slice(1);
-      const initial = this.commands.value().colonTree.children;
-      return initial.filter(x => x.content.text.toLowerCase().includes(inputCommands[0]?.toLowerCase()));
+      const initial = this.commands.value().colonTree;
+      let current = initial;
+      for (const command of inputCommands) {
+        if (!current.children) {
+          break;
+        }
+        const index = current.children.findIndex((value: ScpiNode) => value.content.text.toLowerCase() === command.toLowerCase());
+        if (index !== -1) {
+          current = current.children[index];
+        }
+      }
+      return current.children?.filter(x => x.content.text.toLowerCase().includes(inputCommands[inputCommands.length - 1]?.toLowerCase()));
     }
   });
 
   private autocompleteValueTransform = (previous: string, selected: string) => {
+    selected = selected.startsWith(':') ? selected.slice(1) : selected;
     if (previous === ':') {
       return previous + selected;
     }

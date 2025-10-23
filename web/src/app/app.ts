@@ -82,16 +82,17 @@ export class App {
       const inputSegments = this.inputText().split(":").slice(1);
       const initialNode = this.commands.value().colonTree;
       let currentNode = initialNode;
+      let finishedNode = initialNode;
       let matched = 0;
 
-      const compare = (node: string, typed: string) => {
-         const fullMatch = () => typed.toLowerCase() === node.toLowerCase();
-         const shortMatch = () => typed.toLowerCase() === this.getShortMnemonic(node).toLowerCase();
-         const noCardinalityMatch = () => this.stripCardinality(typed).toLowerCase() === node.toLowerCase();
+      const compare = (node: NodeInfo, typed: string) => {
+         const fullMatch = () => typed.toLowerCase() === node.text.toLowerCase();
+         const shortMatch = () => typed.toLowerCase() === this.getShortMnemonic(node.text).toLowerCase();
+         const noCardinalityMatch = () => node.suffixed && this.stripCardinality(typed).toLowerCase() === node.text.toLowerCase();
          return fullMatch() || shortMatch() || noCardinalityMatch();
       };
 
-      for (const segment of inputSegments) {
+      for (const [segmentIndex, segment] of inputSegments.entries()) {
         if (segment === '') {
           continue;
         }
@@ -100,9 +101,15 @@ export class App {
           break;
         }
 
-        const index = currentNode.children.findIndex((value: ScpiNode) => compare(value.content.text, segment));
+        const index = currentNode.children.findIndex((value: ScpiNode) => compare(value.content, segment));
         if (index !== -1) {
-          currentNode = currentNode.children[index];
+          finishedNode = currentNode.children[index];
+
+          const lastSegment = segmentIndex !== inputSegments.length - 1;
+          if (lastSegment) {
+            currentNode = currentNode.children[index];
+          }
+
           matched++;
         }
       }
@@ -113,14 +120,12 @@ export class App {
       }
 
       // TODO: handle cases where suffixed and unsuffixed nodes both exist
+
       const currentInputSegment = inputSegments[inputSegments.length - 1];
-      const currentInputFinishesNode = currentInputSegment !== '' && currentInputSegment === currentNode.content.text;
-      const showSuffixes = currentInputFinishesNode && currentNode.content.suffixed;
+      const currentInputFinishesNode = currentInputSegment !== '' && currentInputSegment === finishedNode.content.text;
+      const showSuffixes = currentInputFinishesNode && finishedNode.content.suffixed;
       if (showSuffixes) {
-        console.log('here', currentNode.content);
-        const blah = range(currentNode.content.start, currentNode.content.stop).map(x => `${x}`);
-        console.log(blah)
-        return blah;
+        return range(finishedNode.content.start, finishedNode.content.stop).map(x => `${x}`);
       }
       return currentNode.children?.filter(x => x.content.text.toLowerCase().startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()));
     }

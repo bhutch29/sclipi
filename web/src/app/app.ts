@@ -87,8 +87,8 @@ export class App {
           break;
         }
         const compare = (node: string, typed: string) => {
-          if (this.getShortMnemonic(typed).length === typed.length) {
-            return this.getShortMnemonic(node) === this.getShortMnemonic(typed);
+          if (typed.toLowerCase() === this.getShortMnemonic(node).toLowerCase()) {
+            return true;
           }
           return node.toLowerCase() === typed.toLowerCase();
         };

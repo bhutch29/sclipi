@@ -14,7 +14,7 @@ import {
     WritableSignal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatOption } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -29,7 +29,7 @@ import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
-import { Commands, LogEntry, ScpiNode, ScpiResponse } from './types';
+import { Commands, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
@@ -106,24 +106,36 @@ export class App {
     }
   });
 
-  private autocompleteValueTransform = (previous: string, selected: string) => {
-    console.log(selected);
-    selected = selected.startsWith(':') ? selected.slice(1) : selected;
+  private autocompleteValueTransform = (previous: string, selected: MatOption<any>): MatOption<any> => {
+    // Have to capture copies of these early.
+    // We modify the object further down in a hacky way by replacing the Object in `selected.value` with a string.
+    const selectedScpiNode = selected.value as ScpiNode;
+    const selectedText = selectedScpiNode.content.text;
     if (this.preferences.preferShortScpi()) {
-      selected = this.getShortMnemonic(selected);
+      selected.value = this.getShortMnemonic(selected.value);
     }
-    if (previous === ':') {
-      return previous + selected;
+
+    const appendColonToUnfinishedMnemonics = (node: ScpiNode, option: MatOption<any>): MatOption<any> => {
+      if (node.children && node.children.length !== 0) {
+        option.value += ":";
+      }
+      return option;
     }
-    if (previous === '*') {
-      return selected;
-    }
+
     const previousSplit = previous.split(':');
-    if (previousSplit.length === 1) {
-      return previous + selected;
+
+    if (previous === ':') {
+      selected.value = previous + selectedText;
+    } else if (previous === '*') {
+      selected.value = selectedText;
+      return selected;
+    } else if (previousSplit.length === 1) {
+      selected.value = previous + selectedText;
+    } else {
+      const trimmed = previousSplit.slice(0, -1).join(':') + ':';
+      selected.value = trimmed + selectedText;
     }
-    const trimmed = previousSplit.slice(0, -1).join(':') + ':';
-    return trimmed + selected;
+    return appendColonToUnfinishedMnemonics(selectedScpiNode, selected);
   }
 
   private unsentScpiInput = '';

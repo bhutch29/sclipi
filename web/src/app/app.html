@@ -37,7 +37,7 @@
           @if (inputText().length !== 0 && history.index() < 0) {
             <!-- TODO: better track -->
             @for (option of autocomplete(); track $index) {
-              <mat-option [value]="option.content.text">
+              <mat-option [value]="option">
                 @if (option.content.text.startsWith('*')) {
                   {{ option.content.text }}
                 } @else {

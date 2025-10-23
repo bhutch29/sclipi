@@ -174,7 +174,7 @@ export class AutocompleteTrigger
   /** `View -> model callback called when autocomplete has been touched` */
   _onTouched = () => {};
 
-  valueTransform: (previous: string, seleted: string) => string = (previous: string, value: string) => {return value};
+  valueTransform: (previous: string, selected: MatOption<any>) => MatOption<any> = (previous: string, value: MatOption<any>) => {return value};
 
   /** The autocomplete panel to be attached to this trigger. */
   @Input('autocomplete') autocomplete!: MatAutocomplete;
@@ -672,11 +672,11 @@ export class AutocompleteTrigger
    */
   private _setValueAndClose(event: MatOptionSelectionChange | null): void {
     const panel = this.autocomplete;
-    const toSelect = event ? event.source : this._pendingAutoselectedOption;
+    let toSelect = event ? event.source : this._pendingAutoselectedOption;
 
     if (toSelect) {
       const previous = this._previousValue ? `${this._previousValue}` : "";
-      toSelect.value = this.valueTransform(previous, toSelect.viewValue);
+      toSelect = this.valueTransform(previous, toSelect);
       this._clearPreviousSelectedOption(null);
       this._assignOptionValue(toSelect.value);
       // TODO(crisbeto): this should wait until the animation is done, otherwise the value

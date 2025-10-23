@@ -115,7 +115,7 @@ export class App {
     const selectedText = selectedScpiNode.content.text;
 
     if (selectedText.startsWith('*')) {
-      selected.value = selected.viewValue;
+      selected.value = selectedText;
       return selected;
     }
 

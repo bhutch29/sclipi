@@ -5,6 +5,7 @@ import {
     computed,
     effect,
     ElementRef,
+    HostListener,
     QueryList,
     Renderer2,
     Signal,
@@ -61,12 +62,11 @@ import { cardinalityOf, childrenOf, findCardinalNode, getShortMnemonic, range, r
 export class App {
   public inputText = signal('');
   public log: WritableSignal<LogEntry[]> = signal([]);
+  public selectedLogIndex = signal(-1);
   private lastSelectedAutocompletionHasSuffix = signal(false);
   private lastSelectedAutocompletionIsQuery = signal(false);
-
   public activeToolbarButtons: WritableSignal<string[]> = signal([])
-
-  private isScrolledToBottom = true;
+  public isScrolledToBottom = signal(true);
 
   public autocomplete: Signal<Array<ScpiNode | string>> = computed(() => {
     if (!this.commands.hasValue()) {
@@ -146,7 +146,6 @@ export class App {
       if (cardinalNode) {
         const currentInputSegment = inputSegments[inputSegments.length - 1];
         const currentInputFinishesNode = currentInputSegment !== '' && (currentInputSegment === cardinalNode.content.text || currentInputSegment === getShortMnemonic(cardinalNode.content.text));
-        console.log(currentInputFinishesNode);
         if (currentInputFinishesNode && this.lastSelectedAutocompletionHasSuffix()) {
           return range(cardinalNode.content.start, cardinalNode.content.stop).map(x => {
             if (this.lastSelectedAutocompletionIsQuery()) {
@@ -295,7 +294,7 @@ export class App {
 
   ngAfterViewInit() {
     this.entryElements?.changes.subscribe(() => {
-      if (this.isScrolledToBottom) {
+      if (this.isScrolledToBottom()) {
         this.scrollToBottom();
       }
     });
@@ -305,9 +304,27 @@ export class App {
     }
   }
 
-  private scrollToBottom() {
+  public scrollToBottom() {
     if (this.logContainer) {
       this.logContainer.nativeElement.scrollTop = Number.MAX_SAFE_INTEGER;
+    }
+  }
+
+  public onLogScroll() {
+    this.checkScrollPosition();
+  }
+
+  @HostListener('window:resize')
+  onResize() {
+    this.checkScrollPosition();
+  }
+
+  private checkScrollPosition() {
+    if (this.log().length === 0) {
+      this.isScrolledToBottom.set(true);
+    } else {
+      // Allows for 1px inaccuracy
+      this.isScrolledToBottom.set(this.logContainer?.nativeElement.scrollHeight - this.logContainer?.nativeElement.clientHeight <= this.logContainer?.nativeElement.scrollTop + 1);
     }
   }
 
@@ -325,14 +342,14 @@ export class App {
       return;
     }
     this.sendInternal(this.inputText());
-    this.history.index.set(-1);
   }
 
   private sendInternal(scpi: string) {
     this.sending$.next(true);
+    this.history.index.set(-1);
     this.inputText.set('');
 
-    this.isScrolledToBottom = this.logContainer?.nativeElement.scrollHeight - this.logContainer?.nativeElement.clientHeight <= this.logContainer?.nativeElement.scrollTop + 1; // allows for 1px inaccuracy
+    this.checkScrollPosition();
 
     scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
     this.history.add(scpi);

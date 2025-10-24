@@ -66,27 +66,48 @@ mat-toolbar {
   min-height: 0;
 }
 
-.log {
+.log-section {
+  min-height: 150px;
   margin-top: 12px;
   padding: 2px;
-  min-height: 150px;
-  background-color: var(--mat-sys-neutral10);
-  border: 1px solid var(--mat-sys-outline-variant);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid:
+    "log right-upper-buttons" auto
+    "log ." 1fr
+    / 1fr auto;
   gap: 4px;
-  overflow-y: auto;
 
-  &:not(.wrap) {
-    text-wrap: nowrap;
-    overflow-x: scroll;
+  .log {
+    grid-area: log;
+    background-color: var(--mat-sys-neutral10);
+    border: 1px solid var(--mat-sys-outline-variant);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+
+    &:not(.wrap) {
+      text-wrap: nowrap;
+      overflow-x: scroll;
+    }
   }
 }
 
 .entry {
   display: flex;
   flex-direction: row;
-  gap: 4px;
+  width: 100%;
+  cursor: pointer;
+
+  .entry-text {
+    flex-shrink: 1;
+    display: flex;
+    gap: 8px;
+    cursor: text;
+  }
+
+  &.selected {
+    background-color: var(--mat-sys-on-secondary);
+  }
 
   .timestamp {
     font-weight: lighter;

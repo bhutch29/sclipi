@@ -52,7 +52,7 @@
                       @if (option.content.text.endsWith('?')) {
                         question_mark
                       } @else {
-                        send
+                        play_arrow
                       }
                     }
                   }
@@ -106,6 +106,13 @@
         }
         @for (option of history.list(); track $index) {
           <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
+            <mat-icon>
+              @if (option.includes('?')) {
+                question_mark
+              } @else {
+                play_arrow
+              }
+            </mat-icon>
             {{ option }}
           </button>
         }

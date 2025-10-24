@@ -130,7 +130,7 @@
           }
         </div>
 
-        <div class="right-log-buttons">
+        <div class="left-log-buttons">
           <button matMiniFab matTooltip="Scroll to top" matTooltipPosition="right" (click)="scrollToTop()" [disabled]="isScrolledToTop()">
             <mat-icon>keyboard_double_arrow_up</mat-icon>
           </button>
@@ -143,6 +143,8 @@
           <button matMiniFab matTooltip="Select previous" matTooltipPosition="right" [disabled]="selectedLogIndex() >= log().length - 1" (click)="nextLogEntry()">
             <mat-icon>arrow_downward</mat-icon>
           </button>
+        </div>
+        <div class="right-log-buttons">
           <button matMiniFab matTooltip="Copy full log" matTooltipPosition="right" (click)="copyLogToClipboard()">
             <mat-icon>content_copy</mat-icon>
           </button>

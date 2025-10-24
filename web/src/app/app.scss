@@ -72,9 +72,9 @@ mat-toolbar {
   padding: 2px;
   display: grid;
   grid:
-    "log right-upper-buttons" auto
-    "log ." 1fr
-    / 1fr auto;
+    "left-upper-buttons log right-upper-buttons" auto
+    ". log ." 1fr
+    / auto 1fr auto;
   gap: 4px;
 
   .log {
@@ -97,6 +97,13 @@ mat-toolbar {
     flex-direction: column;
     gap: 4px;
   }
+
+  .left-log-buttons {
+    grid-area: left-upper-buttons;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 }
 
 .entry {
@@ -110,6 +117,7 @@ mat-toolbar {
     display: flex;
     gap: 8px;
     cursor: text;
+    margin-left: 2px;
   }
 
   &.selected {

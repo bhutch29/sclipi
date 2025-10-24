@@ -411,7 +411,7 @@ export class App {
           lastElement.serverError = x.serverError;
           lastElement.elapsed = Date.now() - time;
           for (const error of x.errors) {
-            log.push({type: 'query', scpi: ':SYST:ERR?', response: error, uniqueId: crypto.randomUUID(), time, elapsed: 0, hideTime: true})
+            log.push({type: 'query', scpi: ':SYST:ERR?', response: error, uniqueId: crypto.randomUUID(), time, hideTime: true})
           }
           return log;
         });
@@ -506,7 +506,7 @@ export class App {
   }
 
   private tryGetLogText(): string | undefined {
-    return this.entryElements?.reduce((a, b) => a + b.nativeElement.innerText.replace(/\n/g, ' ') + '\n', '');
+    return this.entryElements?.reduce((a, b) => a + b.nativeElement.innerText.replace(/\n/g, ' ').replace(/ subdirectory_arrow_right/g, '') + '\n', '');
   }
 
   public clearLog() {

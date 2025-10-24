@@ -111,11 +111,19 @@
           @for (entry of log(); track entry.uniqueId; let i = $index) {
             <div #entry class="entry" [class.selected]="selectedLogIndex() === i" (click)="selectedLogIndex.set(i)">
               <div class="entry-text">
-                @if (preferences.showDate()) {
-                  <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">{{ entry.time | date: 'MMM dd, hh:mm:ss.SS a' }}</span>
-                } @else {
-                  <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">{{ entry.time | date: 'hh:mm:ss.SS a' }}</span>
-                }
+                <div class="timestamp-container">
+                  @if (preferences.showDate()) {
+                    <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">{{ entry.time | date: 'MMM dd, hh:mm:ss.SS a' }}</span>
+                  } @else {
+                    <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">
+                      {{ entry.time | date: 'hh:mm:ss.SS a' }}
+                    </span>
+                  }
+
+                  @if (!!entry.hideTime) {
+                    <mat-icon>subdirectory_arrow_right</mat-icon>
+                  }
+                </div>
                 <b>{{ entry.scpi }}</b>
                 @if (i === log().length - 1 && (showSlowSendIndicator$ | async)) {
                   <div>...</div>

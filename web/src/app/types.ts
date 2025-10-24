@@ -3,7 +3,7 @@ export interface LogEntry {
   scpi: string;
   response?: string;
   time: number;
-  elapsed: number;
+  elapsed?: number;
   hideTime?: boolean
   serverError?: string;
   uniqueId: string;

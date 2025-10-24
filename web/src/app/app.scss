@@ -126,10 +126,19 @@ mat-toolbar {
     background-color: var(--mat-sys-on-secondary);
   }
 
-  .timestamp {
+  .timestamp-container {
     flex-shrink: 0;
-    font-weight: lighter;
-    color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
+
+    .timestamp {
+      font-weight: lighter;
+      color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
+    }
+
+    mat-icon {
+      position: absolute;
+      margin-left: -25px;
+      font-size: 1rem;
+    }
   }
 }
 

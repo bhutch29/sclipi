@@ -33,7 +33,7 @@ import { Commands, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
-import { cardinalityOf, getShortMnemonic, range, stripCardinality } from './utils';
+import { cardinalityOf, childrenOf, getShortMnemonic, range, removeDuplicateNodes, stripCardinality } from './utils';
 
 @Component({
   selector: 'app-root',
@@ -87,7 +87,7 @@ export class App {
       const inputSegments = this.inputText().split(":").slice(1);
       const initialNode = this.commands.value().colonTree;
       let currentNodes = [initialNode];
-      let finishedNode = initialNode;
+      let finishedNodes = [initialNode];
       let matched = 0;
 
       const compare = (node: NodeInfo, typed: string) => {
@@ -111,19 +111,23 @@ export class App {
           continue;
         }
 
-        if (!finishedNode.children) {
+        if (childrenOf(finishedNodes).length === 0) {
           break;
         }
 
         const lastSegment = segmentIndex !== inputSegments.length - 1;
 
-        const matchingNodes = finishedNode.children.filter(x => compare(x.content, segment));
+        const matchingNodes = childrenOf(finishedNodes).filter(x => compare(x.content, segment));
         if (matchingNodes.length > 0) {
           if (lastSegment) {
             currentNodes = matchingNodes
           }
-          // This works because non-suffixed always come before suffixed nodes, and we only ever expect these 2 in the list
-          finishedNode = this.lastSelectedAutocompletionHasSuffix() ? matchingNodes[matchingNodes.length - 1] : matchingNodes[0];
+
+          // If the currently typed segment doesn't have cardinality, we include matches with and without cardinality (since cardinality is optional)
+          // Otherwise, when it has cardinality, we take only the last item, which based on backend sorting should always be the one with cardinality.
+          const cardinality = cardinalityOf(segment);
+          const hasCardinality = cardinality !== undefined;
+          finishedNodes = hasCardinality ? [matchingNodes[matchingNodes.length - 1]] : matchingNodes;
 
           matched++;
         }
@@ -134,26 +138,26 @@ export class App {
         return [];
       }
 
-      const currentInputSegment = inputSegments[inputSegments.length - 1];
-      const currentInputFinishesNode = currentInputSegment !== '' && (currentInputSegment === finishedNode.content.text || currentInputSegment === getShortMnemonic(finishedNode.content.text));
-      const showSuffixes = currentInputFinishesNode && finishedNode.content.suffixed;
-      if (showSuffixes) {
-        return range(finishedNode.content.start, finishedNode.content.stop).map(x => {
-          if (this.lastSelectedAutocompletionIsQuery()) {
-            return `${x}?`;
-          } else {
-            return `${x}`;
-          }
-        });
+      if (finishedNodes.length > 2) {
+        console.error('Unexpected, should have at most 2, with and withous suffixes', finishedNodes);
       }
 
-      const allChildren: ScpiNode[] = [];
-      for (const node of currentNodes) {
-        if (node.children) {
-          allChildren.push(...node.children);
+      if (finishedNodes.length >= 2) {
+        const currentInputSegment = inputSegments[inputSegments.length - 1];
+        const currentInputFinishesNode = currentInputSegment !== '' && (currentInputSegment === finishedNodes[0].content.text || currentInputSegment === getShortMnemonic(finishedNodes[0].content.text));
+        if (currentInputFinishesNode && this.lastSelectedAutocompletionHasSuffix()) {
+          return range(finishedNodes[1].content.start, finishedNodes[1].content.stop).map(x => {
+            if (this.lastSelectedAutocompletionIsQuery()) {
+              return `${x}?`;
+            } else {
+              return `${x}`;
+            }
+          });
         }
       }
-      return allChildren.filter(x => x.content.text.toLowerCase().startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()));
+
+      const result = childrenOf(currentNodes).filter(x => x.content.text.toLowerCase().startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()));
+      return removeDuplicateNodes(result);
     }
   });
 

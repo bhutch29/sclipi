@@ -68,6 +68,7 @@ export class App {
   public activeToolbarButtons: WritableSignal<string[]> = signal([])
   public isScrolledToBottom = signal(true);
   public isScrolledToTop = signal(true);
+  public forceShowLog = signal(false);
 
   public autocomplete: Signal<Array<ScpiNode | string>> = computed(() => {
     if (!this.commands.hasValue()) {
@@ -392,7 +393,7 @@ export class App {
     const type = scpi.includes('?') ? 'query' : 'command';
     this.log.update((log) => [
       ...log,
-      { type, scpi, response: undefined, time, elapsed: 0, errors: [], serverError: "" },
+      { type, scpi, response: undefined, time, elapsed: 0, serverError: "", uniqueId: crypto.randomUUID() },
     ]);
     const params = {
       simulated: this.preferences.simulated(),
@@ -407,9 +408,11 @@ export class App {
         this.log.update((log) => {
           const lastElement = log[log.length - 1];
           lastElement.response = response;
-          lastElement.errors = x.errors;
           lastElement.serverError = x.serverError;
           lastElement.elapsed = Date.now() - time;
+          for (const error of x.errors) {
+            log.push({type: 'query', scpi: ':SYST:ERR?', response: error, uniqueId: crypto.randomUUID(), time, elapsed: 0, hideTime: true})
+          }
           return log;
         });
         this.sending$.next(false);
@@ -506,7 +509,12 @@ export class App {
     return this.entryElements?.reduce((a, b) => a + b.nativeElement.innerText.replace(/\n/g, ' ') + '\n', '');
   }
 
-  public async copyLogToClipboard() {
+  public clearLog() {
+    this.log.set([]);
+    this.forceShowLog.set(true);
+  }
+
+  public async copyFullLog() {
     const text = this.tryGetLogText();
     if (text) {
       await navigator.clipboard.writeText(text);
@@ -517,7 +525,18 @@ export class App {
     }
   }
 
-  public async saveLogToFile() {
+  public async copyCommands() {
+    const text = this.log().map(x => x.scpi).join('\n');
+    if (text) {
+      await navigator.clipboard.writeText(text);
+      const count = this.entryElements?.length;
+      this.snackBar.open(`${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`, "Close", {duration: 2000});
+    } else {
+      this.snackBar.open('Copy commands failed', "Close", {duration: 5000});
+    }
+  }
+
+  public async downloadFullLog() {
     const text = this.tryGetLogText();
     if (!text) {
       this.snackBar.open('Download log failed', "Close", {duration: 5000});
@@ -529,6 +548,23 @@ export class App {
 
     link.href = url;
     link.download = `sclipi_web_log_${this.getTimestamp()}.txt`;
+    link.click();
+
+    window.URL.revokeObjectURL(url);
+  }
+
+  public async downloadCommands() {
+    const text = this.log().map(x => x.scpi).join('\n');
+    if (!text) {
+      this.snackBar.open('Download commands failed', "Close", {duration: 5000});
+      return;
+    }
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `sclipi_web_commands_${this.getTimestamp()}.txt`;
     link.click();
 
     window.URL.revokeObjectURL(url);

@@ -4,8 +4,9 @@ export interface LogEntry {
   response?: string;
   time: number;
   elapsed: number;
-  errors: string[];
-  serverError: string;
+  hideTime?: boolean
+  serverError?: string;
+  uniqueId: string;
 }
 
 export interface ScpiResponse {

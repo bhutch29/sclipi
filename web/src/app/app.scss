@@ -39,8 +39,10 @@ mat-toolbar {
   gap: 8px;
 
   .start-keys {
+    width: 40px;
     display: flex;
     flex-direction: column;
+    align-items: flex-end;
     gap: 4px;
 
     button {
@@ -125,6 +127,7 @@ mat-toolbar {
   }
 
   .timestamp {
+    flex-shrink: 0;
     font-weight: lighter;
     color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
   }
@@ -167,4 +170,13 @@ mat-divider {
 
 mat-toolbar {
   background-color: var(--mat-sys-on-secondary-fixed);
+}
+
+.wide-mini-fab-button {
+  min-width: 60px;
+  width: 60px;
+}
+
+.hidden {
+  opacity: 0;
 }

@@ -31,7 +31,7 @@
           [autocomplete]="auto"
           #autocompleteRef="autocompleteTrigger"
         />
-        <mat-hint>Type <strong>:</strong> or <strong>*</strong> for auto-complete. <strong>Enter</strong> to submit. <strong>Arrow Up</strong> for history.</mat-hint>
+        <mat-hint>Type <strong>:</strong> or <strong>*</strong> for auto-complete. <strong>Arrow Up</strong> for history. <strong>Enter</strong> to submit.</mat-hint>
         <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" hideSingleSelectionIndicator>
           @if (inputText().length !== 0 && history.index() < 0) {
             <!-- TODO: better track -->
@@ -105,16 +105,16 @@
       </mat-menu>
     </div>
 
-    @if (log().length > 0) {
+    @if (log().length > 0 || forceShowLog()) {
       <div class="log-section">
         <div #logContainer class="log" [class.wrap]="preferences.wrapLog()" (scroll)="onLogScroll()">
-          @for (entry of log(); track entry.time; let i = $index) {
+          @for (entry of log(); track entry.uniqueId; let i = $index) {
             <div #entry class="entry" [class.selected]="selectedLogIndex() === i" (click)="selectedLogIndex.set(i)">
               <div class="entry-text">
                 @if (preferences.showDate()) {
-                  <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''">{{ entry.time | date: 'MMM dd, hh:mm:ss.SS a' }}</span>
+                  <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">{{ entry.time | date: 'MMM dd, hh:mm:ss.SS a' }}</span>
                 } @else {
-                  <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''">{{ entry.time | date: 'hh:mm:ss.SS a' }}</span>
+                  <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">{{ entry.time | date: 'hh:mm:ss.SS a' }}</span>
                 }
                 <b>{{ entry.scpi }}</b>
                 @if (i === log().length - 1 && (showSlowSendIndicator$ | async)) {
@@ -122,9 +122,6 @@
                 }
                 {{ entry.response }}
                 {{ entry.serverError }}
-                @for (error of entry.errors; track $index) {
-                  {{ error }}
-                }
               </div>
             </div>
           }
@@ -137,19 +134,42 @@
           <button matMiniFab matTooltip="Scroll to bottom" matTooltipPosition="right" (click)="scrollToBottom()" [disabled]="isScrolledToBottom()">
             <mat-icon>keyboard_double_arrow_down</mat-icon>
           </button>
-          <button matMiniFab matTooltip="Select next" matTooltipPosition="right" [disabled]="selectedLogIndex() == 0" (click)="previousLogEntry()">
+          <button matMiniFab matTooltip="Select previous" matTooltipPosition="right" [disabled]="selectedLogIndex() == 0 || log().length === 0" (click)="previousLogEntry()">
             <mat-icon>arrow_upward</mat-icon>
           </button>
-          <button matMiniFab matTooltip="Select previous" matTooltipPosition="right" [disabled]="selectedLogIndex() >= log().length - 1" (click)="nextLogEntry()">
+          <button matMiniFab matTooltip="Select next" matTooltipPosition="right" [disabled]="selectedLogIndex() >= log().length - 1" (click)="nextLogEntry()">
             <mat-icon>arrow_downward</mat-icon>
           </button>
         </div>
         <div class="right-log-buttons">
-          <button matMiniFab matTooltip="Copy full log" matTooltipPosition="right" (click)="copyLogToClipboard()">
+          <button matMiniFab class="wide-mini-fab-button" matTooltip="Copy" matTooltipPosition="right" [matMenuTriggerFor]="copyMenu">
+            <mat-icon>arrow_drop_down</mat-icon>
             <mat-icon>content_copy</mat-icon>
           </button>
-          <button matMiniFab matTooltip="Download full log" matTooltipPosition="right" (click)="saveLogToFile()">
+          <mat-menu #copyMenu="matMenu">
+              <button (click)="copyFullLog()" mat-menu-item>
+                Copy Full Log
+              </button>
+              <button (click)="copyCommands()" mat-menu-item>
+                Copy Commands
+              </button>
+          </mat-menu>
+
+          <button matMiniFab class="wide-mini-fab-button" matTooltip="Download" matTooltipPosition="right" [matMenuTriggerFor]="downloadMenu">
+            <mat-icon>arrow_drop_down</mat-icon>
             <mat-icon>download</mat-icon>
+          </button>
+          <mat-menu #downloadMenu="matMenu">
+              <button (click)="downloadFullLog()" mat-menu-item>
+                Download Full Log
+              </button>
+              <button (click)="downloadCommands()" mat-menu-item>
+                Download Commands
+              </button>
+          </mat-menu>
+
+          <button matMiniFab matTooltip="Clear log" matTooltipPosition="right" (click)="clearLog()">
+            <mat-icon>clear</mat-icon>
           </button>
         </div>
       </div>

@@ -33,7 +33,7 @@ import { Commands, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
-import { cardinalityOf, childrenOf, getShortMnemonic, range, removeDuplicateNodes, stripCardinality } from './utils';
+import { cardinalityOf, childrenOf, findCardinalNode, getShortMnemonic, range, removeDuplicateNodes, stripCardinality } from './utils';
 
 @Component({
   selector: 'app-root',
@@ -142,11 +142,13 @@ export class App {
         console.error('Unexpected, should have at most 2, with and withous suffixes', finishedNodes);
       }
 
-      if (finishedNodes.length >= 2) {
+      const cardinalNode = findCardinalNode(finishedNodes);
+      if (cardinalNode) {
         const currentInputSegment = inputSegments[inputSegments.length - 1];
-        const currentInputFinishesNode = currentInputSegment !== '' && (currentInputSegment === finishedNodes[0].content.text || currentInputSegment === getShortMnemonic(finishedNodes[0].content.text));
+        const currentInputFinishesNode = currentInputSegment !== '' && (currentInputSegment === cardinalNode.content.text || currentInputSegment === getShortMnemonic(cardinalNode.content.text));
+        console.log(currentInputFinishesNode);
         if (currentInputFinishesNode && this.lastSelectedAutocompletionHasSuffix()) {
-          return range(finishedNodes[1].content.start, finishedNodes[1].content.stop).map(x => {
+          return range(cardinalNode.content.start, cardinalNode.content.stop).map(x => {
             if (this.lastSelectedAutocompletionIsQuery()) {
               return `${x}?`;
             } else {

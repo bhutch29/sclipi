@@ -47,3 +47,12 @@ export function removeDuplicateNodes(input: ScpiNode[]): ScpiNode[] {
       return (a.content.suffixed ? 1 : 0) - (b.content.suffixed ? 1 : 0);
     });
 }
+
+export function findCardinalNode(input: ScpiNode[]): ScpiNode | undefined {
+  for (const node of input) {
+    if (node.content.suffixed) {
+      return node;
+    }
+  }
+  return undefined;
+}

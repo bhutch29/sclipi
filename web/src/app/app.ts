@@ -502,14 +502,40 @@ export class App {
     this.scpiInput?.nativeElement.focus();
   }
 
+  private tryGetLogText(): string | undefined {
+    return this.entryElements?.reduce((a, b) => a + b.nativeElement.innerText.replace(/\n/g, ' ') + '\n', '');
+  }
+
   public async copyLogToClipboard() {
-    const text = this.entryElements?.reduce((a, b) => a + b.nativeElement.innerText.replace(/\n/g, ' ') + '\n', '');
+    const text = this.tryGetLogText();
     if (text) {
       await navigator.clipboard.writeText(text);
       const count = this.entryElements?.length;
       this.snackBar.open(`${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`, "Close", {duration: 2000});
     } else {
-      this.snackBar.open('Copy text failed', "Close", {duration: 5000});
+      this.snackBar.open('Copy log failed', "Close", {duration: 5000});
     }
+  }
+
+  public async saveLogToFile() {
+    const text = this.tryGetLogText();
+    if (!text) {
+      this.snackBar.open('Download log failed', "Close", {duration: 5000});
+      return;
+    }
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `sclipi_web_log_${this.getTimestamp()}.txt`;
+    link.click();
+
+    window.URL.revokeObjectURL(url);
+  }
+
+  private getTimestamp(): string {
+    const now = new Date();
+    return now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
   }
 }

@@ -97,16 +97,16 @@
         History
       </button>
       <mat-menu #menu="matMenu" class="history-menu">
-        @for (option of history.list(); track $index) {
-          <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
-            {{ option }}
-          </button>
-        }
         @if (history.list().length > 0) {
-          <mat-divider></mat-divider>
           <button mat-menu-item (click)="history.list.set([])">
             <mat-icon>delete</mat-icon>
             Clear History
+          </button>
+          <mat-divider></mat-divider>
+        }
+        @for (option of history.list(); track $index) {
+          <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
+            {{ option }}
           </button>
         }
       </mat-menu>

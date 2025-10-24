@@ -500,7 +500,6 @@ export class App {
 
   public onHistoryEntrySelect(entry: string) {
     this.inputText.set(entry);
-    this.send();
   }
 
   public insertCharacter(character: string) {

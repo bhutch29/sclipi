@@ -103,6 +103,7 @@
           </button>
         }
         @if (history.list().length > 0) {
+          <mat-divider></mat-divider>
           <button mat-menu-item (click)="history.list.set([])">
             <mat-icon>delete</mat-icon>
             Clear History

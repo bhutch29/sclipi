@@ -35,6 +35,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
 import { cardinalityOf, childrenOf, findCardinalNode, getShortMnemonic, range, removeDuplicateNodes, stripCardinality } from './utils';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 @Component({
   selector: 'app-root',
@@ -56,7 +57,8 @@ import { cardinalityOf, childrenOf, findCardinalNode, getShortMnemonic, range, r
     MatButtonToggleModule,
     MatSnackBarModule,
     MatDividerModule,
-    AutocompleteTrigger
+    AutocompleteTrigger,
+    MatProgressBarModule,
   ],
 })
 export class App {

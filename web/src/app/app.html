@@ -126,7 +126,7 @@
                 </div>
                 <b>{{ entry.scpi }}</b>
                 @if (i === log().length - 1 && (showSlowSendIndicator$ | async)) {
-                  <div>...</div>
+                  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
                 }
                 {{ entry.response }}
                 {{ entry.serverError }}
@@ -137,10 +137,10 @@
 
         <div class="left-log-buttons">
           <button matMiniFab matTooltip="Scroll to top" matTooltipPosition="right" (click)="scrollToTop()" [disabled]="isScrolledToTop()">
-            <mat-icon>keyboard_double_arrow_up</mat-icon>
+            <mat-icon>vertical_align_top</mat-icon>
           </button>
           <button matMiniFab matTooltip="Scroll to bottom" matTooltipPosition="right" (click)="scrollToBottom()" [disabled]="isScrolledToBottom()">
-            <mat-icon>keyboard_double_arrow_down</mat-icon>
+            <mat-icon>vertical_align_bottom</mat-icon>
           </button>
           <button matMiniFab matTooltip="Select previous" matTooltipPosition="right" [disabled]="selectedLogIndex() == 0 || log().length === 0" (click)="previousLogEntry()">
             <mat-icon>arrow_upward</mat-icon>
@@ -177,7 +177,7 @@
           </mat-menu>
 
           <button matMiniFab matTooltip="Clear log" matTooltipPosition="right" (click)="clearLog()">
-            <mat-icon>clear</mat-icon>
+            <mat-icon>delete</mat-icon>
           </button>
         </div>
       </div>

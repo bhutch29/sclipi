@@ -74,8 +74,8 @@ mat-toolbar {
   padding: 2px;
   display: grid;
   grid:
-    "left-upper-buttons log right-upper-buttons" auto
-    ". log ." 1fr
+    'left-upper-buttons log right-upper-buttons' auto
+    '. log .' 1fr
     / auto 1fr auto;
   gap: 4px;
 
@@ -117,27 +117,35 @@ mat-toolbar {
   .entry-text {
     flex-shrink: 1;
     display: flex;
+    /* align-items: center; */
     gap: 8px;
     cursor: text;
     margin-left: 2px;
-  }
 
-  &.selected {
-    background-color: var(--mat-sys-on-secondary);
-  }
-
-  .timestamp-container {
-    flex-shrink: 0;
-
-    .timestamp {
-      font-weight: lighter;
-      color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
+    &.selected {
+      background-color: var(--mat-sys-on-secondary);
     }
 
-    mat-icon {
-      position: absolute;
-      margin-left: -25px;
-      font-size: 1rem;
+    mat-progress-bar {
+      width: 300px;
+      align-self: center;
+    }
+
+    .timestamp-container {
+      position: relative;
+      flex-shrink: 0;
+
+      .timestamp {
+        font-weight: lighter;
+        color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
+      }
+
+      mat-icon {
+        position: absolute;
+        margin-left: -20px;
+        display: inline;
+        font-size: 1rem;
+      }
     }
   }
 }

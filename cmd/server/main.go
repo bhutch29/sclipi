@@ -339,7 +339,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 		})
 		if executeError != nil {
 			log.Printf("Error sending query: %v", executeError)
-			scpiResponse.ServerError = fmt.Sprintf("Error sending query: %v", executeError)
+			scpiResponse.ServerError = fmt.Sprintf("%v", executeError)
 		} else {
 			scpiResponse.Response = queryResponse
 		}
@@ -349,7 +349,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 		})
 		if executeError != nil {
 			log.Printf("Error sending command: %v", executeError)
-			scpiResponse.ServerError = fmt.Sprintf("Error sending command: %v", executeError)
+			scpiResponse.ServerError = fmt.Sprintf("%v", executeError)
 		}
 	}
 

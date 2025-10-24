@@ -101,8 +101,9 @@ export class App {
 
         const fullMatch = () => typed.toLowerCase() === node.text.toLowerCase();
         const shortMatch = () => typed.toLowerCase() === getShortMnemonic(node.text).toLowerCase();
-        const noCardinalityMatch = () => node.suffixed && stripCardinality(typed).toLowerCase() === node.text.toLowerCase();
-        return fullMatch() || shortMatch() || noCardinalityMatch();
+        const noCardinalityFullMatch = () => node.suffixed && stripCardinality(typed).toLowerCase() === node.text.toLowerCase();
+        const noCardinalityShortMatch = () => node.suffixed && stripCardinality(typed).toLowerCase() === getShortMnemonic(node.text).toLowerCase();
+        return fullMatch() || shortMatch() || noCardinalityFullMatch() || noCardinalityShortMatch();
       };
 
       for (const [segmentIndex, segment] of inputSegments.entries()) {
@@ -134,7 +135,7 @@ export class App {
       }
 
       const currentInputSegment = inputSegments[inputSegments.length - 1];
-      const currentInputFinishesNode = currentInputSegment !== '' && currentInputSegment === finishedNode.content.text;
+      const currentInputFinishesNode = currentInputSegment !== '' && (currentInputSegment === finishedNode.content.text || currentInputSegment === getShortMnemonic(finishedNode.content.text));
       const showSuffixes = currentInputFinishesNode && finishedNode.content.suffixed;
       if (showSuffixes) {
         return range(finishedNode.content.start, finishedNode.content.stop).map(x => {
@@ -176,10 +177,6 @@ export class App {
       return selected;
     }
 
-    if (this.preferences.preferShortScpi()) {
-      selected.value = getShortMnemonic(selected.value);
-    }
-
     const appendColonToUnfinishedMnemonics = (node: ScpiNode, option: MatOption<any>): MatOption<any> => {
       const noChildren = node.children && node.children.length !== 0;
       const noSuffix = !node.content.suffixed;
@@ -201,6 +198,10 @@ export class App {
     } else {
       const trimmed = previousSplit.slice(0, -1).join(':') + ':';
       selected.value = trimmed + selectedText;
+    }
+
+    if (this.preferences.preferShortScpi()) {
+      selected.value = getShortMnemonic(selected.value);
     }
 
     this.lastSelectedAutocompletionHasSuffix.set(selectedScpiNode.content.suffixed);
@@ -378,8 +379,8 @@ export class App {
     // Not handling Enter here, for some reason it affects whether `stopImmediatePropagation` works in autocomplete-trigger
 
     const isNumber = /^[0-9]$/.test(event.key);
-    const isArrow = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key);
-    if (!(isNumber || isArrow || event.key === 'Backspace' || event.key === 'Enter')) {
+    const ignoredKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Enter', 'Shift', 'Control', 'Meta'].includes(event.key);
+    if (!(isNumber || ignoredKey)) {
       this.lastSelectedAutocompletionHasSuffix.set(false);
       this.lastSelectedAutocompletionIsQuery.set(false);
     }

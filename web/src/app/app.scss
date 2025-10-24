@@ -90,6 +90,13 @@ mat-toolbar {
       overflow-x: scroll;
     }
   }
+
+  .right-log-buttons {
+    grid-area: right-upper-buttons;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 }
 
 .entry {

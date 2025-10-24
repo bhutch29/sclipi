@@ -129,9 +129,18 @@
         </div>
 
         <div class="right-log-buttons">
-          <button matMiniFab matTooltip="Scroll to bottom" (click)="scrollToBottom()" [disabled]="isScrolledToBottom()">
-            <mat-icon>vertical_align_bottom</mat-icon>
+          <button matMiniFab matTooltip="Scroll to top" (click)="scrollToTop()" [disabled]="isScrolledToTop()">
+            <mat-icon>keyboard_double_arrow_up</mat-icon>
           </button>
+          <button matMiniFab matTooltip="Scroll to bottom" (click)="scrollToBottom()" [disabled]="isScrolledToBottom()">
+            <mat-icon>keyboard_double_arrow_down</mat-icon>
+          </button>
+          <button matMiniFab [disabled]="selectedLogIndex() == 0" (click)="previousLogEntry()">
+            <mat-icon>arrow_upward</mat-icon>
+          </button>
+          <button matMiniFab [disabled]="selectedLogIndex() >= log().length - 1" (click)="nextLogEntry()">
+            <mat-icon>arrow_downward</mat-icon>
+        </button>
         </div>
       </div>
     }

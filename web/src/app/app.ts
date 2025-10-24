@@ -67,6 +67,7 @@ export class App {
   private lastSelectedAutocompletionIsQuery = signal(false);
   public activeToolbarButtons: WritableSignal<string[]> = signal([])
   public isScrolledToBottom = signal(true);
+  public isScrolledToTop = signal(true);
 
   public autocomplete: Signal<Array<ScpiNode | string>> = computed(() => {
     if (!this.commands.hasValue()) {
@@ -310,6 +311,12 @@ export class App {
     }
   }
 
+  public scrollToTop() {
+    if (this.logContainer) {
+      this.logContainer.nativeElement.scrollTop = 0;
+    }
+  }
+
   public onLogScroll() {
     this.checkScrollPosition();
   }
@@ -322,9 +329,36 @@ export class App {
   private checkScrollPosition() {
     if (this.log().length === 0) {
       this.isScrolledToBottom.set(true);
+      this.isScrolledToTop.set(true);
     } else {
       // Allows for 1px inaccuracy
       this.isScrolledToBottom.set(this.logContainer?.nativeElement.scrollHeight - this.logContainer?.nativeElement.clientHeight <= this.logContainer?.nativeElement.scrollTop + 1);
+      this.isScrolledToTop.set(this.logContainer?.nativeElement.scrollTop <= 1);
+    }
+  }
+
+  public previousLogEntry() {
+    this.selectedLogIndex.update(x => {
+      if (x === -1) {
+        return this.log().length - 1;
+      } else {
+        return x - 1;
+      }
+    });
+    this.scrollToSelectedEntry();
+  }
+
+  public nextLogEntry() {
+    this.selectedLogIndex.update(x => x + 1);
+    this.scrollToSelectedEntry();
+  }
+
+  private scrollToSelectedEntry() {
+    if (this.entryElements?.get(this.selectedLogIndex())) {
+      this.entryElements?.get(this.selectedLogIndex()).nativeElement.scrollIntoView({
+        behavior: 'instant',
+        block: 'nearest'
+      });
     }
   }
 

@@ -90,16 +90,22 @@
         matTooltip="Select and run a command from your command history"
         matTooltipPosition="above"
         [matMenuTriggerFor]="menu"
-        [disabled]="inputText().length !== 0 || (sending$ | async)"
+        [disabled]="history.list().length === 0 || inputText().length !== 0 || (sending$ | async)"
       >
         <mat-icon>history</mat-icon>
         <mat-icon>arrow_drop_down</mat-icon>
         History
       </button>
-      <mat-menu #menu="matMenu">
+      <mat-menu #menu="matMenu" class="history-menu">
         @for (option of history.list(); track $index) {
           <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
             {{ option }}
+          </button>
+        }
+        @if (history.list().length > 0) {
+          <button mat-menu-item (click)="history.list.set([])">
+            <mat-icon>delete</mat-icon>
+            Clear History
           </button>
         }
       </mat-menu>

@@ -111,8 +111,4 @@ export class PreferencesComponent {
 
     this.preferences.timeoutSeconds.set(this.preferences.uncommittedTimeoutSeconds());
   }
-
-  public clearHistory() {
-    this.history.list.set([]);
-  }
 }

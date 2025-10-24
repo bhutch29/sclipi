@@ -389,7 +389,8 @@ export class App {
     this.checkScrollPosition();
 
     scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
-    this.history.add(scpi);
+
+    setTimeout(() => this.history.add(scpi), 100); // Delay to avoid history dropdown updating before it has a chance to close.
 
     const time = Date.now();
     const type = scpi.includes('?') ? 'query' : 'command';

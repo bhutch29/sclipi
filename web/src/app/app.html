@@ -2,7 +2,7 @@
   <span>Sclipi Web</span>
   <mat-divider [vertical]="true"></mat-divider>
   @if (idn.data(); as data) {
-    <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip">{{data.model}} - {{data.serial}}</span>
+    <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip" matTooltipPosition="right">{{data.model}} - {{data.serial}}</span>
   }
   <span class="toolbar-spacer"></span>
   <mat-button-toggle-group name="toolbar-buttons" [(ngModel)]="activeToolbarButtons" multiple hideMultipleSelectionIndicator>
@@ -15,8 +15,8 @@
   <div class="main">
     <div class="inputs">
       <div class="start-keys">
-        <button (click)="insertCharacter(':')" [disabled]="inputText().length > 1">:</button>
-        <button (click)="insertCharacter('*')" [disabled]="inputText().length > 1">*</button>
+        <button matMiniFab (click)="insertCharacter(':')" [disabled]="inputText().length > 1" matTooltip="Start common command" matTooltipPosition="above">:</button>
+        <button matMiniFab (click)="insertCharacter('*')" [disabled]="inputText().length > 1" matTooltip="Start subsystem command" matTooltipPosition="below">*</button>
       </div>
       <mat-form-field appearance="outline" class="scpi-form">
         <mat-label>SCPI Command/Query</mat-label>
@@ -78,6 +78,7 @@
       <button
         matFab extended
         matTooltip="Send :SYST:ERR? query to check for errors"
+        matTooltipPosition="above"
         (click)="systErr()"
         [disabled]="inputText().length !== 0 || (sending$ | async)"
       >
@@ -87,6 +88,7 @@
       <button
         matFab extended
         matTooltip="Select and run a command from your command history"
+        matTooltipPosition="above"
         [matMenuTriggerFor]="menu"
         [disabled]="inputText().length !== 0 || (sending$ | async)"
       >
@@ -129,18 +131,21 @@
         </div>
 
         <div class="right-log-buttons">
-          <button matMiniFab matTooltip="Scroll to top" (click)="scrollToTop()" [disabled]="isScrolledToTop()">
+          <button matMiniFab matTooltip="Scroll to top" matTooltipPosition="right" (click)="scrollToTop()" [disabled]="isScrolledToTop()">
             <mat-icon>keyboard_double_arrow_up</mat-icon>
           </button>
-          <button matMiniFab matTooltip="Scroll to bottom" (click)="scrollToBottom()" [disabled]="isScrolledToBottom()">
+          <button matMiniFab matTooltip="Scroll to bottom" matTooltipPosition="right" (click)="scrollToBottom()" [disabled]="isScrolledToBottom()">
             <mat-icon>keyboard_double_arrow_down</mat-icon>
           </button>
-          <button matMiniFab [disabled]="selectedLogIndex() == 0" (click)="previousLogEntry()">
+          <button matMiniFab matTooltip="Select next" matTooltipPosition="right" [disabled]="selectedLogIndex() == 0" (click)="previousLogEntry()">
             <mat-icon>arrow_upward</mat-icon>
           </button>
-          <button matMiniFab [disabled]="selectedLogIndex() >= log().length - 1" (click)="nextLogEntry()">
+          <button matMiniFab matTooltip="Select previous" matTooltipPosition="right" [disabled]="selectedLogIndex() >= log().length - 1" (click)="nextLogEntry()">
             <mat-icon>arrow_downward</mat-icon>
-        </button>
+          </button>
+          <button matMiniFab matTooltip="Copy full log" matTooltipPosition="right" (click)="copyLogToClipboard()">
+            <mat-icon>content_copy</mat-icon>
+          </button>
         </div>
       </div>
     }

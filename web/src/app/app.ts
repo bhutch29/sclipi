@@ -501,4 +501,15 @@ export class App {
     this.inputText.set(character);
     this.scpiInput?.nativeElement.focus();
   }
+
+  public async copyLogToClipboard() {
+    const text = this.entryElements?.reduce((a, b) => a + b.nativeElement.innerText.replace(/\n/g, ' ') + '\n', '');
+    if (text) {
+      await navigator.clipboard.writeText(text);
+      const count = this.entryElements?.length;
+      this.snackBar.open(`${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`, "Close", {duration: 2000});
+    } else {
+      this.snackBar.open('Copy text failed', "Close", {duration: 5000});
+    }
+  }
 }

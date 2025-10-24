@@ -68,7 +68,7 @@ mat-toolbar {
 
 .log-section {
   min-height: 150px;
-  margin-top: 12px;
+  margin-top: 20px;
   padding: 2px;
   display: grid;
   grid:
@@ -118,6 +118,7 @@ mat-toolbar {
 
   .timestamp {
     font-weight: lighter;
+    color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
   }
 }
 

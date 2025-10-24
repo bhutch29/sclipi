@@ -330,6 +330,22 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 
   var executeError error
 	scpiResponse := scpiResponse{}
+
+  if (scpi == ":_ERR") {
+    scpiResponse.ServerError = fmt.Sprint("This is a fake server error for testing purposes.")
+    var errors []string
+    if (autoSystError) {
+      errors = append(errors, "First fake :SYST:ERR? response")
+      errors = append(errors, "Another fake :SYST:ERR? response for testing")
+    }
+    scpiResponse.Errors = errors;
+
+	  w.WriteHeader(http.StatusOK)
+	  responseData, _ := json.Marshal(scpiResponse)
+	  fmt.Fprintf(w, "%s\n", responseData)
+    return
+  }
+
 	if strings.Contains(scpi, "?") {
 		var queryResponse string
 		executeError = executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {

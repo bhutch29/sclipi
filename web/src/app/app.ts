@@ -84,7 +84,7 @@ export class App {
     }
 
     if (this.inputText().startsWith("*")) {
-      return this.commands.value().starTree.children.filter(command => {
+      return this.commands.value().starTree?.children.filter(command => {
         return command.content.text.slice(1).toLowerCase().startsWith(this.inputText().slice(1).toLowerCase());
       });
     } else {
@@ -166,7 +166,7 @@ export class App {
     }
   });
 
-  private autocompleteValueTransform = (previous: string, selected: MatOption<any>): MatOption<any> => {
+  public autocompleteValueTransform = (previous: string, selected: MatOption<any>): MatOption<any> => {
     if (typeof selected.value === 'string') {
       if (selected.value.endsWith('?')) {
         selected.value = previous + selected.value;
@@ -291,6 +291,9 @@ export class App {
     localStorageService.setFromStorage('activeToolbarButtons', this.activeToolbarButtons);
     effect(() => localStorageService.setItem('activeToolbarButtons', this.activeToolbarButtons()));
 
+    localStorageService.setFromStorage('log', this.log);
+    effect(() => localStorageService.setItem('log', this.log()));
+
     this.renderer.listen('window', 'focus', () => {
       this.scpiInput?.nativeElement.focus();
     });
@@ -302,10 +305,6 @@ export class App {
         this.scrollToBottom();
       }
     });
-
-    if (this.autocompleteRef) {
-      this.autocompleteRef.valueTransform = this.autocompleteValueTransform;
-    }
   }
 
   public scrollToBottom() {
@@ -409,23 +408,25 @@ export class App {
       next: (x) => {
         const response = type === 'query' ? x.response : undefined;
         this.log.update((log) => {
-          const lastElement = log[log.length - 1];
+          const clone = structuredClone(log); // Can't modify existing log, have to write a new one, otherwise signals don't work
+          const lastElement = clone[clone.length - 1];
           lastElement.response = response;
           lastElement.serverError = x.serverError;
           lastElement.elapsed = Date.now() - time;
           for (const error of x.errors) {
-            log.push({type: 'query', scpi: ':SYST:ERR?', response: error, uniqueId: crypto.randomUUID(), time, hideTime: true})
+            clone.push({type: 'query', scpi: ':SYST:ERR?', response: error, uniqueId: crypto.randomUUID(), time, hideTime: true})
           }
-          return log;
+          return clone;
         });
         this.sending$.next(false);
       },
       error: (x) => {
         this.log.update((log) => {
-          const lastElement = log[log.length - 1];
+          const clone = structuredClone(log); // Can't modify existing log, have to write a new one, otherwise signals don't work
+          const lastElement = clone[clone.length - 1];
           lastElement.serverError = x.error ?? x.message;
           lastElement.elapsed = Date.now() - time;
-          return log;
+          return clone;
         });
         this.snackBar.open(x.error ?? x.message, "Close", {duration: 5000});
         this.sending$.next(false);

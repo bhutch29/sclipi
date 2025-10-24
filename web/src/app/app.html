@@ -30,6 +30,7 @@
           matInput
           [autocomplete]="auto"
           #autocompleteRef="autocompleteTrigger"
+          [valueTransform]="autocompleteValueTransform"
         />
         <mat-hint>Type <strong>:</strong> or <strong>*</strong> for auto-complete. <strong>Arrow Up</strong> for history. <strong>Enter</strong> to submit.</mat-hint>
         <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" hideSingleSelectionIndicator>
@@ -173,7 +174,7 @@
                 Copy Full Log
               </button>
               <button (click)="copyCommands()" mat-menu-item>
-                Copy Commands
+                Copy Command List
               </button>
           </mat-menu>
 
@@ -186,7 +187,7 @@
                 Download Full Log
               </button>
               <button (click)="downloadCommands()" mat-menu-item>
-                Download Commands
+                Download Command List
               </button>
           </mat-menu>
 

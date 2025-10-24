@@ -174,7 +174,7 @@ export class AutocompleteTrigger
   /** `View -> model callback called when autocomplete has been touched` */
   _onTouched = () => {};
 
-  valueTransform: (previous: string, selected: MatOption<any>) => MatOption<any> = (previous: string, value: MatOption<any>) => {return value};
+  @Input('valueTransform') valueTransform: (previous: string, selected: MatOption<any>) => MatOption<any> = (previous: string, value: MatOption<any>) => {return value};
 
   /** The autocomplete panel to be attached to this trigger. */
   @Input('autocomplete') autocomplete!: MatAutocomplete;

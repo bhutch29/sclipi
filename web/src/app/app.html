@@ -156,7 +156,7 @@
           </button>
         </div>
         <div class="right-log-buttons">
-          <button matMiniFab class="wide-mini-fab-button" matTooltip="Copy" matTooltipPosition="right" [matMenuTriggerFor]="copyMenu">
+          <button matMiniFab class="wide-mini-fab-button" matTooltip="Copy" matTooltipPosition="right" [matMenuTriggerFor]="copyMenu" [disabled]="log().length === 0">
             <mat-icon>arrow_drop_down</mat-icon>
             <mat-icon>content_copy</mat-icon>
           </button>
@@ -169,7 +169,7 @@
               </button>
           </mat-menu>
 
-          <button matMiniFab class="wide-mini-fab-button" matTooltip="Download" matTooltipPosition="right" [matMenuTriggerFor]="downloadMenu">
+          <button matMiniFab class="wide-mini-fab-button" matTooltip="Download" matTooltipPosition="right" [matMenuTriggerFor]="downloadMenu" [disabled]="log().length === 0">
             <mat-icon>arrow_drop_down</mat-icon>
             <mat-icon>download</mat-icon>
           </button>
@@ -182,7 +182,7 @@
               </button>
           </mat-menu>
 
-          <button matMiniFab matTooltip="Clear log" matTooltipPosition="right" (click)="clearLog()">
+          <button matMiniFab matTooltip="Clear log" matTooltipPosition="right" (click)="clearLog()" [disabled]="log().length === 0">
             <mat-icon>delete</mat-icon>
           </button>
         </div>

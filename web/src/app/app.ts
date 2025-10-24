@@ -376,21 +376,20 @@ export class App {
     } else if (event.key === 'ArrowUp') {
       this.arrowUp(event);
     }
+
     // Not handling Enter here, for some reason it affects whether `stopImmediatePropagation` works in autocomplete-trigger
 
-    const isNumber = /^[0-9]$/.test(event.key);
-    const ignoredKey = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Enter', 'Shift', 'Control', 'Meta'].includes(event.key);
-    if (!(isNumber || ignoredKey)) {
-      this.lastSelectedAutocompletionHasSuffix.set(false);
-      this.lastSelectedAutocompletionIsQuery.set(false);
-    }
+    this.trackLastSelectedAutocompletion(event.key);
+    this.trackModificationsToResetHistoryIndex(event.key);
   }
 
   public arrowUp(event: Event) {
     event.preventDefault();
+
     if (this.history.index() === -1 && this.inputText() !== "") {
       return;
     }
+
     if (this.history.list().length > this.history.index() + 1) {
       if (this.history.index() === -1) {
         this.unsentScpiInput = this.inputText();
@@ -402,13 +401,33 @@ export class App {
 
   public arrowDown(event: Event) {
     event.preventDefault();
+
     if (this.history.index() === 0) {
       this.inputText.set(this.unsentScpiInput);
       this.history.index.update(x => x - 1);
     }
+
     if (this.history.index() > 0) {
       this.history.index.update(x => x - 1)
       this.inputText.set(this.history.list()[this.history.index()]);
+    }
+  }
+
+  private trackLastSelectedAutocompletion(key: string) {
+    const isNumber = /^[0-9]$/.test(key);
+    const ignoredKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Enter', 'Shift', 'Control', 'Meta'];
+    if (!isNumber && !ignoredKeys.includes(key)) {
+      this.lastSelectedAutocompletionHasSuffix.set(false);
+      this.lastSelectedAutocompletionIsQuery.set(false);
+    }
+  }
+
+  private trackModificationsToResetHistoryIndex(key: string) {
+    const isNumeric = /^[a-zA-Z0-9]$/.test(key);
+    const isSymbol = /^[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]$/.test(key);
+    const watchedKeys = ['Backspace', 'Delete'];
+    if (isNumeric || isSymbol || watchedKeys.includes(key)) {
+      this.history.index.set(-1);
     }
   }
 

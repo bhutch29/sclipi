@@ -98,18 +98,31 @@ func splitScpiCommands(lines []string) [][]nodeInfo {
 
 // Rewrites any discovered suffixes into an easier to parse format that most importantly doesnt have any ':' characters
 func reformatSuffixes(s string) string {
+	// First handle {N:M} format
 	r, _ := regexp.Compile("{([0-9]):([0-9][0-9]?)}")
 	match := r.FindStringSubmatchIndex(s)
-	if match == nil {
+	if match != nil {
+		start := calculateSuffix(s, match[2], match[3])
+		stop := calculateSuffix(s, match[4], match[5])
+
+		startCut := match[0]
+		stopCut := match[1]
+
+		return reformatSuffixes(s[:startCut] + "@" + start + "#" + stop + s[stopCut:])
+	}
+
+	// Handle {N} format as {N:N}
+	r2, _ := regexp.Compile("{([0-9][0-9]?)}")
+	match2 := r2.FindStringSubmatchIndex(s)
+	if match2 == nil {
 		return s
 	}
-	start := calculateSuffix(s, match[2], match[3])
-	stop := calculateSuffix(s, match[4], match[5])
+	value := calculateSuffix(s, match2[2], match2[3])
 
-	startCut := match[0]
-	stopCut := match[1]
+	startCut := match2[0]
+	stopCut := match2[1]
 
-	return reformatSuffixes(s[:startCut] + "@" + start + "#" + stop + s[stopCut:])
+	return reformatSuffixes(s[:startCut] + "@" + value + "#" + value + s[stopCut:])
 }
 
 // Workaround for MXG SCPI existence of RAD1 and RAD{1:1} syntax simultaneously

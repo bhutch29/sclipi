@@ -112,6 +112,10 @@ func (i *scpiInstrument) QueryError(errors []string) ([]string, error) {
 }
 
 func (i *scpiInstrument) Query(cmd string) (res string, err error) {
+  if (cmd == ":SARA?") {
+    return "Sara is cute!", nil;
+  }
+
 	if err := i.exec(cmd); err != nil {
 		return "", err
 	}

@@ -5,120 +5,177 @@
     <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip" matTooltipPosition="right">{{data.model}} - {{data.serial}}</span>
   }
   <span class="toolbar-spacer"></span>
+
+  <mat-button-toggle-group name="operation-mode-buttons" [(ngModel)]="preferences.operationMode" hideSingleSelectionIndicator>
+    <mat-button-toggle value="interactive">Interactive</mat-button-toggle>
+    <mat-button-toggle value="scripted">Scripts</mat-button-toggle>
+  </mat-button-toggle-group>
+
+  <span class="toolbar-spacer"></span>
+
   <mat-button-toggle-group name="toolbar-buttons" [(ngModel)]="activeToolbarButtons" multiple hideMultipleSelectionIndicator>
-    <mat-button-toggle value="idn" matTooltip="IDN Information"><mat-icon>info</mat-icon></mat-button-toggle>
+    <mat-button-toggle value="idn" matTooltip="Info"><mat-icon>info</mat-icon></mat-button-toggle>
     <mat-button-toggle value="settings" matTooltip="Preferences"><mat-icon>settings</mat-icon></mat-button-toggle>
   </mat-button-toggle-group>
   <button matIconButton matTooltip="Help"><mat-icon>help</mat-icon></button>
 </mat-toolbar>
 <div class="content">
   <div class="main">
-    <div class="inputs">
-      <div class="start-keys">
-        <button matMiniFab (click)="insertCharacter(':')" [disabled]="inputText().length > 1" matTooltip="Start common command" matTooltipPosition="above">:</button>
-        <button matMiniFab (click)="insertCharacter('*')" [disabled]="inputText().length > 1" matTooltip="Start subsystem command" matTooltipPosition="below">*</button>
-      </div>
-      <mat-form-field appearance="outline" class="scpi-form">
-        <mat-label>SCPI Command/Query</mat-label>
-        <input
-          type="text"
-          #scpiInput
-          [(ngModel)]="inputText"
-          autofocus
-          (keydown)="onInputKeydown($event)"
-          (keydown.enter)="send()"
-          matInput
-          [autocomplete]="auto"
-          #autocompleteRef="autocompleteTrigger"
-          [valueTransform]="autocompleteValueTransform"
-        />
-        <mat-hint>Type <strong>:</strong> or <strong>*</strong> for auto-complete. <strong>Arrow Up</strong> for history. <strong>Enter</strong> to submit.</mat-hint>
-        <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" hideSingleSelectionIndicator>
-          @if (inputText().length !== 0 && history.index() < 0) {
-            <!-- TODO: better track -->
-            @for (option of autocomplete(); track $index) {
-              <mat-option [value]="option">
-                @if (typeof option === 'string') {
-                  {{ option }}
+    @if (preferences.operationMode() === 'scripted') {
+      <div class="script-header">
+        <div class="script-inputs">
+          <div class="script-load-buttons">
+            <button matFab extended (click)="selectScriptFromFile()" [disabled]="scriptRunning()"><mat-icon>file_open</mat-icon>Load from File</button>
+            <input #fileInput type="file" (change)="onFileSelected($event)" style="display: none" />
+
+            <button matFab extended (click)="selectScriptFromClipboard()" [disabled]="scriptRunning()"><mat-icon>content_paste</mat-icon>Paste from Clipboard</button>
+          </div>
+
+          <div class="loaded-script-info">
+            {{script().length}} {{script().length === 1 ? 'line' : 'lines'}}
+            {{scriptSource()}}
+            {{scriptFileName()}}
+          </div>
+
+          <div class="run-script-controls">
+            <button matFab extended (click)="runScript()" [disabled]="scriptRunning()">
+              @if (sending$ | async) {
+                <mat-icon>schedule_send</mat-icon>
+              } @else {
+                <mat-icon>send</mat-icon>
+              }
+              @if (sending$ | async) {
+                Running...
+              } @else {
+                Run Script
+              }
+            </button>
+            @if (scriptRunning()) {
+              <button matFab extended (click)="scriptCancelled.set(true)" [disabled]="scriptCancelled()"><mat-icon>content_paste</mat-icon>
+                @if (scriptCancelled()) {
+                  Aborting...
                 } @else {
-                  {{ getDisplayValue(option) }}
+                  Abort
                 }
-                <mat-icon>
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="script-progress">
+          @if (scriptRunning()) {
+            <mat-progress-bar mode="determinate" [value]="scriptProgressPercentage()"></mat-progress-bar>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="inputs">
+        <div class="start-keys">
+          <button matMiniFab (click)="insertCharacter(':')" [disabled]="inputText().length > 1" matTooltip="Start common command" matTooltipPosition="above">:</button>
+          <button matMiniFab (click)="insertCharacter('*')" [disabled]="inputText().length > 1" matTooltip="Start subsystem command" matTooltipPosition="below">*</button>
+        </div>
+        <mat-form-field appearance="outline" class="scpi-form">
+          <mat-label>SCPI Command/Query</mat-label>
+          <input
+            type="text"
+            #scpiInput
+            [(ngModel)]="inputText"
+            autofocus
+            (keydown)="onInputKeydown($event)"
+            (keydown.enter)="sendInteractive()"
+            matInput
+            [autocomplete]="auto"
+            #autocompleteRef="autocompleteTrigger"
+            [valueTransform]="autocompleteValueTransform"
+          />
+          <mat-hint>Type <strong>:</strong> or <strong>*</strong> for auto-complete. <strong>Arrow Up</strong> for history. <strong>Enter</strong> to submit.</mat-hint>
+          <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete" hideSingleSelectionIndicator>
+            @if (inputText().length !== 0 && history.index() < 0) {
+              <!-- TODO: better track -->
+              @for (option of autocomplete(); track $index) {
+                <mat-option [value]="option">
                   @if (typeof option === 'string') {
-                    @if (option.endsWith('?')) {
-                      question_mark
-                    }
+                    {{ option }}
                   } @else {
-                    @if ((!option.children || option.children.length === 0)) {
-                      @if (option.content.text.endsWith('?')) {
+                    {{ getDisplayValue(option) }}
+                  }
+                  <mat-icon>
+                    @if (typeof option === 'string') {
+                      @if (option.endsWith('?')) {
                         question_mark
-                      } @else {
-                        play_arrow
+                      }
+                    } @else {
+                      @if ((!option.children || option.children.length === 0)) {
+                        @if (option.content.text.endsWith('?')) {
+                          question_mark
+                        } @else {
+                          play_arrow
+                        }
                       }
                     }
-                  }
-                </mat-icon>
-              </mat-option>
-            }
-          }
-        </mat-autocomplete>
-      </mat-form-field>
-      <button
-        class="send-button"
-        matFab extended
-        (click)="send()"
-        [disabled]="inputText().length === 0 || (sending$ | async)"
-      >
-        @if (sending$ | async) {
-          <mat-icon>schedule_send</mat-icon>
-        } @else {
-          <mat-icon>send</mat-icon>
-        }
-        Send
-      </button>
-      <button
-        matFab extended
-        matTooltip="Send :SYST:ERR? query to check for errors"
-        matTooltipPosition="above"
-        (click)="systErr()"
-        [disabled]="inputText().length !== 0 || (sending$ | async)"
-      >
-        <mat-icon>question_mark</mat-icon>
-        :SYST:ERR?
-      </button>
-      <button
-        matFab extended
-        matTooltip="Select and run a command from your command history"
-        matTooltipPosition="above"
-        [matMenuTriggerFor]="menu"
-        [disabled]="history.list().length === 0 || inputText().length !== 0 || (sending$ | async)"
-      >
-        <mat-icon>history</mat-icon>
-        <mat-icon>arrow_drop_down</mat-icon>
-        History
-      </button>
-      <mat-menu #menu="matMenu" class="history-menu">
-        @if (history.list().length > 0) {
-          <button mat-menu-item (click)="history.list.set([])">
-            <mat-icon>delete</mat-icon>
-            Clear History
-          </button>
-          <mat-divider></mat-divider>
-        }
-        @for (option of history.list(); track $index) {
-          <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
-            <mat-icon>
-              @if (option.includes('?')) {
-                question_mark
-              } @else {
-                play_arrow
+                  </mat-icon>
+                </mat-option>
               }
-            </mat-icon>
-            {{ option }}
-          </button>
-        }
-      </mat-menu>
-    </div>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+        <button
+          class="send-button"
+          matFab extended
+          (click)="sendInteractive()"
+          [disabled]="inputText().length === 0 || (sending$ | async)"
+        >
+          @if (sending$ | async) {
+            <mat-icon>schedule_send</mat-icon>
+          } @else {
+            <mat-icon>send</mat-icon>
+          }
+          Send
+        </button>
+        <button
+          matFab extended
+          matTooltip="Send :SYST:ERR? query to check for errors"
+          matTooltipPosition="above"
+          (click)="systErr()"
+          [disabled]="inputText().length !== 0 || (sending$ | async)"
+        >
+          <mat-icon>question_mark</mat-icon>
+          :SYST:ERR?
+        </button>
+        <button
+          matFab extended
+          matTooltip="Select and run a command from your command history"
+          matTooltipPosition="above"
+          [matMenuTriggerFor]="menu"
+          [disabled]="history.list().length === 0 || inputText().length !== 0 || (sending$ | async)"
+        >
+          <mat-icon>history</mat-icon>
+          <mat-icon>arrow_drop_down</mat-icon>
+          History
+        </button>
+        <mat-menu #menu="matMenu" class="history-menu">
+          @if (history.list().length > 0) {
+            <button mat-menu-item (click)="history.list.set([])">
+              <mat-icon>delete</mat-icon>
+              Clear History
+            </button>
+            <mat-divider></mat-divider>
+          }
+          @for (option of history.list(); track $index) {
+            <button (click)="onHistoryEntrySelect(option)" mat-menu-item>
+              <mat-icon>
+                @if (option.includes('?')) {
+                  question_mark
+                } @else {
+                  play_arrow
+                }
+              </mat-icon>
+              {{ option }}
+            </button>
+          }
+        </mat-menu>
+      </div>
+    }
 
     @if (log().length > 0 || forceShowLog()) {
       <div class="log-section">

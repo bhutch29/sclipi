@@ -1,4 +1,4 @@
-import { effect, Injectable, signal } from '@angular/core';
+import { effect, Injectable, signal, WritableSignal } from '@angular/core';
 import { LocalStorageService } from './localStorage.service';
 import { firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
@@ -13,6 +13,8 @@ const defaultScrollToNewLogOutput = true;
 
 @Injectable({providedIn: 'root'})
 export class PreferencesService {
+  public operationMode: WritableSignal<'interactive' | 'scripted'> = signal('interactive')
+
   public simulated = signal(defaultSimulated);
   public autoSystErr = signal(defaultAutoSystErr);
   public wrapLog = signal(defaultWrapLog);
@@ -39,6 +41,8 @@ export class PreferencesService {
     localStorageService.setFromStorage('showDate', this.showDate);
     localStorageService.setFromStorage('preferShortScpi', this.preferShortScpi);
     localStorageService.setFromStorage('scrollToNewLogOutput', this.scrollToNewLogOutput);
+    localStorageService.setFromStorage('operationMode', this.operationMode);
+
 
     effect(() => localStorageService.setItem('simulated', this.simulated()));
     effect(() => localStorageService.setItem('autoSystErr', this.autoSystErr()));
@@ -47,6 +51,7 @@ export class PreferencesService {
     effect(() => localStorageService.setItem('showDate', this.showDate()));
     effect(() => localStorageService.setItem('preferShortScpi', this.preferShortScpi()));
     effect(() => localStorageService.setItem('scrollToNewLogOutput', this.scrollToNewLogOutput()));
+    effect(() => localStorageService.setItem('operationMode', this.operationMode()));
 
     this.loadServerPreferences();
   }
@@ -77,6 +82,7 @@ export class PreferencesService {
     this.showDate.set(defaultShowDate);
     this.preferShortScpi.set(defaultPreferShortScpi);
     this.scrollToNewLogOutput.set(defaultScrollToNewLogOutput);
+    // Operation mode is skipped intentionally
   }
 
 }

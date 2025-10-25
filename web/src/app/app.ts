@@ -1,18 +1,18 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, httpResource } from '@angular/common/http';
 import {
-    Component,
-    computed,
-    effect,
-    ElementRef,
-    HostListener,
-    QueryList,
-    Renderer2,
-    Signal,
-    signal,
-    ViewChild,
-    ViewChildren,
-    WritableSignal
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  HostListener,
+  QueryList,
+  Renderer2,
+  Signal,
+  signal,
+  ViewChild,
+  ViewChildren,
+  WritableSignal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule, MatOption } from '@angular/material/autocomplete';
@@ -34,7 +34,17 @@ import { Commands, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
-import { cardinalityOf, childrenOf, findCardinalNode, getShortMnemonic, range, removeDuplicateNodes, stripCardinality } from './utils';
+import {
+  cardinalityOf,
+  childrenOf,
+  findCardinalNode,
+  getClipboardText,
+  getShortMnemonic,
+  getTimestamp,
+  range,
+  removeDuplicateNodes,
+  stripCardinality,
+} from './utils';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 @Component({
@@ -64,14 +74,26 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 })
 export class App {
   public inputText = signal('');
-  public log: WritableSignal<LogEntry[]> = signal([]);
+  public scriptedLog: WritableSignal<LogEntry[]> = signal([]);
+  public interactiveLog: WritableSignal<LogEntry[]> = signal([]);
   public selectedLogIndex = signal(-1);
   private lastSelectedAutocompletionHasSuffix = signal(false);
   private lastSelectedAutocompletionIsQuery = signal(false);
-  public activeToolbarButtons: WritableSignal<string[]> = signal([])
+  public activeToolbarButtons: WritableSignal<string[]> = signal([]);
   public isScrolledToBottom = signal(true);
   public isScrolledToTop = signal(true);
   public forceShowLog = signal(false);
+
+  public script: WritableSignal<string[]> = signal([]);
+  public scriptSource: WritableSignal<'file' | 'clipboard'> = signal('file');
+  public scriptFileName: WritableSignal<string> = signal('');
+  public scriptRunning: WritableSignal<boolean> = signal(false);
+  public scriptProgressPercentage: WritableSignal<number> = signal(0);
+  public scriptCancelled: WritableSignal<boolean> = signal(false);
+
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  private resolveFile?: (value: string) => void;
+  private rejectFile?: (reason?: any) => void;
 
   public autocomplete: Signal<Array<ScpiNode | string>> = computed(() => {
     if (!this.commands.hasValue()) {
@@ -84,12 +106,15 @@ export class App {
       return [];
     }
 
-    if (this.inputText().startsWith("*")) {
-      return this.commands.value().starTree?.children.filter(command => {
-        return command.content.text.slice(1).toLowerCase().startsWith(this.inputText().slice(1).toLowerCase());
+    if (this.inputText().startsWith('*')) {
+      return this.commands.value().starTree?.children.filter((command) => {
+        return command.content.text
+          .slice(1)
+          .toLowerCase()
+          .startsWith(this.inputText().slice(1).toLowerCase());
       });
     } else {
-      const inputSegments = this.inputText().split(":").slice(1);
+      const inputSegments = this.inputText().split(':').slice(1);
       const initialNode = this.commands.value().colonTree;
       let currentNodes = [initialNode];
       let finishedNodes = [initialNode];
@@ -99,15 +124,19 @@ export class App {
         const cardinality = cardinalityOf(typed);
         const hasCardinality = cardinality !== undefined;
         const cardinalityMismatch = () => hasCardinality && !node.suffixed;
-        const cardinalityOutOfRange = () => hasCardinality && node.suffixed && (cardinality < node.start || cardinality > node.stop);
+        const cardinalityOutOfRange = () =>
+          hasCardinality && node.suffixed && (cardinality < node.start || cardinality > node.stop);
         if (cardinalityMismatch() || cardinalityOutOfRange()) {
           return false;
         }
 
         const fullMatch = () => typed.toLowerCase() === node.text.toLowerCase();
         const shortMatch = () => typed.toLowerCase() === getShortMnemonic(node.text).toLowerCase();
-        const noCardinalityFullMatch = () => node.suffixed && stripCardinality(typed).toLowerCase() === node.text.toLowerCase();
-        const noCardinalityShortMatch = () => node.suffixed && stripCardinality(typed).toLowerCase() === getShortMnemonic(node.text).toLowerCase();
+        const noCardinalityFullMatch = () =>
+          node.suffixed && stripCardinality(typed).toLowerCase() === node.text.toLowerCase();
+        const noCardinalityShortMatch = () =>
+          node.suffixed &&
+          stripCardinality(typed).toLowerCase() === getShortMnemonic(node.text).toLowerCase();
         return fullMatch() || shortMatch() || noCardinalityFullMatch() || noCardinalityShortMatch();
       };
 
@@ -122,17 +151,19 @@ export class App {
 
         const lastSegment = segmentIndex !== inputSegments.length - 1;
 
-        const matchingNodes = childrenOf(finishedNodes).filter(x => compare(x.content, segment));
+        const matchingNodes = childrenOf(finishedNodes).filter((x) => compare(x.content, segment));
         if (matchingNodes.length > 0) {
           if (lastSegment) {
-            currentNodes = matchingNodes
+            currentNodes = matchingNodes;
           }
 
           // If the currently typed segment doesn't have cardinality, we include matches with and without cardinality (since cardinality is optional)
           // Otherwise, when it has cardinality, we take only the last item, which based on backend sorting should always be the one with cardinality.
           const cardinality = cardinalityOf(segment);
           const hasCardinality = cardinality !== undefined;
-          finishedNodes = hasCardinality ? [matchingNodes[matchingNodes.length - 1]] : matchingNodes;
+          finishedNodes = hasCardinality
+            ? [matchingNodes[matchingNodes.length - 1]]
+            : matchingNodes;
 
           matched++;
         }
@@ -144,15 +175,21 @@ export class App {
       }
 
       if (finishedNodes.length > 2) {
-        console.error('Unexpected, should have at most 2, with and withous suffixes', finishedNodes);
+        console.error(
+          'Unexpected, should have at most 2, with and withous suffixes',
+          finishedNodes,
+        );
       }
 
       const cardinalNode = findCardinalNode(finishedNodes);
       if (cardinalNode) {
         const currentInputSegment = inputSegments[inputSegments.length - 1];
-        const currentInputFinishesNode = currentInputSegment !== '' && (currentInputSegment === cardinalNode.content.text || currentInputSegment === getShortMnemonic(cardinalNode.content.text));
+        const currentInputFinishesNode =
+          currentInputSegment !== '' &&
+          (currentInputSegment === cardinalNode.content.text ||
+            currentInputSegment === getShortMnemonic(cardinalNode.content.text));
         if (currentInputFinishesNode && this.lastSelectedAutocompletionHasSuffix()) {
-          return range(cardinalNode.content.start, cardinalNode.content.stop).map(x => {
+          return range(cardinalNode.content.start, cardinalNode.content.stop).map((x) => {
             if (this.lastSelectedAutocompletionIsQuery()) {
               return `${x}?`;
             } else {
@@ -162,12 +199,19 @@ export class App {
         }
       }
 
-      const result = childrenOf(currentNodes).filter(x => x.content.text.toLowerCase().startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()));
+      const result = childrenOf(currentNodes).filter((x) =>
+        x.content.text
+          .toLowerCase()
+          .startsWith(inputSegments[inputSegments.length - 1]?.toLowerCase()),
+      );
       return removeDuplicateNodes(result);
     }
   });
 
-  public autocompleteValueTransform = (previous: string, selected: MatOption<any>): MatOption<any> => {
+  public autocompleteValueTransform = (
+    previous: string,
+    selected: MatOption<any>,
+  ): MatOption<any> => {
     if (typeof selected.value === 'string') {
       if (selected.value.endsWith('?')) {
         selected.value = previous + selected.value;
@@ -187,14 +231,17 @@ export class App {
       return selected;
     }
 
-    const appendColonToUnfinishedMnemonics = (node: ScpiNode, option: MatOption<any>): MatOption<any> => {
+    const appendColonToUnfinishedMnemonics = (
+      node: ScpiNode,
+      option: MatOption<any>,
+    ): MatOption<any> => {
       const noChildren = node.children && node.children.length !== 0;
       const noSuffix = !node.content.suffixed;
       if (noChildren && noSuffix) {
-        option.value += ":";
+        option.value += ':';
       }
       return option;
-    }
+    };
 
     const previousSplit = previous.split(':');
 
@@ -222,14 +269,14 @@ export class App {
     }
 
     return appendColonToUnfinishedMnemonics(selectedScpiNode, selected);
-  }
+  };
 
   public getDisplayValue = (node: ScpiNode): string => {
     let result = '';
     if (!node.content.text.startsWith('*')) {
       result += ':';
     }
-    const isQuery = node.content.text.endsWith('?')
+    const isQuery = node.content.text.endsWith('?');
     if (isQuery) {
       result += node.content.text.slice(0, -1);
     } else {
@@ -246,7 +293,7 @@ export class App {
       result += '?';
     }
     return result;
-  }
+  };
 
   private unsentScpiInput = '';
 
@@ -288,13 +335,21 @@ export class App {
     public history: HistoryService,
     private snackBar: MatSnackBar,
     localStorageService: LocalStorageService,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
   ) {
     localStorageService.setFromStorage('activeToolbarButtons', this.activeToolbarButtons);
     effect(() => localStorageService.setItem('activeToolbarButtons', this.activeToolbarButtons()));
 
-    localStorageService.setFromStorage('log', this.log);
-    effect(() => localStorageService.setItem('log', this.log()));
+    localStorageService.setFromStorage('interactiveLog', this.interactiveLog);
+    effect(() => localStorageService.setItem('interactiveLog', this.interactiveLog()));
+
+    localStorageService.setFromStorage('scriptedLog', this.scriptedLog);
+    effect(() => localStorageService.setItem('scriptedLog', this.scriptedLog()));
+
+    effect(() => {
+      this.preferences.operationMode();
+      this.checkScrollPosition();
+    });
 
     this.renderer.listen('window', 'focus', () => {
       this.scpiInput?.nativeElement.focus();
@@ -307,6 +362,10 @@ export class App {
         this.scrollToBottom();
       }
     });
+  }
+
+  public get log(): WritableSignal<LogEntry[]> {
+    return this.preferences.operationMode() === 'scripted' ? this.scriptedLog : this.interactiveLog;
   }
 
   public scrollToBottom() {
@@ -336,13 +395,17 @@ export class App {
       this.isScrolledToTop.set(true);
     } else {
       // Allows for 1px inaccuracy
-      this.isScrolledToBottom.set(this.logContainer?.nativeElement.scrollHeight - this.logContainer?.nativeElement.clientHeight <= this.logContainer?.nativeElement.scrollTop + 1);
+      this.isScrolledToBottom.set(
+        this.logContainer?.nativeElement.scrollHeight -
+          this.logContainer?.nativeElement.clientHeight <=
+          this.logContainer?.nativeElement.scrollTop + 1,
+      );
       this.isScrolledToTop.set(this.logContainer?.nativeElement.scrollTop <= 1);
     }
   }
 
   public previousLogEntry() {
-    this.selectedLogIndex.update(x => {
+    this.selectedLogIndex.update((x) => {
       if (x === -1) {
         return this.log().length - 1;
       } else {
@@ -353,7 +416,7 @@ export class App {
   }
 
   public nextLogEntry() {
-    this.selectedLogIndex.update(x => x + 1);
+    this.selectedLogIndex.update((x) => x + 1);
     this.scrollToSelectedEntry();
   }
 
@@ -361,12 +424,12 @@ export class App {
     if (this.entryElements?.get(this.selectedLogIndex())) {
       this.entryElements?.get(this.selectedLogIndex()).nativeElement.scrollIntoView({
         behavior: 'instant',
-        block: 'nearest'
+        block: 'nearest',
       });
     }
   }
 
-  public send() {
+  public sendInteractive() {
     if (this.sending$.value) {
       return;
     }
@@ -379,10 +442,10 @@ export class App {
     ) {
       return;
     }
-    this.sendInternal(this.inputText());
+    this.sendInteractiveInternal(this.inputText());
   }
 
-  private sendInternal(scpi: string) {
+  private async sendInteractiveInternal(scpi: string): Promise<void> {
     this.sending$.next(true);
     this.history.index.set(-1);
     this.inputText.set('');
@@ -390,14 +453,33 @@ export class App {
     this.checkScrollPosition();
 
     scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
-
     setTimeout(() => this.history.add(scpi), 100); // Delay to avoid history dropdown updating before it has a chance to close.
+
+    try {
+      await this.sendInternal(scpi);
+    } catch (err) {
+      // Do nothing, we already printed errors to the log
+    }
+
+    this.sending$.next(false);
+  }
+
+  private async sendInternal(scpi: string): Promise<void> {
+    scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
 
     const time = Date.now();
     const type = scpi.includes('?') ? 'query' : 'command';
     this.log.update((log) => [
       ...log,
-      { type, scpi, response: undefined, time, elapsed: 0, isServerError: false, uniqueId: crypto.randomUUID() },
+      {
+        type,
+        scpi,
+        response: undefined,
+        time,
+        elapsed: 0,
+        isServerError: false,
+        uniqueId: crypto.randomUUID(),
+      },
     ]);
     const params = {
       simulated: this.preferences.simulated(),
@@ -406,34 +488,45 @@ export class App {
       port: this.preferences.port(),
       address: this.preferences.address(),
     };
-    this.http.post<ScpiResponse>('/api/scpi', scpi, { params, responseType: 'json' }).subscribe({
-      next: (x) => {
-        const response = type === 'query' ? x.response : undefined;
-        this.log.update((log) => {
-          const clone = structuredClone(log); // Can't modify existing log, have to write a new one, otherwise signals don't work
-          const lastElement = clone[clone.length - 1];
-          lastElement.response = (response ? response : x.serverError).trim();
-          lastElement.isServerError = !response;
-          lastElement.elapsed = Date.now() - time;
-          for (const error of x.errors) {
-            clone.push({type: 'query', scpi: ':SYST:ERR?', response: error, uniqueId: crypto.randomUUID(), time, hideTime: true, isServerError: false})
-          }
-          return clone;
-        });
-        this.sending$.next(false);
-      },
-      error: (x) => {
-        this.log.update((log) => {
-          const clone = structuredClone(log); // Can't modify existing log, have to write a new one, otherwise signals don't work
-          const lastElement = clone[clone.length - 1];
-          lastElement.response = x.error ?? x.message;
-          lastElement.isServerError = true;
-          lastElement.elapsed = Date.now() - time;
-          return clone;
-        });
-        this.snackBar.open(x.error ?? x.message, "Close", {duration: 5000});
-        this.sending$.next(false);
-      },
+
+    return new Promise<void>((resolve, reject) => {
+      this.http.post<ScpiResponse>('/api/scpi', scpi, { params, responseType: 'json' }).subscribe({
+        next: (x) => {
+          const response = type === 'query' ? x.response : undefined;
+          this.log.update((log) => {
+            const clone = structuredClone(log); // Can't modify existing log, have to write a new one, otherwise signals don't work
+            const lastElement = clone[clone.length - 1];
+            lastElement.response = (response ? response : x.serverError).trim();
+            lastElement.isServerError = !response;
+            lastElement.elapsed = Date.now() - time;
+            for (const error of x.errors ?? []) {
+              clone.push({
+                type: 'query',
+                scpi: ':SYST:ERR?',
+                response: error,
+                uniqueId: crypto.randomUUID(),
+                time,
+                hideTime: true,
+                isServerError: false,
+              });
+            }
+            return clone;
+          });
+          resolve();
+        },
+        error: (x) => {
+          this.log.update((log) => {
+            const clone = structuredClone(log); // Can't modify existing log, have to write a new one, otherwise signals don't work
+            const lastElement = clone[clone.length - 1];
+            lastElement.response = x.error ?? x.message;
+            lastElement.isServerError = true;
+            lastElement.elapsed = Date.now() - time;
+            return clone;
+          });
+          this.snackBar.open(x.error ?? x.message, 'Close', { duration: 5000 });
+          reject();
+        },
+      });
     });
   }
 
@@ -453,7 +546,7 @@ export class App {
   public arrowUp(event: Event) {
     event.preventDefault();
 
-    if (this.history.index() === -1 && this.inputText() !== "") {
+    if (this.history.index() === -1 && this.inputText() !== '') {
       return;
     }
 
@@ -461,7 +554,7 @@ export class App {
       if (this.history.index() === -1) {
         this.unsentScpiInput = this.inputText();
       }
-      this.history.index.update(x => x + 1)
+      this.history.index.update((x) => x + 1);
       this.inputText.set(this.history.list()[this.history.index()]);
     }
   }
@@ -471,18 +564,28 @@ export class App {
 
     if (this.history.index() === 0) {
       this.inputText.set(this.unsentScpiInput);
-      this.history.index.update(x => x - 1);
+      this.history.index.update((x) => x - 1);
     }
 
     if (this.history.index() > 0) {
-      this.history.index.update(x => x - 1)
+      this.history.index.update((x) => x - 1);
       this.inputText.set(this.history.list()[this.history.index()]);
     }
   }
 
   private trackLastSelectedAutocompletion(key: string) {
     const isNumber = /^[0-9]$/.test(key);
-    const ignoredKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Enter', 'Shift', 'Control', 'Meta'];
+    const ignoredKeys = [
+      'ArrowUp',
+      'ArrowDown',
+      'ArrowLeft',
+      'ArrowRight',
+      'Backspace',
+      'Enter',
+      'Shift',
+      'Control',
+      'Meta',
+    ];
     if (!isNumber && !ignoredKeys.includes(key)) {
       this.lastSelectedAutocompletionHasSuffix.set(false);
       this.lastSelectedAutocompletionIsQuery.set(false);
@@ -499,7 +602,7 @@ export class App {
   }
 
   public systErr() {
-    this.sendInternal(':SYST:ERR?');
+    this.sendInteractiveInternal(':SYST:ERR?');
   }
 
   public onHistoryEntrySelect(entry: string) {
@@ -512,7 +615,9 @@ export class App {
   }
 
   private tryGetLogText(): string | undefined {
-    return this.log().map(x => this.tryGetCommandText(x)).join('\n');
+    return this.log()
+      .map((x) => this.tryGetCommandText(x))
+      .join('\n');
   }
 
   private tryGetCommandText(entry?: LogEntry): string | undefined {
@@ -520,7 +625,10 @@ export class App {
       return undefined;
     }
 
-    const timestamp = this.datePipe.transform(entry.time, this.preferences.showDate() ? 'MMM dd, hh:mm:ss.SS a' : 'hh:mm:ss.SS a');
+    const timestamp = this.datePipe.transform(
+      entry.time,
+      this.preferences.showDate() ? 'MMM dd, hh:mm:ss.SS a' : 'hh:mm:ss.SS a',
+    );
     return `[${timestamp}] ${entry.scpi} ${entry.response}`;
   }
 
@@ -534,20 +642,30 @@ export class App {
     if (text) {
       await navigator.clipboard.writeText(text);
       const count = this.entryElements?.length;
-      this.snackBar.open(`${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`, "Close", {duration: 2000});
+      this.snackBar.open(
+        `${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`,
+        'Close',
+        { duration: 2000 },
+      );
     } else {
-      this.snackBar.open('Copy log failed', "Close", {duration: 5000});
+      this.snackBar.open('Copy log failed', 'Close', { duration: 5000 });
     }
   }
 
   public async copyCommands() {
-    const text = this.log().map(x => x.scpi).join('\n');
+    const text = this.log()
+      .map((x) => x.scpi)
+      .join('\n');
     if (text) {
       await navigator.clipboard.writeText(text);
       const count = this.entryElements?.length;
-      this.snackBar.open(`${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`, "Close", {duration: 2000});
+      this.snackBar.open(
+        `${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`,
+        'Close',
+        { duration: 2000 },
+      );
     } else {
-      this.snackBar.open('Copy commands failed', "Close", {duration: 5000});
+      this.snackBar.open('Copy commands failed', 'Close', { duration: 5000 });
     }
   }
 
@@ -555,16 +673,16 @@ export class App {
     const text = this.tryGetCommandText(this.log()[this.selectedLogIndex()]);
     if (text) {
       await navigator.clipboard.writeText(text);
-      this.snackBar.open(`Copied to clipboard`, "Close", {duration: 2000});
+      this.snackBar.open(`Copied to clipboard`, 'Close', { duration: 2000 });
     } else {
-      this.snackBar.open('Copy failed', "Close", {duration: 5000});
+      this.snackBar.open('Copy failed', 'Close', { duration: 5000 });
     }
   }
 
   public async downloadFullLog() {
     const text = this.tryGetLogText();
     if (!text) {
-      this.snackBar.open('Download log failed', "Close", {duration: 5000});
+      this.snackBar.open('Download log failed', 'Close', { duration: 5000 });
       return;
     }
     const blob = new Blob([text], { type: 'text/plain' });
@@ -572,16 +690,18 @@ export class App {
     const link = document.createElement('a');
 
     link.href = url;
-    link.download = `sclipi_web_log_${this.getTimestamp()}.txt`;
+    link.download = `sclipi_web_log_${getTimestamp()}.txt`;
     link.click();
 
     window.URL.revokeObjectURL(url);
   }
 
   public async downloadCommands() {
-    const text = this.log().map(x => x.scpi).join('\n');
+    const text = this.log()
+      .map((x) => x.scpi)
+      .join('\n');
     if (!text) {
-      this.snackBar.open('Download commands failed', "Close", {duration: 5000});
+      this.snackBar.open('Download commands failed', 'Close', { duration: 5000 });
       return;
     }
     const blob = new Blob([text], { type: 'text/plain' });
@@ -589,30 +709,107 @@ export class App {
     const link = document.createElement('a');
 
     link.href = url;
-    link.download = `sclipi_web_commands_${this.getTimestamp()}.txt`;
+    link.download = `sclipi_web_commands_${getTimestamp()}.txt`;
     link.click();
 
     window.URL.revokeObjectURL(url);
   }
 
-  private getTimestamp(): string {
-    const now = new Date();
-    return now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  }
-
   public minimizeSelectedEntry() {
-    this.log.update(x => {
+    this.log.update((x) => {
       const clone = structuredClone(x);
       clone[this.selectedLogIndex()].minimized = true;
       return clone;
-    })
+    });
   }
 
   public maximizeSelectedEntry() {
-    this.log.update(x => {
+    this.log.update((x) => {
       const clone = structuredClone(x);
       clone[this.selectedLogIndex()].minimized = false;
       return clone;
-    })
+    });
+  }
+
+  public async selectScriptFromClipboard(): Promise<void> {
+    try {
+      const text = await getClipboardText();
+      const split = text.trim().split(/\r?\n/);
+      this.snackBar.open(
+        `Copied ${split.length} ${split.length === 1 ? 'line' : 'lines'} from clipboard`,
+        'Close',
+        { duration: 2000 },
+      );
+      this.script.set(split);
+      this.scriptSource.set('clipboard');
+    } catch (err) {
+      this.snackBar.open(`Failed to read clipboard: ${err}`, 'Close', { duration: 5000 });
+      this.script.set([]);
+    }
+  }
+
+  public async selectScriptFromFile(): Promise<void> {
+    const filePromise = new Promise<string>((resolve, reject) => {
+      this.resolveFile = resolve;
+      this.rejectFile = reject;
+    });
+
+    this.fileInput.nativeElement.click();
+
+    try {
+      const content = await filePromise;
+      const split = content.trim().split(/\r?\n/);
+      this.snackBar.open(
+        `Copied ${split.length} ${split.length === 1 ? 'line' : 'lines'} from file`,
+        'Close',
+        { duration: 2000 },
+      );
+      this.script.set(split);
+      this.scriptSource.set('file');
+    } catch (err) {
+      this.snackBar.open(`Failed to read from file: ${err}`, 'Close', { duration: 5000 });
+    }
+  }
+
+  public onFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+
+    if (!file) {
+      this.rejectFile?.('No file selected');
+      return;
+    }
+
+    this.scriptFileName.set(file.name);
+
+    const reader = new FileReader();
+    reader.onload = () => this.resolveFile?.(reader.result as string);
+    reader.onerror = () => this.rejectFile?.(reader.error);
+    reader.readAsText(file);
+
+    this.fileInput.nativeElement.value = '';
+  }
+
+  public async runScript() {
+    this.log.set([]);
+    this.scriptCancelled.set(false);
+    this.scriptProgressPercentage.set(0);
+    this.scriptRunning.set(true);
+
+    const percentPerCommand = 100.0 / this.script().length;
+    let count = 0;
+
+    for (const entry of this.script()) {
+      if (this.scriptCancelled()) {
+        this.snackBar.open(`Script was aborted early. Skipped ${this.script().length - count} commands`, 'Close', { duration: 5000 });
+        break;
+      }
+      this.sending$.next(true);
+      await this.sendInternal(entry);
+      count++
+      this.scriptProgressPercentage.update(x => x + percentPerCommand);
+      this.sending$.next(false);
+    }
+
+    this.scriptRunning.set(false);
   }
 }

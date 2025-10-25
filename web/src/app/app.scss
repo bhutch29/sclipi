@@ -145,7 +145,7 @@ pre {
 
   mat-progress-bar {
     align-self: center;
-    max-width: 1000px;
+    max-width: 600px;
     flex-shrink: 1;
     margin: 0 8px;
   }
@@ -251,4 +251,27 @@ mat-toolbar {
 
 .hidden {
   opacity: 0;
+}
+
+.script-header {
+  display: flex;
+  flex-direction: column;
+
+  .script-inputs {
+    display: flex;
+    gap: 8px;
+
+    .script-load-buttons {
+      display: flex;
+      gap: 8px;
+    }
+  }
+
+  .script-progress {
+    display: flex;
+    align-items: center;
+    height: 20px;
+    width: 100%;
+    margin: auto;
+  }
 }

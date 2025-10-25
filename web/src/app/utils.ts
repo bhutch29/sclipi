@@ -56,3 +56,18 @@ export function findCardinalNode(input: ScpiNode[]): ScpiNode | undefined {
   }
   return undefined;
 }
+
+export async function getClipboardText(): Promise<string> {
+  try {
+    const text = await navigator.clipboard.readText();
+    return text;
+  } catch (err) {
+    return ''
+  }
+}
+
+export function getTimestamp(): string {
+  const now = new Date();
+  return now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+}
+

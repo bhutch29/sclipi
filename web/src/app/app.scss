@@ -95,9 +95,12 @@ mat-toolbar {
       overflow-x: scroll;
     }
 
+    &.wrap {
+      word-wrap: anywhere;
+    }
+
     &.wrap pre {
       white-space: pre-wrap;
-      word-wrap: anywhere;
     }
   }
 
@@ -137,11 +140,12 @@ pre {
   }
 
   .scpi {
-    flex-shrink: 0;
+    flex-shrink: 1;
   }
 
   mat-progress-bar {
     align-self: center;
+    max-width: 400px;
     flex-shrink: 1;
     margin: 0 8px;
   }

@@ -5,7 +5,7 @@ export interface LogEntry {
   time: number;
   elapsed?: number;
   hideTime?: boolean
-  serverError?: string;
+  isServerError: boolean;
   uniqueId: string;
   minimized?: boolean;
 }

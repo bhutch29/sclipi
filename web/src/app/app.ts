@@ -397,7 +397,7 @@ export class App {
     const type = scpi.includes('?') ? 'query' : 'command';
     this.log.update((log) => [
       ...log,
-      { type, scpi, response: undefined, time, elapsed: 0, serverError: "", uniqueId: crypto.randomUUID() },
+      { type, scpi, response: undefined, time, elapsed: 0, isServerError: false, uniqueId: crypto.randomUUID() },
     ]);
     const params = {
       simulated: this.preferences.simulated(),
@@ -412,11 +412,11 @@ export class App {
         this.log.update((log) => {
           const clone = structuredClone(log); // Can't modify existing log, have to write a new one, otherwise signals don't work
           const lastElement = clone[clone.length - 1];
-          lastElement.response = response?.trim();
-          lastElement.serverError = x.serverError;
+          lastElement.response = (response ? response : x.serverError).trim();
+          lastElement.isServerError = !response;
           lastElement.elapsed = Date.now() - time;
           for (const error of x.errors) {
-            clone.push({type: 'query', scpi: ':SYST:ERR?', response: error, uniqueId: crypto.randomUUID(), time, hideTime: true})
+            clone.push({type: 'query', scpi: ':SYST:ERR?', response: error, uniqueId: crypto.randomUUID(), time, hideTime: true, isServerError: false})
           }
           return clone;
         });
@@ -426,7 +426,8 @@ export class App {
         this.log.update((log) => {
           const clone = structuredClone(log); // Can't modify existing log, have to write a new one, otherwise signals don't work
           const lastElement = clone[clone.length - 1];
-          lastElement.serverError = x.error ?? x.message;
+          lastElement.response = x.error ?? x.message;
+          lastElement.isServerError = true;
           lastElement.elapsed = Date.now() - time;
           return clone;
         });
@@ -520,7 +521,7 @@ export class App {
     }
 
     const timestamp = this.datePipe.transform(entry.time, this.preferences.showDate() ? 'MMM dd, hh:mm:ss.SS a' : 'hh:mm:ss.SS a');
-    return `[${timestamp}] ${entry.scpi} ${entry.response ? entry.response : entry.serverError}`;
+    return `[${timestamp}] ${entry.scpi} ${entry.response}`;
   }
 
   public clearLog() {
@@ -600,10 +601,18 @@ export class App {
   }
 
   public minimizeSelectedEntry() {
-    this.log()[this.selectedLogIndex()].minimized = true;
+    this.log.update(x => {
+      const clone = structuredClone(x);
+      clone[this.selectedLogIndex()].minimized = true;
+      return clone;
+    })
   }
 
   public maximizeSelectedEntry() {
-    this.log()[this.selectedLogIndex()].minimized = false;
+    this.log.update(x => {
+      const clone = structuredClone(x);
+      clone[this.selectedLogIndex()].minimized = false;
+      return clone;
+    })
   }
 }

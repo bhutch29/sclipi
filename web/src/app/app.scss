@@ -123,11 +123,10 @@ pre {
 .entry {
   display: flex;
   flex-direction: row;
-  align-items: center;
   width: 100%;
   cursor: pointer;
   position: relative;
-  gap: 8px;
+  gap: 12px;
 
   &.selected {
     background-color: var(--mat-sys-on-primary);
@@ -137,9 +136,22 @@ pre {
     background-color: var(--mat-sys-on-secondary);
   }
 
+  .scpi {
+    min-width: 200px;
+    flex-shrink: 0;
+  }
+
   mat-progress-bar {
-    width: 300px;
     align-self: center;
+    flex-shrink: 1;
+    margin: 0 8px;
+  }
+
+  mat-icon {
+    display: inline;
+    font-size: 1rem;
+    height: 1rem;
+    width: 1rem;
   }
 
   .timestamp-container {
@@ -154,24 +166,17 @@ pre {
     mat-icon {
       position: absolute;
       margin-left: -20px;
-      display: inline;
-      font-size: 1rem;
-      height: 1rem;
-      width: 1rem;
     }
   }
 
-  .collapsed-span {
+  .collapsed {
     color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
   }
 
-  .collapsed-icon {
-    color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
-    display: inline;
-    height: 1rem;
-    width: 1rem;
-    font-size: 1rem;
-    margin: 0 auto
+  mat-icon.collapsed {
+    margin-left: auto;
+    margin-right: 16px;
+    align-self: center;
   }
 
   .hover-buttons {

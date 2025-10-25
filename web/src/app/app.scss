@@ -236,12 +236,12 @@ mat-hint {
   white-space: nowrap;
 }
 
-mat-divider {
-  height: 70%;
-}
-
 mat-toolbar {
   background-color: var(--mat-sys-on-secondary-fixed);
+
+  mat-divider {
+    height: 70%;
+  }
 }
 
 .wide-mini-fab-button {
@@ -262,6 +262,25 @@ mat-toolbar {
     gap: 8px;
 
     .script-load-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .loaded-script-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      flex-basis: 200px;
+      max-width: 400px;
+
+      div {
+        display: flex;
+        gap: 2px;
+        align-items: center;
+      }
+    }
+
+    .run-script-controls {
       display: flex;
       gap: 8px;
     }

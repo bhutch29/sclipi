@@ -24,6 +24,9 @@ body {
   // Hack the mat-label font to appear as a "disabled" font
   --mat-form-field-outlined-label-text-color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
 
+  // Don't like the highly rounded corners that toggle buttons have by default
+  --mat-button-toggle-shape: var(--mat-sys-corner-medium);
+
   .history-menu {
     max-height: 400px;
     max-width: 1000px;

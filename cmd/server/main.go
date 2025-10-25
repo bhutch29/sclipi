@@ -346,6 +346,16 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
     return
   }
 
+  if (scpi == ":_SLOW?") {
+    time.Sleep(8 * time.Second)
+    scpiResponse.Response = "Testing command :_SLOW? returned after 8 seconds, ignoring whatever timeout was set";
+
+	  w.WriteHeader(http.StatusOK)
+	  responseData, _ := json.Marshal(scpiResponse)
+	  fmt.Fprintf(w, "%s\n", responseData)
+    return
+  }
+
 	if strings.Contains(scpi, "?") {
 		var queryResponse string
 		executeError = executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {

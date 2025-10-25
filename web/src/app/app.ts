@@ -346,6 +346,15 @@ export class App {
     localStorageService.setFromStorage('scriptedLog', this.scriptedLog);
     effect(() => localStorageService.setItem('scriptedLog', this.scriptedLog()));
 
+    localStorageService.setFromStorage('script', this.script);
+    effect(() => localStorageService.setItem('script', this.script()));
+
+    localStorageService.setFromStorage('scriptSource', this.scriptSource);
+    effect(() => localStorageService.setItem('scriptSource', this.scriptSource()));
+
+    localStorageService.setFromStorage('scriptFileName', this.scriptFileName);
+    effect(() => localStorageService.setItem('scriptFileName', this.scriptFileName()));
+
     effect(() => {
       this.preferences.operationMode();
       this.checkScrollPosition();
@@ -660,7 +669,7 @@ export class App {
       await navigator.clipboard.writeText(text);
       const count = this.entryElements?.length;
       this.snackBar.open(
-        `${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`,
+        `${count} ${count === 1 ? 'command' : 'commands'} copied to clipboard`,
         'Close',
         { duration: 2000 },
       );
@@ -736,7 +745,7 @@ export class App {
       const text = await getClipboardText();
       const split = text.trim().split(/\r?\n/);
       this.snackBar.open(
-        `Copied ${split.length} ${split.length === 1 ? 'line' : 'lines'} from clipboard`,
+        `Copied ${split.length} ${split.length === 1 ? 'command' : 'commands'} from clipboard`,
         'Close',
         { duration: 2000 },
       );
@@ -760,7 +769,7 @@ export class App {
       const content = await filePromise;
       const split = content.trim().split(/\r?\n/);
       this.snackBar.open(
-        `Copied ${split.length} ${split.length === 1 ? 'line' : 'lines'} from file`,
+        `Copied ${split.length} ${split.length === 1 ? 'command' : 'commands'} from file`,
         'Close',
         { duration: 2000 },
       );

@@ -1,14 +1,14 @@
 <mat-toolbar>
   <span>Sclipi Web</span>
-  <mat-divider [vertical]="true"></mat-divider>
+  <mat-divider vertical></mat-divider>
   @if (idn.data(); as data) {
     <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip" matTooltipPosition="right">{{data.model}} - {{data.serial}}</span>
   }
   <span class="toolbar-spacer"></span>
 
   <mat-button-toggle-group name="operation-mode-buttons" [(ngModel)]="preferences.operationMode" hideSingleSelectionIndicator>
-    <mat-button-toggle value="interactive">Interactive</mat-button-toggle>
-    <mat-button-toggle value="scripted">Scripts</mat-button-toggle>
+    <mat-button-toggle value="interactive" matTooltip="Manually input commands">Interactive</mat-button-toggle>
+    <mat-button-toggle value="scripted" matTooltip="Load/run predefined lists of commands">Scripts</mat-button-toggle>
   </mat-button-toggle-group>
 
   <span class="toolbar-spacer"></span>
@@ -17,7 +17,6 @@
     <mat-button-toggle value="idn" matTooltip="Info"><mat-icon>info</mat-icon></mat-button-toggle>
     <mat-button-toggle value="settings" matTooltip="Preferences"><mat-icon>settings</mat-icon></mat-button-toggle>
   </mat-button-toggle-group>
-  <button matIconButton matTooltip="Help"><mat-icon>help</mat-icon></button>
 </mat-toolbar>
 <div class="content">
   <div class="main">
@@ -32,26 +31,39 @@
           </div>
 
           <div class="loaded-script-info">
-            {{script().length}} {{script().length === 1 ? 'line' : 'lines'}}
-            {{scriptSource()}}
-            {{scriptFileName()}}
+            @if (script().length > 0) {
+              <div>
+                <mat-icon>numbers</mat-icon>
+                <span>{{script().length}} {{script().length === 1 ? 'command' : 'commands'}}</span>
+              </div>
+              <div matTooltip="Origin of loaded script">
+                <mat-icon>{{scriptSource() === 'file' ? 'article' : 'content_paste'}}</mat-icon>
+                <span>{{scriptSource() === 'file' ? scriptFileName() : 'clipboard'}}</span>
+              </div>
+            }
           </div>
 
+          @if (script().length > 0) {
+            <mat-divider vertical></mat-divider>
+          }
+
           <div class="run-script-controls">
-            <button matFab extended (click)="runScript()" [disabled]="scriptRunning()">
-              @if (sending$ | async) {
-                <mat-icon>schedule_send</mat-icon>
-              } @else {
-                <mat-icon>send</mat-icon>
-              }
-              @if (sending$ | async) {
-                Running...
-              } @else {
-                Run Script
-              }
-            </button>
+            @if (script().length > 0) {
+              <button matFab extended (click)="runScript()" [disabled]="scriptRunning()">
+                @if (scriptRunning()) {
+                  <mat-icon>play_disabled</mat-icon>
+                } @else {
+                  <mat-icon>play_circle</mat-icon>
+                }
+                @if (scriptRunning()) {
+                  Running...
+                } @else {
+                  Run Script
+                }
+              </button>
+            }
             @if (scriptRunning()) {
-              <button matFab extended (click)="scriptCancelled.set(true)" [disabled]="scriptCancelled()"><mat-icon>content_paste</mat-icon>
+              <button matFab extended (click)="scriptCancelled.set(true)" [disabled]="scriptCancelled()"><mat-icon>stop_circle</mat-icon>
                 @if (scriptCancelled()) {
                   Aborting...
                 } @else {

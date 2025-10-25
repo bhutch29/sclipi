@@ -149,7 +149,7 @@
                 <span class="collapsed">... response collapsed ...</span>
                 <mat-icon class="collapsed">compress</mat-icon>
               } @else {
-                <pre>{{ entry.response }}</pre>
+                <pre [class.serverError]="entry.isServerError">{{ entry.response }}</pre>
               }
               @if (selectedLogIndex() === i) {
                 <div class="hover-buttons">

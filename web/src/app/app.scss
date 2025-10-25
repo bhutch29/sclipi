@@ -168,6 +168,10 @@ pre {
     }
   }
 
+  .serverError {
+    color: var(--mat-sys-error);
+  }
+
   .collapsed {
     color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
   }

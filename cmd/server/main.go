@@ -40,9 +40,13 @@ func main() {
 	preferences, err = loadPreferences()
 	if err != nil {
 		log.Fatalf("Failed to load preferences: %v", err)
+	} else if preferences == nil {
+	  var prefs Preferences
+    preferences = &prefs;
+		log.Printf("No preferences found, loaded default preferences: %+v", preferences)
 	} else {
 		log.Printf("Loaded preferences: %+v", preferences)
-	}
+  }
 
 	addr := fmt.Sprintf(":%d", config.ServerPort)
 	server := &http.Server{

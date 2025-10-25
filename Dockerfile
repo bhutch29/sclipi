@@ -26,26 +26,55 @@ FROM caddy:2-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache tini
+
 COPY --from=go-builder /build/sclipi-server .
 
 COPY --from=web-builder /build/web/dist/sclipi-web/browser /srv
 
-RUN echo ':80 {\n\
-    root * /srv\n\
-    encode gzip\n\
-    \n\
-    handle /api/* {\n\
-        uri strip_prefix /api\n\
-        reverse_proxy localhost:8080\n\
-    }\n\
-    \n\
-    try_files {path} /index.html\n\
-    file_server\n\
-}' > /etc/caddy/Caddyfile
+RUN printf ':80 {\n\
+\tencode gzip\n\
+\n\
+\thandle /api/* {\n\
+\t\turi strip_prefix /api\n\
+\t\treverse_proxy localhost:8080\n\
+\t}\n\
+\n\
+\thandle {\n\
+\t\troot * /srv\n\
+\t\ttry_files {path} /index.html\n\
+\t\tfile_server\n\
+\t}\n\
+}\n' > /etc/caddy/Caddyfile
+
+RUN printf '#!/bin/sh\n\
+set -e\n\
+\n\
+echo "Starting sclipi-server on port 8080..."\n\
+./sclipi-server &\n\
+SERVER_PID=$!\n\
+\n\
+echo "Waiting for server to be ready..."\n\
+for i in $(seq 1 30); do\n\
+\tif wget -q -O /dev/null http://localhost:8080/health 2>/dev/null; then\n\
+\t\techo "Server is ready!"\n\
+\t\tbreak\n\
+\tfi\n\
+\tif [ $i -eq 30 ]; then\n\
+\t\techo "Server failed to start"\n\
+\t\texit 1\n\
+\tfi\n\
+\tsleep 1\n\
+done\n\
+\n\
+echo "Starting Caddy..."\n\
+exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile\n\
+' > /app/start.sh && chmod +x /app/start.sh
 
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
 
-CMD ./sclipi-server & caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["/app/start.sh"]

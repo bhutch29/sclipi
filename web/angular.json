@@ -70,7 +70,6 @@
           "options": {
             "host": "0.0.0.0",
             "proxyConfig": "proxy.conf.js",
-            "servePath": "scpi"
           },
           "configurations": {
             "production": {

@@ -32,44 +32,10 @@ COPY --from=go-builder /build/sclipi-server .
 
 COPY --from=web-builder /build/web/dist/sclipi-web/browser /srv
 
-RUN printf ':80 {\n\
-\tencode gzip\n\
-\n\
-\thandle /api/* {\n\
-\t\turi strip_prefix /api\n\
-\t\treverse_proxy localhost:8080\n\
-\t}\n\
-\n\
-\thandle {\n\
-\t\troot * /srv\n\
-\t\ttry_files {path} /index.html\n\
-\t\tfile_server\n\
-\t}\n\
-}\n' > /etc/caddy/Caddyfile
+COPY docker/Caddyfile /etc/caddy/Caddyfile
 
-RUN printf '#!/bin/sh\n\
-set -e\n\
-\n\
-echo "Starting sclipi-server on port 8080..."\n\
-./sclipi-server &\n\
-SERVER_PID=$!\n\
-\n\
-echo "Waiting for server to be ready..."\n\
-for i in $(seq 1 30); do\n\
-\tif wget -q -O /dev/null http://localhost:8080/health 2>/dev/null; then\n\
-\t\techo "Server is ready!"\n\
-\t\tbreak\n\
-\tfi\n\
-\tif [ $i -eq 30 ]; then\n\
-\t\techo "Server failed to start"\n\
-\t\texit 1\n\
-\tfi\n\
-\tsleep 1\n\
-done\n\
-\n\
-echo "Starting Caddy..."\n\
-exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile\n\
-' > /app/start.sh && chmod +x /app/start.sh
+COPY docker/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 EXPOSE 80
 

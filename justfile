@@ -65,3 +65,10 @@ serve-web:
 clean:
     rm -f sclipi sclipi.exe scpi-server scpi-server.exe
     rm -rf web/dist/
+
+build-docker:
+    docker build -f docker/Dockerfile -t sclipi-server .
+
+run-docker:
+    # TODO: needs to be networked with target scpi instrument
+    docker run -p 80:8235 sclipi-server

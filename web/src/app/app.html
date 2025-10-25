@@ -6,9 +6,9 @@
   }
   <span class="toolbar-spacer"></span>
 
-  <mat-button-toggle-group name="operation-mode-buttons" [(ngModel)]="preferences.operationMode" hideSingleSelectionIndicator>
-    <mat-button-toggle value="interactive" matTooltip="Manually input commands">Interactive</mat-button-toggle>
-    <mat-button-toggle value="scripted" matTooltip="Load/run predefined lists of commands">Scripts</mat-button-toggle>
+  <mat-button-toggle-group name="operation-mode-buttons" [(ngModel)]="preferences.operationMode">
+    <mat-button-toggle value="interactive" matTooltip="Manually input commands" [disabled]="sending$ | async">Interactive</mat-button-toggle>
+    <mat-button-toggle value="scripted" matTooltip="Load/run predefined lists of commands" [disabled]="sending$ | async">Scripts</mat-button-toggle>
   </mat-button-toggle-group>
 
   <span class="toolbar-spacer"></span>
@@ -193,7 +193,11 @@
       <div class="log-section">
         <div #logContainer class="log" [class.wrap]="preferences.wrapLog()" (scroll)="onLogScroll()">
           @for (entry of log(); track entry.uniqueId; let i = $index) {
-            <div #entry class="entry" [class.selected]="selectedLogIndex() === i" (click)="selectedLogIndex.set(i)">
+            <div #entry class="entry"
+              [class.selected]="selectedLogIndices().includes(i)"
+              (mousedown)="onEntryMouseDown(i, $event)"
+              (mouseenter)="onEntryMouseEnter(i)"
+              (click)="onEntryClick(i)">
               <div class="timestamp-container">
                 @if (preferences.showDate()) {
                   <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">
@@ -221,22 +225,26 @@
               } @else {
                 <pre [class.serverError]="entry.isServerError">{{ entry.response }}</pre>
               }
-              @if (selectedLogIndex() === i) {
+              @if (selectedLogIndices().length > 0 && selectedLogIndices()[0] === i) {
                 <div class="hover-buttons">
                   <button
                     matMiniFab
-                    [matTooltip]="log()[selectedLogIndex()].scpi.includes('?') ? 'Resend this query' : 'Resend this command'"
-                    (click)="sendSelectedCommand()"
+                    [matTooltip]="selectedLogIndices().length === 1
+                      ? (log()[selectedLogIndices()[0]].scpi.includes('?') ? 'Resend this query' : 'Resend this command')
+                      : 'Resend selected commands'"
+                    (click)="sendSelectedCommands()"
                     [disabled]="sending$ | async"
                   >
                     <mat-icon>send</mat-icon>
                   </button>
 
-                  <button matMiniFab matTooltip="Copy" (click)="copySelectedCommand()"><mat-icon>content_copy</mat-icon></button>
-                  @if (entry.minimized) {
-                    <button matMiniFab matTooltip="Expand" (click)="maximizeSelectedEntry()"><mat-icon>expand</mat-icon></button>
-                  } @else {
-                    <button matMiniFab matTooltip="Collapse" (click)="minimizeSelectedEntry()"><mat-icon>compress</mat-icon></button>
+                  <button matMiniFab matTooltip="Copy" (click)="copySelectedCommands()"><mat-icon>content_copy</mat-icon></button>
+                  @if (selectedLogIndices().length === 1) {
+                    @if (entry.minimized) {
+                      <button matMiniFab matTooltip="Expand" (click)="maximizeSelectedEntry()"><mat-icon>expand</mat-icon></button>
+                    } @else {
+                      <button matMiniFab matTooltip="Collapse" (click)="minimizeSelectedEntry()"><mat-icon>compress</mat-icon></button>
+                    }
                   }
                 </div>
               }
@@ -251,10 +259,14 @@
           <button matMiniFab matTooltip="Scroll to bottom" matTooltipPosition="right" (click)="scrollToBottom()" [disabled]="isScrolledToBottom()">
             <mat-icon>vertical_align_bottom</mat-icon>
           </button>
-          <button matMiniFab matTooltip="Select previous" matTooltipPosition="right" [disabled]="selectedLogIndex() == 0 || log().length === 0" (click)="previousLogEntry()">
+          <button matMiniFab matTooltip="Select previous" matTooltipPosition="right"
+            [disabled]="log().length === 0 || (selectedLogIndices().length > 0 && selectedLogIndices()[0] === 0)"
+            (click)="previousLogEntry()">
             <mat-icon>arrow_upward</mat-icon>
           </button>
-          <button matMiniFab matTooltip="Select next" matTooltipPosition="right" [disabled]="selectedLogIndex() >= log().length - 1" (click)="nextLogEntry()">
+          <button matMiniFab matTooltip="Select next" matTooltipPosition="right"
+            [disabled]="log().length === 0 || (selectedLogIndices().length > 0 && selectedLogIndices()[selectedLogIndices().length - 1] >= log().length - 1)"
+            (click)="nextLogEntry()">
             <mat-icon>arrow_downward</mat-icon>
           </button>
         </div>

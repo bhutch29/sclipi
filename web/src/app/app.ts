@@ -76,7 +76,9 @@ export class App {
   public inputText = signal('');
   public scriptedLog: WritableSignal<LogEntry[]> = signal([]);
   public interactiveLog: WritableSignal<LogEntry[]> = signal([]);
-  public selectedLogIndex = signal(-1);
+  public selectedLogIndices = signal<number[]>([]);
+  private dragStartIndex: number | null = null;
+  private isDragging = false;
   private lastSelectedAutocompletionHasSuffix = signal(false);
   private lastSelectedAutocompletionIsQuery = signal(false);
   public activeToolbarButtons: WritableSignal<string[]> = signal([]);
@@ -297,7 +299,7 @@ export class App {
 
   private unsentScpiInput = '';
 
-  public sending$ = new BehaviorSubject(false);
+  public sending$: BehaviorSubject<boolean> = new BehaviorSubject(false);
   public showSlowSendIndicator$ = combineLatest([
     this.sending$.pipe(map((x) => (x ? 'start' : 'end'))),
     this.sending$.pipe(
@@ -362,8 +364,11 @@ export class App {
 
     effect(() => {
       this.log();
+      this.checkScrollPosition();
       if (this.preferences.scrollToNewLogOutput() || this.isScrolledToBottom()) {
-        this.scrollToBottom();
+        setTimeout(() => { // wait to scroll to bottom until after Angular has a chance to redraw things
+          this.scrollToBottom();
+        })
       }
     });
 
@@ -412,28 +417,72 @@ export class App {
     }
   }
 
-  public previousLogEntry() {
-    this.selectedLogIndex.update((x) => {
-      if (x === -1) {
-        return this.log().length - 1;
-      } else {
-        return x - 1;
+  public onEntryMouseDown(index: number, event: MouseEvent) {
+    this.dragStartIndex = index;
+    this.isDragging = true;
+    event.preventDefault();
+  }
+
+  public onEntryMouseEnter(index: number) {
+    if (this.isDragging && this.dragStartIndex !== null) {
+      const start = Math.min(this.dragStartIndex, index);
+      const end = Math.max(this.dragStartIndex, index);
+      const selected: number[] = [];
+      for (let i = start; i <= end; i++) {
+        selected.push(i);
       }
-    });
+      this.selectedLogIndices.set(selected);
+    }
+  }
+
+  @HostListener('window:mouseup')
+  onMouseUp() {
+    this.isDragging = false;
+    this.dragStartIndex = null;
+  }
+
+  public onEntryClick(index: number) {
+    if (!this.isDragging) {
+      this.selectedLogIndices.set([index]);
+    }
+  }
+
+  public previousLogEntry() {
+    const current = this.selectedLogIndices();
+    if (current.length === 0) {
+      this.selectedLogIndices.set([this.log().length - 1]);
+    } else {
+      const minIndex = Math.min(...current);
+      if (minIndex > 0) {
+        this.selectedLogIndices.set([minIndex - 1]);
+      }
+    }
     this.scrollToSelectedEntry();
   }
 
   public nextLogEntry() {
-    this.selectedLogIndex.update((x) => x + 1);
+    const current = this.selectedLogIndices();
+    if (current.length === 0) {
+      this.selectedLogIndices.set([0]);
+    } else {
+      const maxIndex = Math.max(...current);
+      if (maxIndex < this.log().length - 1) {
+        this.selectedLogIndices.set([maxIndex + 1]);
+      }
+    }
     this.scrollToSelectedEntry();
   }
 
   private scrollToSelectedEntry() {
-    if (this.entryElements?.get(this.selectedLogIndex())) {
-      this.entryElements?.get(this.selectedLogIndex()).nativeElement.scrollIntoView({
-        behavior: 'instant',
-        block: 'nearest',
-      });
+    const indices = this.selectedLogIndices();
+    if (indices.length > 0) {
+      const lastIndex = indices[indices.length - 1];
+      if (this.entryElements?.get(lastIndex)) {
+        this.entryElements?.get(lastIndex).nativeElement.scrollIntoView({
+          behavior: 'instant',
+          block: 'nearest',
+        });
+      }
     }
   }
 
@@ -454,7 +503,6 @@ export class App {
   }
 
   private async sendInteractiveInternal(scpi: string): Promise<void> {
-    this.sending$.next(true);
     this.history.index.set(-1);
     this.inputText.set('');
 
@@ -463,16 +511,11 @@ export class App {
     scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
     setTimeout(() => this.history.add(scpi), 100); // Delay to avoid history dropdown updating before it has a chance to close.
 
-    try {
-      await this.sendInternal(scpi);
-    } catch (err) {
-      // Do nothing, we already printed errors to the log
-    }
-
-    this.sending$.next(false);
+    await this.sendInternal(scpi);
   }
 
   private async sendInternal(scpi: string): Promise<void> {
+    this.sending$.next(true);
     scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
 
     const time = Date.now();
@@ -497,7 +540,7 @@ export class App {
       address: this.preferences.address(),
     };
 
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve) => {
       this.http.post<ScpiResponse>('/api/scpi', scpi, { params, responseType: 'json' }).subscribe({
         next: (x) => {
           const response = type === 'query' ? x.response : undefined;
@@ -520,6 +563,7 @@ export class App {
             }
             return clone;
           });
+          this.sending$.next(false);
           resolve();
         },
         error: (x) => {
@@ -532,7 +576,8 @@ export class App {
             return clone;
           });
           this.snackBar.open(x.error ?? x.message, 'Close', { duration: 5000 });
-          reject();
+          this.sending$.next(false);
+          resolve();
         },
       });
     });
@@ -609,8 +654,8 @@ export class App {
     }
   }
 
-  public systErr() {
-    this.sendInteractiveInternal(':SYST:ERR?');
+  public async systErr() {
+    await this.sendInteractiveInternal(':SYST:ERR?');
   }
 
   public onHistoryEntrySelect(entry: string) {
@@ -677,15 +722,36 @@ export class App {
     }
   }
 
-  public async sendSelectedCommand() {
-    this.sendInteractiveInternal(this.log()[this.selectedLogIndex()].scpi);
+  public async sendSelectedCommands() {
+    const indices = this.selectedLogIndices();
+    for (const index of indices) {
+      if (this.preferences.operationMode() === 'interactive') {
+        await this.sendInteractiveInternal(this.log()[index].scpi)
+      } else {
+        await this.sendInternal(this.log()[index].scpi);
+      }
+    }
   }
 
-  public async copySelectedCommand() {
-    const text = this.tryGetCommandText(this.log()[this.selectedLogIndex()]);
-    if (text) {
-      await navigator.clipboard.writeText(text);
-      this.snackBar.open(`Copied to clipboard`, 'Close', { duration: 2000 });
+  public async copySelectedCommands() {
+    const indices = this.selectedLogIndices();
+    if (indices.length === 0) {
+      this.snackBar.open('No entries selected', 'Close', { duration: 2000 });
+      return;
+    }
+
+    const result = indices
+      .map(index => this.tryGetCommandText(this.log()[index]))
+      .filter(text => text !== undefined)
+      .join('\n');
+
+    if (result) {
+      await navigator.clipboard.writeText(result);
+      this.snackBar.open(
+        `Copied ${indices.length} ${indices.length === 1 ? 'entry' : 'entries'} to clipboard`,
+        'Close',
+        { duration: 2000 }
+      );
     } else {
       this.snackBar.open('Copy failed', 'Close', { duration: 5000 });
     }
@@ -728,17 +794,19 @@ export class App {
   }
 
   public minimizeSelectedEntry() {
+    const index = this.selectedLogIndices()[0]; // Only supported on single selection
     this.log.update((x) => {
       const clone = structuredClone(x);
-      clone[this.selectedLogIndex()].minimized = true;
+      clone[index].minimized = true;
       return clone;
     });
   }
 
   public maximizeSelectedEntry() {
+    const index = this.selectedLogIndices()[0]; // Only supported on single selection
     this.log.update((x) => {
       const clone = structuredClone(x);
-      clone[this.selectedLogIndex()].minimized = false;
+      clone[index].minimized = false;
       return clone;
     });
   }
@@ -815,11 +883,9 @@ export class App {
         this.snackBar.open(`Script was aborted early. Skipped ${this.script().length - count} commands`, 'Close', { duration: 5000 });
         break;
       }
-      this.sending$.next(true);
       await this.sendInternal(entry);
       count++
       this.scriptProgressPercentage.update(x => x + percentPerCommand);
-      this.sending$.next(false);
     }
 
     this.scriptRunning.set(false);

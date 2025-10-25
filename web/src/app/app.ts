@@ -360,16 +360,15 @@ export class App {
       this.checkScrollPosition();
     });
 
-    this.renderer.listen('window', 'focus', () => {
-      this.scpiInput?.nativeElement.focus();
-    });
-  }
-
-  ngAfterViewInit() {
-    this.entryElements?.changes.subscribe(() => {
+    effect(() => {
+      this.log();
       if (this.preferences.scrollToNewLogOutput() || this.isScrolledToBottom()) {
         this.scrollToBottom();
       }
+    });
+
+    this.renderer.listen('window', 'focus', () => {
+      this.scpiInput?.nativeElement.focus();
     });
   }
 
@@ -676,6 +675,10 @@ export class App {
     } else {
       this.snackBar.open('Copy commands failed', 'Close', { duration: 5000 });
     }
+  }
+
+  public async sendSelectedCommand() {
+    this.sendInteractiveInternal(this.log()[this.selectedLogIndex()].scpi);
   }
 
   public async copySelectedCommand() {

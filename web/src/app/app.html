@@ -211,6 +211,7 @@
               </div>
               <div class="scpi"><b>{{ entry.scpi }}</b></div>
               @if (i === log().length - 1 && (showSlowSendIndicator$ | async)) {
+
                 <mat-progress-bar mode="indeterminate"></mat-progress-bar>
               }
               @if (entry.minimized) {
@@ -222,12 +223,21 @@
               }
               @if (selectedLogIndex() === i) {
                 <div class="hover-buttons">
+                  <button
+                    matMiniFab
+                    [matTooltip]="log()[selectedLogIndex()].scpi.includes('?') ? 'Resend this query' : 'Resend this command'"
+                    (click)="sendSelectedCommand()"
+                    [disabled]="sending$ | async"
+                  >
+                    <mat-icon>send</mat-icon>
+                  </button>
+
+                  <button matMiniFab matTooltip="Copy" (click)="copySelectedCommand()"><mat-icon>content_copy</mat-icon></button>
                   @if (entry.minimized) {
                     <button matMiniFab matTooltip="Expand" (click)="maximizeSelectedEntry()"><mat-icon>expand</mat-icon></button>
                   } @else {
                     <button matMiniFab matTooltip="Collapse" (click)="minimizeSelectedEntry()"><mat-icon>compress</mat-icon></button>
                   }
-                  <button matMiniFab matTooltip="Copy" (click)="copySelectedCommand()"><mat-icon>content_copy</mat-icon></button>
                 </div>
               }
             </div>

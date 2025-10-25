@@ -41,6 +41,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
+  providers: [DatePipe],
   imports: [
     FormsModule,
     DatePipe,
@@ -287,6 +288,7 @@ export class App {
     public history: HistoryService,
     private snackBar: MatSnackBar,
     localStorageService: LocalStorageService,
+    private datePipe: DatePipe
   ) {
     localStorageService.setFromStorage('activeToolbarButtons', this.activeToolbarButtons);
     effect(() => localStorageService.setItem('activeToolbarButtons', this.activeToolbarButtons()));
@@ -410,7 +412,7 @@ export class App {
         this.log.update((log) => {
           const clone = structuredClone(log); // Can't modify existing log, have to write a new one, otherwise signals don't work
           const lastElement = clone[clone.length - 1];
-          lastElement.response = response;
+          lastElement.response = response?.trim();
           lastElement.serverError = x.serverError;
           lastElement.elapsed = Date.now() - time;
           for (const error of x.errors) {
@@ -509,7 +511,16 @@ export class App {
   }
 
   private tryGetLogText(): string | undefined {
-    return this.entryElements?.reduce((a, b) => a + b.nativeElement.innerText.replace(/\n/g, ' ').replace(/ subdirectory_arrow_right/g, '') + '\n', '');
+    return this.log().map(x => this.tryGetCommandText(x)).join('\n');
+  }
+
+  private tryGetCommandText(entry?: LogEntry): string | undefined {
+    if (!entry) {
+      return undefined;
+    }
+
+    const timestamp = this.datePipe.transform(entry.time, this.preferences.showDate() ? 'MMM dd, hh:mm:ss.SS a' : 'hh:mm:ss.SS a');
+    return `[${timestamp}] ${entry.scpi} ${entry.response ? entry.response : entry.serverError}`;
   }
 
   public clearLog() {
@@ -536,6 +547,16 @@ export class App {
       this.snackBar.open(`${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`, "Close", {duration: 2000});
     } else {
       this.snackBar.open('Copy commands failed', "Close", {duration: 5000});
+    }
+  }
+
+  public async copySelectedCommand() {
+    const text = this.tryGetCommandText(this.log()[this.selectedLogIndex()]);
+    if (text) {
+      await navigator.clipboard.writeText(text);
+      this.snackBar.open(`Copied to clipboard`, "Close", {duration: 2000});
+    } else {
+      this.snackBar.open('Copy failed', "Close", {duration: 5000});
     }
   }
 
@@ -576,5 +597,13 @@ export class App {
   private getTimestamp(): string {
     const now = new Date();
     return now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  }
+
+  public minimizeSelectedEntry() {
+    this.log()[this.selectedLogIndex()].minimized = true;
+  }
+
+  public maximizeSelectedEntry() {
+    this.log()[this.selectedLogIndex()].minimized = false;
   }
 }

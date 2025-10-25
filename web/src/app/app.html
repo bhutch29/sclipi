@@ -125,27 +125,44 @@
         <div #logContainer class="log" [class.wrap]="preferences.wrapLog()" (scroll)="onLogScroll()">
           @for (entry of log(); track entry.uniqueId; let i = $index) {
             <div #entry class="entry" [class.selected]="selectedLogIndex() === i" (click)="selectedLogIndex.set(i)">
-              <div class="entry-text">
-                <div class="timestamp-container">
-                  @if (preferences.showDate()) {
-                    <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">{{ entry.time | date: 'MMM dd, hh:mm:ss.SS a' }}</span>
-                  } @else {
-                    <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">
-                      {{ entry.time | date: 'hh:mm:ss.SS a' }}
-                    </span>
-                  }
-
-                  @if (!!entry.hideTime) {
-                    <mat-icon>subdirectory_arrow_right</mat-icon>
-                  }
-                </div>
-                <b>{{ entry.scpi }}</b>
-                @if (i === log().length - 1 && (showSlowSendIndicator$ | async)) {
-                  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+              <div class="timestamp-container">
+                @if (preferences.showDate()) {
+                  <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">
+                    {{ entry.time | date: 'MMM dd, hh:mm:ss.SS a' }}
+                  </span>
+                } @else {
+                  <span class="timestamp" [matTooltip]="entry.elapsed | date: 's.SSS \'s\''" [class.hidden]="!!entry.hideTime">
+                    {{ entry.time | date: 'hh:mm:ss.SS a' }}
+                  </span>
                 }
-                {{ entry.response }}
-                {{ entry.serverError }}
+
+                @if (!!entry.hideTime) {
+                  <mat-icon>subdirectory_arrow_right</mat-icon>
+                }
               </div>
+              <b>{{ entry.scpi }}</b>
+              @if (i === log().length - 1 && (showSlowSendIndicator$ | async)) {
+                <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+              }
+              @if (entry.minimized) {
+                <pre>{{ entry.response?.split('\n')?.[0]?.slice(0, 30) }}</pre>
+                {{ entry.serverError?.split('\n')?.[0]?.slice(0, 30) }}
+                <span class="collapsed-span">... response collapsed ...</span>
+                <mat-icon class="collapsed-icon">compress</mat-icon>
+              } @else {
+                <pre>{{ entry.response }}</pre>
+                {{ entry.serverError }}
+              }
+              @if (selectedLogIndex() === i) {
+                <div class="hover-buttons">
+                  @if (entry.minimized) {
+                    <button matMiniFab matTooltip="Expand" (click)="maximizeSelectedEntry()"><mat-icon>expand</mat-icon></button>
+                  } @else {
+                    <button matMiniFab matTooltip="Collapse" (click)="minimizeSelectedEntry()"><mat-icon>compress</mat-icon></button>
+                  }
+                  <button matMiniFab matTooltip="Copy" (click)="copySelectedCommand()"><mat-icon>content_copy</mat-icon></button>
+                </div>
+              }
             </div>
           }
         </div>
@@ -167,7 +184,7 @@
         <div class="right-log-buttons">
           <button matMiniFab class="wide-mini-fab-button" matTooltip="Copy" matTooltipPosition="right" [matMenuTriggerFor]="copyMenu" [disabled]="log().length === 0">
             <mat-icon>arrow_drop_down</mat-icon>
-            <mat-icon>content_copy</mat-icon>
+            <mat-icon>copy_all</mat-icon>
           </button>
           <mat-menu #copyMenu="matMenu">
               <button (click)="copyFullLog()" mat-menu-item>
@@ -236,3 +253,4 @@
     </div>
   }
 </div>
+

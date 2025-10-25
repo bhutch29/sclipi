@@ -64,7 +64,9 @@ mat-toolbar {
   padding: 16px;
   display: flex;
   flex-direction: column;
+  width: 100%;
   min-width: 20vw;
+  max-width: 1200px;
   min-height: 0;
 }
 
@@ -86,10 +88,16 @@ mat-toolbar {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    padding-left: 2px;
 
     &:not(.wrap) {
       text-wrap: nowrap;
       overflow-x: scroll;
+    }
+
+    &.wrap pre {
+      white-space: pre-wrap;
+      word-wrap: anywhere;
     }
   }
 
@@ -108,45 +116,87 @@ mat-toolbar {
   }
 }
 
+pre {
+  margin: 0;
+}
+
 .entry {
   display: flex;
   flex-direction: row;
+  align-items: center;
   width: 100%;
   cursor: pointer;
+  position: relative;
+  gap: 8px;
 
   &.selected {
+    background-color: var(--mat-sys-on-primary);
+  }
+
+  &:hover {
     background-color: var(--mat-sys-on-secondary);
   }
 
-  .entry-text {
-    flex-shrink: 1;
-    display: flex;
-    gap: 8px;
-    cursor: text;
-    margin-left: 2px;
+  mat-progress-bar {
+    width: 300px;
+    align-self: center;
+  }
 
-    mat-progress-bar {
-      width: 300px;
-      align-self: center;
+  .timestamp-container {
+    position: relative;
+    flex-shrink: 0;
+
+    .timestamp {
+      font-weight: lighter;
+      color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
     }
 
-    .timestamp-container {
-      position: relative;
-      flex-shrink: 0;
-
-      .timestamp {
-        font-weight: lighter;
-        color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
-      }
-
-      mat-icon {
-        position: absolute;
-        margin-left: -20px;
-        display: inline;
-        font-size: 1rem;
-      }
+    mat-icon {
+      position: absolute;
+      margin-left: -20px;
+      display: inline;
+      font-size: 1rem;
+      height: 1rem;
+      width: 1rem;
     }
   }
+
+  .collapsed-span {
+    color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
+  }
+
+  .collapsed-icon {
+    color: color-mix(in srgb, var(--mat-sys-on-surface) 38%, transparent);
+    display: inline;
+    height: 1rem;
+    width: 1rem;
+    font-size: 1rem;
+    margin: 0 auto
+  }
+
+  .hover-buttons {
+    position: absolute;
+    top: 0px;
+    right: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    margin-right: 4px;
+    z-index: 1000;
+    transform: translateY(calc(-100% - 5px));
+
+    display: flex;
+    gap: 4px;
+  }
+
+  &:nth-child(-n+3) .hover-buttons {
+    transform: translateY(25px);
+  }
+}
+
+.log:hover .entry.selected .hover-buttons {
+  opacity: 1;
+  visibility: visible;
 }
 
 .right-panel {
@@ -172,12 +222,6 @@ mat-hint {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
-
-  /* strong,span { */
-  /*   padding: 1px; */
-  /*   border-radius: 2px; */
-  /*   background-color: var(--mat-sys-on-secondary); */
-  /* } */
 }
 
 mat-divider {

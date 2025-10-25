@@ -7,6 +7,7 @@ export interface LogEntry {
   hideTime?: boolean
   serverError?: string;
   uniqueId: string;
+  minimized?: boolean;
 }
 
 export interface ScpiResponse {

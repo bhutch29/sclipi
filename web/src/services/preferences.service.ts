@@ -9,6 +9,7 @@ const defaultAutoSystErr = true;
 const defaultWrapLog = true;
 const defaultShowDate = false;
 const defaultPreferShortScpi = false;
+const defaultScrollToNewLogOutput = true;
 
 @Injectable({providedIn: 'root'})
 export class PreferencesService {
@@ -19,6 +20,7 @@ export class PreferencesService {
   public uncommittedTimeoutSeconds = signal(defaultTimeout);
   public timeoutSeconds = signal(defaultTimeout);
   public preferShortScpi = signal(defaultPreferShortScpi);
+  public scrollToNewLogOutput = signal(defaultScrollToNewLogOutput);
 
   public uncommittedPort = signal(0);
   public port = signal(0);
@@ -36,6 +38,7 @@ export class PreferencesService {
     localStorageService.setFromStorage('timeoutSeconds', this.timeoutSeconds);
     localStorageService.setFromStorage('showDate', this.showDate);
     localStorageService.setFromStorage('preferShortScpi', this.preferShortScpi);
+    localStorageService.setFromStorage('scrollToNewLogOutput', this.scrollToNewLogOutput);
 
     effect(() => localStorageService.setItem('simulated', this.simulated()));
     effect(() => localStorageService.setItem('autoSystErr', this.autoSystErr()));
@@ -43,6 +46,7 @@ export class PreferencesService {
     effect(() => localStorageService.setItem('timeoutSeconds', this.timeoutSeconds()));
     effect(() => localStorageService.setItem('showDate', this.showDate()));
     effect(() => localStorageService.setItem('preferShortScpi', this.preferShortScpi()));
+    effect(() => localStorageService.setItem('scrollToNewLogOutput', this.scrollToNewLogOutput()));
 
     this.loadServerPreferences();
   }
@@ -72,6 +76,7 @@ export class PreferencesService {
     this.uncommittedTimeoutSeconds.set(defaultTimeout);
     this.showDate.set(defaultShowDate);
     this.preferShortScpi.set(defaultPreferShortScpi);
+    this.scrollToNewLogOutput.set(defaultScrollToNewLogOutput);
   }
 
 }

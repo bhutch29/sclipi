@@ -303,7 +303,7 @@ export class App {
 
   ngAfterViewInit() {
     this.entryElements?.changes.subscribe(() => {
-      if (this.isScrolledToBottom()) {
+      if (this.preferences.scrollToNewLogOutput() || this.isScrolledToBottom()) {
         this.scrollToBottom();
       }
     });

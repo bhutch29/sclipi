@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+  "log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -31,6 +32,12 @@ type scpiResponse struct {
 }
 
 func main() {
+  opts := &slog.HandlerOptions{
+    Level: slog.LevelDebug,
+  }
+  logger := slog.New(slog.NewTextHandler(os.Stdout, opts))
+  slog.SetDefault(logger);
+
 	var err error
 	config, err = loadConfig()
 	if err != nil {
@@ -82,19 +89,20 @@ func main() {
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handling /health")
+	slog.Debug("Handling request", "route", "/health")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "OK\n")
 }
 
 func handleAddress(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handling /scpiAddress")
+	slog.Debug("Handling request", "route", "/scpiAddress")
 	if r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "%v", preferences.ScpiAddress)
 	} else if r.Method == http.MethodPost {
 		bodyData, err := io.ReadAll(r.Body)
 		if err != nil {
+	    slog.Error("Failed to read body from post", "route", "/scpiAddress", "error", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -103,25 +111,27 @@ func handleAddress(w http.ResponseWriter, r *http.Request) {
 		address := string(bodyData)
 		preferences.ScpiAddress = address
 		if err := preferences.save(); err != nil {
-			log.Printf("Warning: failed to save preferences: %v", err)
+			slog.Warn("Failed to save preferences", "error", err)
 		}
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "ScpiAddress updated to %v\n", address)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+	  slog.Error("Received request with unsupported method", "route", "/scpiAddress", "method", r.Method)
 		fmt.Fprintf(w, "/scpiAddress supports GET and POST methods\n")
 	}
 }
 
 func handlePort(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handling /scpiPort")
+	slog.Debug("Handling request", "route", "/scpiPort")
 	if r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "%d", preferences.ScpiPort)
 	} else if r.Method == http.MethodPost {
 		bodyData, err := io.ReadAll(r.Body)
 		if err != nil {
+	    slog.Error("Failed to read body from post", "route", "/scpiPort", "error", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -131,32 +141,37 @@ func handlePort(w http.ResponseWriter, r *http.Request) {
 		_, err = fmt.Sscanf(string(bodyData), "%d", &port)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+      slog.Error("Invalid port number: must be an integer", "route", "/scpiPort", "error", err)
 			fmt.Fprintf(w, "Invalid port number: must be an integer\n")
 			return
 		}
 
 		if port < 1 || port > 65535 {
 			w.WriteHeader(http.StatusBadRequest)
+      slog.Error("Invalid port number: must be an between 1 and 65535", "route", "/scpiPort", "error", err, "port", port)
 			fmt.Fprintf(w, "Invalid port number: must be between 1 and 65535\n")
 			return
 		}
 
 		preferences.ScpiPort = port
 		if err := preferences.save(); err != nil {
-			log.Printf("Warning: failed to save preferences: %v", err)
+			slog.Warn("Failed to save preferences", "error", err)
 		}
 
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Port updated to %d\n", port)
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+	  slog.Error("Received request with unsupported method", "route", "/scpiPort", "method", r.Method)
 		fmt.Fprintf(w, "/scpiPort supports GET and POST methods\n")
 	}
 }
 
 func handlePreferences(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Handling request", "route", "/preferences")
 	if r.Method != http.MethodDelete {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+	  slog.Error("Received request with unsupported method", "route", "/preferences", "method", r.Method)
 		fmt.Fprintf(w, "/preferences only supports DELETE method\n")
 	}
 
@@ -180,7 +195,7 @@ func executeWithRetry(address string, port int, timeout time.Duration, operation
 	err = operation(inst)
 
 	if err != nil && errors.Is(err, utils.ErrConnectionClosed) {
-		log.Printf("Connection closed, attempting reconnect")
+		slog.Warn("Connection closed, attempting reconnect", "error", err)
 		instCache.invalidate(address, port)
 		inst, err = instCache.get(address, port, timeout, nil)
 		if err != nil {
@@ -194,8 +209,10 @@ func executeWithRetry(address string, port int, timeout time.Duration, operation
 }
 
 func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Handling request", "route", "/commands")
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+	  slog.Error("Received request with unsupported method", "route", "/commands", "method", r.Method)
 		fmt.Fprintln(w, "/commands only supports GET")
 		return
 	}
@@ -205,12 +222,14 @@ func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
 
 	if address == "" {
 		w.WriteHeader(http.StatusBadRequest)
+    slog.Error("Missing required parameter: address", "route", "/commands")
 		fmt.Fprintln(w, "Missing required parameter: address")
 		return
 	}
 
 	if portString == "" {
 		w.WriteHeader(http.StatusBadRequest)
+    slog.Error("Missing required parameter: port", "route", "/commands")
 		fmt.Fprintln(w, "Missing required parameter: port")
 		return
 	}
@@ -218,15 +237,17 @@ func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
   port, err := strconv.Atoi(portString);
   if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+    slog.Error("Required parameter port must be a number", "route", "/commands")
 		fmt.Fprintln(w, "Required parameter port must be a number")
 		return
   }
 
-	log.Printf("Handling /commands request for address=%s, port=%d", address, port)
+	slog.Debug("Request info", "route", "/commands", "address", address, "port", port)
 
 	inst, err := instCache.get(address, port, 10 * time.Second, nil)
 	if err != nil {
 	  w.WriteHeader(http.StatusInternalServerError)
+    slog.Error("Failed to get instrument", "route", "/commands", "error", err)
     fmt.Fprintf(w, "Failed to get instrument: %v", err)
     return
 	}
@@ -234,6 +255,7 @@ func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
   starTree, colonTree, err := inst.GetSupportedCommandsTree()
   if err != nil {
 	  w.WriteHeader(http.StatusInternalServerError)
+    slog.Error("Failed to get commands", "route", "/commands", "error", err)
     fmt.Fprintf(w, "Failed to get commands: %v", err)
     return
   }
@@ -246,6 +268,7 @@ func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
   responseData, err := json.Marshal(result{StarTree: starTree, ColonTree: colonTree})
   if err != nil {
 	  w.WriteHeader(http.StatusInternalServerError)
+    slog.Error("Failed to read commands", "route", "/commands", "error", err)
     fmt.Fprintf(w, "Failed to read commands: %v", err)
     return
   }
@@ -259,12 +282,12 @@ func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
 
 	_, err = gzipWriter.Write(responseData)
 	if err != nil {
-		log.Printf("Error writing gzipped response: %v", err)
+    slog.Error("Error writing gzipped response", "route", "/commands", "error", err)
 	}
 }
 
 func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
-	log.Println("Handling /scpi")
+	slog.Debug("Handling request", "route", "/scpi")
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		fmt.Fprintln(w, "/scpi only supports POST")
@@ -274,6 +297,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	bodyData, err := io.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+    slog.Error("Failed to read request body", "route", "/scpi", "error", err)
 		fmt.Fprintln(w, "Failed to read request body")
 		return
 	}
@@ -282,6 +306,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	scpi := string(bodyData)
 	if scpi == "" {
 		w.WriteHeader(http.StatusBadRequest)
+    slog.Error("Request body (SCPI command) cannot be empty", "route", "/scpi")
 		fmt.Fprintln(w, "Request body (SCPI command) cannot be empty")
 		return
 	}
@@ -291,6 +316,8 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	simulatedString := r.URL.Query().Get("simulated")
 	autoSystErrorString := r.URL.Query().Get("autoSystErr")
 	timeoutSecondsString := r.URL.Query().Get("timeoutSeconds")
+
+	slog.Debug("Request info", "route", "/scpi", "scpi", scpi, "address", address, "port", portString, "simulated", simulatedString, "autoSystErr", autoSystErrorString, "timeoutSeconds", timeoutSecondsString)
 
 	if address == "" {
 		address = preferences.ScpiAddress
@@ -302,11 +329,13 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 		port, err = strconv.Atoi(portString)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+      slog.Error("Parameter port must be a number", "route", "/scpi", "port", port)
 			fmt.Fprintln(w, "Parameter port must be a number")
 			return
 		}
 		if port < 1 || port > 65535 {
 			w.WriteHeader(http.StatusBadRequest)
+      slog.Error("Port must be between 1 and 65535", "route", "/scpi", "port", port)
 			fmt.Fprintln(w, "Port must be between 1 and 65535")
 			return
 		}
@@ -321,6 +350,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 		timeoutSeconds, err = strconv.Atoi(timeoutSecondsString)
 		if err != nil || timeoutSeconds < 0 {
 			w.WriteHeader(http.StatusBadRequest)
+      slog.Error("Parameter timeoutSeconds must be a positive number", "route", "/scpi", "timeoutSeconds", timeoutSeconds)
 			fmt.Fprintln(w, "Parameter timeoutSeconds must be a positive number")
 			return
 		}
@@ -368,7 +398,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 			return err
 		})
 		if executeError != nil {
-			log.Printf("Error sending query: %v", executeError)
+			slog.Error("Error sending query", "route", "/scpi", "error", executeError)
 			scpiResponse.ServerError = fmt.Sprintf("%v", executeError)
 		} else {
 			scpiResponse.Response = queryResponse
@@ -378,7 +408,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 			return inst.Command(scpi)
 		})
 		if executeError != nil {
-			log.Printf("Error sending command: %v", executeError)
+			slog.Error("Error sending command", "route", "/scpi", "error", executeError)
 			scpiResponse.ServerError = fmt.Sprintf("%v", executeError)
 		}
 	}
@@ -391,7 +421,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 			return err
 		})
 		if err != nil {
-			log.Printf("Error doing auto :syst:err?: %v", err)
+      slog.Error("Error doing auto :syst:err?", "route", "/scpi", "error", err)
 			scpiResponse.ServerError = fmt.Sprintf("Error querying system errors: %v", err)
 		} else {
 			scpiResponse.Errors = systErrors

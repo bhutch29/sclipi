@@ -66,6 +66,7 @@ func main() {
 	http.HandleFunc("/scpi", handleScpiRequest)
 	http.HandleFunc("/commands", handleCommandsRequest)
 	http.HandleFunc("/preferences", handlePreferences)
+	http.HandleFunc("/dumpInstCache", handleDumpInstCache)
 
 	go func() {
 		log.Printf("Serving on port %d", config.ServerPort)
@@ -431,4 +432,11 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	responseData, _ := json.Marshal(scpiResponse)
 	fmt.Fprintf(w, "%s\n", responseData)
+}
+
+func handleDumpInstCache(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Handling request", "route", "/dumpInstCache")
+  slog.Info("Dumping instCache", "cache", instCache.cache)
+  fmt.Fprintf(w, "%v\n", instCache.cache)
+	w.WriteHeader(http.StatusOK)
 }

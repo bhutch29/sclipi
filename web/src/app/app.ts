@@ -46,6 +46,7 @@ import {
   stripCardinality,
 } from './utils';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { SyntaxHighlightPipe } from './syntax-highlight/syntax-highlight.pipe';
 
 @Component({
   selector: 'app-root',
@@ -70,6 +71,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
     MatDividerModule,
     AutocompleteTrigger,
     MatProgressBarModule,
+    SyntaxHighlightPipe,
   ],
 })
 export class App {

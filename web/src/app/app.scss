@@ -139,8 +139,20 @@ pre {
     background-color: var(--mat-sys-on-secondary);
   }
 
-  .scpi {
+  ::ng-deep .scpi {
     flex-shrink: 1;
+
+    color: var(--mat-sys-secondary-fixed-dim);
+
+    .short {
+      color: var(--mat-sys-tertiary);
+      font-weight: bold;
+    }
+
+    .colon,.star,.question-mark {
+      color: var(--mat-sys-primary-fixed-dim);
+      font-weight: bold;
+    }
   }
 
   mat-progress-bar {

@@ -213,7 +213,7 @@
                   <mat-icon>subdirectory_arrow_right</mat-icon>
                 }
               </div>
-              <div class="scpi"><b>{{ entry.scpi }}</b></div>
+              <div class="scpi" [innerHtml]="entry.scpi | syntaxHighlight"></div>
               @if (i === log().length - 1 && (showSlowSendIndicator$ | async)) {
 
                 <mat-progress-bar mode="indeterminate"></mat-progress-bar>

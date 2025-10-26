@@ -506,16 +506,15 @@ export class App {
     this.history.index.set(-1);
     this.inputText.set('');
 
-    this.checkScrollPosition();
-
     scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
     setTimeout(() => this.history.add(scpi), 100); // Delay to avoid history dropdown updating before it has a chance to close.
 
+    this.sending$.next(true);
     await this.sendInternal(scpi);
+    this.sending$.next(false);
   }
 
   private async sendInternal(scpi: string): Promise<void> {
-    this.sending$.next(true);
     scpi = scpi.startsWith(':') || scpi.startsWith('*') ? scpi : `:${scpi}`;
 
     const time = Date.now();
@@ -563,7 +562,6 @@ export class App {
             }
             return clone;
           });
-          this.sending$.next(false);
           resolve();
         },
         error: (x) => {
@@ -576,7 +574,6 @@ export class App {
             return clone;
           });
           this.snackBar.open(x.error ?? x.message, 'Close', { duration: 5000 });
-          this.sending$.next(false);
           resolve();
         },
       });
@@ -694,7 +691,7 @@ export class App {
     const text = this.tryGetLogText();
     if (text) {
       await navigator.clipboard.writeText(text);
-      const count = this.entryElements?.length;
+      const count = this.log().length;
       this.snackBar.open(
         `${count} ${count === 1 ? 'line' : 'lines'} copied to clipboard`,
         'Close',
@@ -711,7 +708,7 @@ export class App {
       .join('\n');
     if (text) {
       await navigator.clipboard.writeText(text);
-      const count = this.entryElements?.length;
+      const count = this.log().length;
       this.snackBar.open(
         `${count} ${count === 1 ? 'command' : 'commands'} copied to clipboard`,
         'Close',
@@ -728,7 +725,9 @@ export class App {
       if (this.preferences.operationMode() === 'interactive') {
         await this.sendInteractiveInternal(this.log()[index].scpi)
       } else {
+        this.sending$.next(true);
         await this.sendInternal(this.log()[index].scpi);
+        this.sending$.next(false);
       }
     }
   }
@@ -874,6 +873,7 @@ export class App {
     this.scriptCancelled.set(false);
     this.scriptProgressPercentage.set(0);
     this.scriptRunning.set(true);
+    this.sending$.next(true);
 
     const percentPerCommand = 100.0 / this.script().length;
     let count = 0;
@@ -888,6 +888,7 @@ export class App {
       this.scriptProgressPercentage.update(x => x + percentPerCommand);
     }
 
+    this.sending$.next(false);
     this.scriptRunning.set(false);
   }
 }

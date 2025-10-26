@@ -24,10 +24,10 @@
       <div class="script-header">
         <div class="script-inputs">
           <div class="script-load-buttons">
-            <button matFab extended (click)="selectScriptFromFile()" [disabled]="scriptRunning()"><mat-icon>file_open</mat-icon>Load from File</button>
+            <button matFab extended (click)="selectScriptFromFile()" [disabled]="scriptRunning() || (sending$ | async)"><mat-icon>file_open</mat-icon>Load from File</button>
             <input #fileInput type="file" (change)="onFileSelected($event)" style="display: none" />
 
-            <button matFab extended (click)="selectScriptFromClipboard()" [disabled]="scriptRunning()"><mat-icon>content_paste</mat-icon>Paste from Clipboard</button>
+            <button matFab extended (click)="selectScriptFromClipboard()" [disabled]="scriptRunning() || (sending$ | async)"><mat-icon>content_paste</mat-icon>Paste from Clipboard</button>
           </div>
 
           <div class="loaded-script-info">
@@ -49,7 +49,7 @@
 
           <div class="run-script-controls">
             @if (script().length > 0) {
-              <button matFab extended (click)="runScript()" [disabled]="scriptRunning()">
+              <button matFab extended (click)="runScript()" [disabled]="scriptRunning() || (sending$ | async)">
                 @if (scriptRunning()) {
                   <mat-icon>play_disabled</mat-icon>
                 } @else {
@@ -233,7 +233,7 @@
                       ? (log()[selectedLogIndices()[0]].scpi.includes('?') ? 'Resend this query' : 'Resend this command')
                       : 'Resend selected commands'"
                     (click)="sendSelectedCommands()"
-                    [disabled]="sending$ | async"
+                    [disabled]="(sending$ | async) || scriptRunning()"
                   >
                     <mat-icon>send</mat-icon>
                   </button>

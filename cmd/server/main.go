@@ -96,17 +96,32 @@ func main() {
 	log.Println("Shutdown complete.")
 }
 
+func getClientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// X-Forwarded-For can contain multiple IPs, get the first one
+		if idx := strings.Index(xff, ","); idx != -1 {
+			return strings.TrimSpace(xff[:idx])
+		}
+		return strings.TrimSpace(xff)
+	}
+
+	if idx := strings.LastIndex(r.RemoteAddr, ":"); idx != -1 {
+		return r.RemoteAddr[:idx]
+	}
+	return r.RemoteAddr
+}
+
 func handleHealth(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Handling request", "route", "/health")
+	slog.Debug("Handling request", "route", "/health", "clientIP", getClientIP(r))
   healthResponse := healthResponse{Healthy: true, Version: version, ConnectionMode: config.ConnectionMode}
-	slog.Debug("Request info", "route", "/health", "response", healthResponse)
+	slog.Debug("Request info", "route", "/health", "clientIP", getClientIP(r), "response", healthResponse)
 	w.WriteHeader(http.StatusOK)
 	responseData, _ := json.Marshal(healthResponse)
 	fmt.Fprintf(w, "%s\n", responseData)
 }
 
 func handleAddress(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Handling request", "route", "/scpiAddress")
+	slog.Debug("Handling request", "route", "/scpiAddress", "clientIP", getClientIP(r))
 	if r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "%v", preferences.ScpiAddress)
@@ -135,7 +150,7 @@ func handleAddress(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePort(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Handling request", "route", "/scpiPort")
+	slog.Debug("Handling request", "route", "/scpiPort", "clientIP", getClientIP(r))
 	if r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "%d", preferences.ScpiPort)
@@ -179,7 +194,7 @@ func handlePort(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePreferences(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Handling request", "route", "/preferences")
+	slog.Debug("Handling request", "route", "/preferences", "clientIP", getClientIP(r))
 	if r.Method != http.MethodDelete {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	  slog.Error("Received request with unsupported method", "route", "/preferences", "method", r.Method)
@@ -220,7 +235,7 @@ func executeWithRetry(address string, port int, timeout time.Duration, operation
 }
 
 func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Handling request", "route", "/commands")
+	slog.Debug("Handling request", "route", "/commands", "clientIP", getClientIP(r))
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	  slog.Error("Received request with unsupported method", "route", "/commands", "method", r.Method)
@@ -253,7 +268,7 @@ func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
 		return
   }
 
-	slog.Debug("Request info", "route", "/commands", "address", address, "port", port)
+	slog.Debug("Request info", "route", "/commands", "clientIP", getClientIP(r), "address", address, "port", port)
 
 	inst, err := instCache.get(address, port, 10 * time.Second, nil)
 	if err != nil {
@@ -298,7 +313,7 @@ func handleCommandsRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Handling request", "route", "/scpi")
+	slog.Debug("Handling request", "route", "/scpi", "clientIP", getClientIP(r))
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	  slog.Error("Received request with unsupported method", "route", "/scpi", "method", r.Method)
@@ -330,7 +345,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	timeoutSecondsString := r.URL.Query().Get("timeoutSeconds")
 	scriptSource := r.URL.Query().Get("scriptSource")
 
-	slog.Debug("Request info", "route", "/scpi", "scpi", scpi, "address", address, "port", portString, "simulated", simulatedString, "autoSystErr", autoSystErrorString, "timeoutSeconds", timeoutSecondsString, "scriptSource", scriptSource)
+	slog.Debug("Request info", "route", "/scpi", "clientIP", getClientIP(r), "scpi", scpi, "address", address, "port", portString, "simulated", simulatedString, "autoSystErr", autoSystErrorString, "timeoutSeconds", timeoutSecondsString, "scriptSource", scriptSource)
 
 	if address == "" {
 		address = preferences.ScpiAddress
@@ -447,7 +462,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleIsConnected(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Handling request", "route", "/isConnected")
+	slog.Debug("Handling request", "route", "/isConnected", "clientIP", getClientIP(r))
 
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -518,7 +533,7 @@ func handleIsConnected(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDumpInstCache(w http.ResponseWriter, r *http.Request) {
-	slog.Debug("Handling request", "route", "/dumpInstCache")
+	slog.Debug("Handling request", "route", "/dumpInstCache", "clientIP", getClientIP(r))
   slog.Info("Dumping instCache", "cache", instCache.cache)
   fmt.Fprintf(w, "%v\n", instCache.cache)
 	w.WriteHeader(http.StatusOK)

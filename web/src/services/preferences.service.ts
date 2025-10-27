@@ -24,9 +24,9 @@ export class PreferencesService {
   public preferShortScpi = signal(defaultPreferShortScpi);
   public scrollToNewLogOutput = signal(defaultScrollToNewLogOutput);
 
-  public uncommittedPort = signal(0);
-  public port = signal(0);
-  public perClientPort = signal(0);
+  public uncommittedPort = signal(5025);
+  public port = signal(5025);
+  public perClientPort = signal(5025);
   public uncommittedAddress = signal('');
   public address = signal('');
   public perClientAddress = signal('');

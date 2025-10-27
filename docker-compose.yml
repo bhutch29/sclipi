@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: scpir-server
+    image: ghcr.io/bhutch29/scpir:master
     network_mode: "host"
     environment:
       SCPIR_SERVERPORT: 8080

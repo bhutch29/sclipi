@@ -1,3 +1,7 @@
+{
+    admin localhost:2020
+}
+
 :8281 {
 	encode gzip
 

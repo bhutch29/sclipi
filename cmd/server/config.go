@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -13,11 +14,21 @@ type Config struct {
 	DefaultScpiSocketPort    int
 	DefaultScpiSocketAddress string
 	ScriptStoragePath        string
-	HelpFilePath             string
 	PreferencesFilePath      string
+  ConnectionMode           string
 }
 
 func loadConfig() (*Config, error) {
+	pflag.Int("server-port", 8080, "HTTP server port")
+	pflag.Int("scpi-port", 5025, "Default SCPI socket port")
+	pflag.String("scpi-address", "localhost", "Default SCPI socket address")
+	pflag.String("script-path", "$HOME/.sclipi/scripts", "Script storage path")
+	pflag.String("preferences-file", "$HOME/.sclipi/preferences.json", "Preferences file path")
+	pflag.String("connection-mode", "per-client", "Connection mode (per-client or shared)")
+	pflag.Parse()
+
+	viper.BindPFlags(pflag.CommandLine)
+
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
@@ -28,15 +39,15 @@ func loadConfig() (*Config, error) {
 	viper.SetDefault("defaultScpiSocketPort", 5025)
 	viper.SetDefault("defaultScpiSocketAddress", "localhost")
 	viper.SetDefault("scriptStoragePath", "$HOME/.sclipi/scripts")
-	viper.SetDefault("helpFilePath", "TODO")
 	viper.SetDefault("preferencesFilePath", "$HOME/.sclipi/preferences.json")
+	viper.SetDefault("connectionMode", "per-client")
 
 	viper.SetEnvPrefix("SCLIPI")
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Println("No config file found, using defaults and environment variables")
+			log.Println("No config file found")
 		} else {
 			return nil, fmt.Errorf("error reading config file: %w", err)
 		}
@@ -45,12 +56,12 @@ func loadConfig() (*Config, error) {
 	}
 
 	config := &Config{
-		ServerPort:               viper.GetInt("serverPort"),
-		DefaultScpiSocketPort:    viper.GetInt("defaultScpiSocketPort"),
-		DefaultScpiSocketAddress: viper.GetString("defaultScpiSocketAddress"),
-		ScriptStoragePath:        os.ExpandEnv(viper.GetString("scriptStoragePath")),
-		HelpFilePath:             os.ExpandEnv(viper.GetString("helpFilePath")),
-		PreferencesFilePath:      os.ExpandEnv(viper.GetString("preferencesFilePath")),
+		ServerPort:               viper.GetInt("server-port"),
+		DefaultScpiSocketPort:    viper.GetInt("scpi-port"),
+		DefaultScpiSocketAddress: viper.GetString("scpi-address"),
+		ScriptStoragePath:        os.ExpandEnv(viper.GetString("script-path")),
+		PreferencesFilePath:      os.ExpandEnv(viper.GetString("preferences-file")),
+		ConnectionMode:           viper.GetString("connection-mode"),
 	}
 
 	log.Printf("Config: %+v", config)

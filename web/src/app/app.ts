@@ -30,7 +30,7 @@ import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
-import { Commands, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
+import { Commands, HealthResponse, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
@@ -310,7 +310,7 @@ export class App {
     ),
   ]).pipe(map(([sending, sendingDelayed]) => sending === 'start' && sendingDelayed === 'start'));
 
-  public health = httpResource.text(() => '/api/health');
+  public health = httpResource<HealthResponse>(() => '/api/health');
 
   public commands = httpResource<Commands>(() => {
     if (this.preferences.port() === 0 || this.preferences.address() === '') {

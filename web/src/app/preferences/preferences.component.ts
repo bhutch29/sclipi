@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { PreferencesService } from '../../services/preferences.service';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { HistoryService } from '../../services/history.service';
+import { ConnectionMode } from '../types';
 
 @Component({
   selector: 'app-preferences',
@@ -15,6 +16,8 @@ import { HistoryService } from '../../services/history.service';
   styleUrl: './preferences.component.scss'
 })
 export class PreferencesComponent {
+  public connectionMode = input<ConnectionMode | undefined>()
+
   constructor(
     public preferences: PreferencesService,
     private http: HttpClient,

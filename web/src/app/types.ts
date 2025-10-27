@@ -16,6 +16,14 @@ export interface ScpiResponse {
   serverError: string;
 }
 
+export type ConnectionMode = 'server-default' | 'per-client';
+
+export interface HealthResponse {
+  healthy: boolean;
+  version: string;
+  connectionMode: ConnectionMode;
+}
+
 export interface IDN {
   manufacturer: string;
   model: string;

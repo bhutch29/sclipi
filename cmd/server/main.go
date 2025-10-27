@@ -20,7 +20,7 @@ import (
 	"github.com/bhutch29/sclipi/internal/utils"
 )
 
-var version = "undefined"
+var version = "unknown"
 var instCache = newInstrumentCache()
 var config *Config
 var preferences *Preferences
@@ -29,6 +29,12 @@ type scpiResponse struct {
 	Response    string   `json:"response"`
 	Errors      []string `json:"errors"`
 	ServerError string   `json:"serverError"`
+}
+
+type healthResponse struct {
+  Healthy        bool   `json:"healthy"`
+  ConnectionMode string `json:"connectionMode"`
+  Version        string `json:"version"`
 }
 
 func main() {
@@ -91,8 +97,11 @@ func main() {
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling request", "route", "/health")
+  healthResponse := healthResponse{Healthy: true, Version: version, ConnectionMode: config.ConnectionMode}
+	slog.Debug("Request info", "route", "/health", "response", healthResponse)
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "OK\n")
+	responseData, _ := json.Marshal(healthResponse)
+	fmt.Fprintf(w, "%s\n", responseData)
 }
 
 func handleAddress(w http.ResponseWriter, r *http.Request) {

@@ -51,8 +51,14 @@ simulate:
 run-server:
     go run ./cmd/server
 
+run-server-variant:
+    go run ./cmd/server --connection-mode server-default
+
 watch-server:
     fd -e go | entr -r just run-server
+
+watch-server-variant:
+    fd -e go | entr -r just run-server-variant
 
 install-web:
     cd web && npm install

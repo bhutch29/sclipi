@@ -310,13 +310,9 @@
       <div class="right-panel-background">
         <div class="right-panel-content">
           @if (activeToolbarButtons().includes('idn')) {
-            @if (health.hasValue() && !health.value()) {
-              <div>Health: Not OK!</div>
-            }
-
-            <h2>Info</h2>
+            <h2>Instrument Info</h2>
             @if (idn.data(); as data) {
-              <div class="idn">
+              <div class="instrument-info">
                 <b>Manufacturer:</b> {{data.manufacturer}}<br>
                 <b>Model:</b> {{data.model}}<br>
                 <b>Serial:</b> {{data.serial}}<br>
@@ -328,6 +324,18 @@
               }
               <span>Connection failed. Check your Server Preferences</span>
             }
+
+            <h2>Application Info</h2>
+            @if (health.hasValue()) {
+              @if (health.value(); as h) {
+                <div class="application-info">
+                  <b>Version:</b> {{h.version}}<br>
+                  <b>Connection Mode:</b> {{h.connectionMode}}<br>
+                </div>
+              } @else {
+                <div>Connection to server has been lost</div>
+              }
+            }
           }
 
           @if (activeToolbarButtons().includes('idn') && activeToolbarButtons().includes('settings')) {
@@ -335,7 +343,7 @@
           }
 
           @if (activeToolbarButtons().includes('settings')) {
-            <app-preferences></app-preferences>
+            <app-preferences [connectionMode]="health.value()?.connectionMode"></app-preferences>
           }
         </div>
       </div>

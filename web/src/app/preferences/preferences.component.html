@@ -4,7 +4,9 @@
   <mat-checkbox [(ngModel)]="preferences.wrapLog">Wrap Log</mat-checkbox>
   <mat-checkbox [(ngModel)]="preferences.showDate">Show Date</mat-checkbox>
   <mat-checkbox [(ngModel)]="preferences.preferShortScpi">Prefer Short SCPI</mat-checkbox>
-  <mat-checkbox [(ngModel)]="preferences.scrollToNewLogOutput">Scroll To New Log Output</mat-checkbox>
+  <mat-checkbox [(ngModel)]="preferences.scrollToNewLogOutput"
+    >Scroll To New Log Output</mat-checkbox
+  >
   <mat-checkbox [(ngModel)]="preferences.simulated">Simulated</mat-checkbox>
   <mat-form-field appearance="outline" subscriptSizing="dynamic">
     <mat-label> Timeout (seconds) </mat-label>
@@ -25,31 +27,33 @@
     </button>
   </div>
 </div>
-<div class="server-preferences">
-  <h2>Server Preferences</h2>
-  <mat-form-field appearance="outline" subscriptSizing="dynamic">
-    <mat-label> SCPI Socket Port </mat-label>
-    <input
-      matInput
-      type="number"
-      [(ngModel)]="preferences.uncommittedPort"
-      (blur)="onPortBlur()"
-      (keydown.enter)="onPortEnter($event)"
-    />
-  </mat-form-field>
-  <mat-form-field appearance="outline" subscriptSizing="dynamic">
-    <mat-label> SCPI Socket Address </mat-label>
-    <input
-      matInput
-      type="text"
-      [(ngModel)]="preferences.uncommittedAddress"
-      (blur)="onAddressBlur()"
-      (keydown.enter)="onAddressEnter($event)"
-    />
-  </mat-form-field>
-  <div>
-    <button matButton="outlined" (click)="preferences.resetServerPreferences()">
-      Reset server preferences to default
-    </button>
+@if (connectionMode() === 'server-default') {
+  <div class="server-preferences">
+    <h2>Server Preferences</h2>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label> SCPI Socket Port </mat-label>
+      <input
+        matInput
+        type="number"
+        [(ngModel)]="preferences.uncommittedPort"
+        (blur)="onPortBlur()"
+        (keydown.enter)="onPortEnter($event)"
+      />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label> SCPI Socket Address </mat-label>
+      <input
+        matInput
+        type="text"
+        [(ngModel)]="preferences.uncommittedAddress"
+        (blur)="onAddressBlur()"
+        (keydown.enter)="onAddressEnter($event)"
+      />
+    </mat-form-field>
+    <div>
+      <button matButton="outlined" (click)="preferences.resetServerPreferences()">
+        Reset server preferences to default
+      </button>
+    </div>
   </div>
-</div>
+}

@@ -8,7 +8,7 @@ mat-toolbar {
   flex: 0 0 auto;
   gap: 16px;
 
-  .subtitle {
+  .model-serial,.address-info {
     font-size: var(--mat-sys-title-medium-size);
   }
 

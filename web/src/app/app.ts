@@ -24,13 +24,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { BehaviorSubject, combineLatest, delay, map } from 'rxjs';
+import { BehaviorSubject, combineLatest, delay, firstValueFrom, map } from 'rxjs';
 import { HistoryService } from '../services/history.service';
 import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
 import { PreferencesService } from '../services/preferences.service';
 import { PreferencesComponent } from './preferences/preferences.component';
-import { Commands, HealthResponse, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
+import { Commands, ConnectionMode, HealthResponse, LogEntry, NodeInfo, ScpiNode, ScpiResponse } from './types';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { AutocompleteTrigger } from './autocomplete/autocomplete-trigger';
@@ -47,6 +47,7 @@ import {
 } from './utils';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { SyntaxHighlightPipe } from './syntax-highlight/syntax-highlight.pipe';
+import { ConnectionService } from '../services/connection.service';
 
 @Component({
   selector: 'app-root',
@@ -87,6 +88,7 @@ export class App {
   public isScrolledToBottom = signal(true);
   public isScrolledToTop = signal(true);
   public forceShowLog = signal(false);
+  public connectionMode: WritableSignal<ConnectionMode> = signal('per-client');
 
   public script: WritableSignal<string[]> = signal([]);
   public scriptSource: WritableSignal<'file' | 'clipboard'> = signal('file');
@@ -313,7 +315,7 @@ export class App {
   public health = httpResource<HealthResponse>(() => '/api/health');
 
   public commands = httpResource<Commands>(() => {
-    if (this.preferences.port() === 0 || this.preferences.address() === '') {
+    if (!this.connection.perClientConnected() || this.preferences.port() === 0 || this.preferences.address() === '') {
       return undefined;
     }
     return {
@@ -336,6 +338,7 @@ export class App {
     private renderer: Renderer2,
     public preferences: PreferencesService,
     public idn: IdnService,
+    public connection: ConnectionService,
     public history: HistoryService,
     private snackBar: MatSnackBar,
     localStorageService: LocalStorageService,
@@ -377,6 +380,14 @@ export class App {
     this.renderer.listen('window', 'focus', () => {
       this.scpiInput?.nativeElement.focus();
     });
+
+    this.getConnectionMode();
+  }
+
+  private async getConnectionMode() {
+    const health = await firstValueFrom(this.http.get<HealthResponse>('/api/health'));
+    this.connectionMode.set(health.connectionMode);
+    this.preferences.loadServerPreferences(health.connectionMode === 'server-default');
   }
 
   public get log(): WritableSignal<LogEntry[]> {

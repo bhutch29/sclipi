@@ -265,6 +265,11 @@ mat-toolbar {
   opacity: 0;
 }
 
+.per-client-config {
+  display: flex;
+  gap: 8px;
+}
+
 .script-header {
   display: flex;
   flex-direction: column;

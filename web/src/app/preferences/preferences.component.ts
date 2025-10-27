@@ -25,67 +25,6 @@ export class PreferencesComponent {
   ) {
   }
 
-  public onPortBlur() {
-    this.setPort(this.preferences.uncommittedPort());
-  }
-
-  public onPortEnter(event: Event) {
-    event.preventDefault();
-    this.setPort(this.preferences.uncommittedPort());
-  }
-
-  private setPort(port: number | null) {
-    if (port === null) {
-      this.preferences.uncommittedPort.set(this.preferences.port());
-      return;
-    }
-
-    if (!Number.isInteger(port)) {
-      console.error('port must be an integer', port);
-      this.preferences.uncommittedPort.set(this.preferences.port());
-      return;
-    }
-
-    if (port < 1 || port > 65535) {
-      console.error('port must be between 1 and 65535', port);
-      this.preferences.uncommittedPort.set(this.preferences.port());
-      return;
-    }
-
-    if (this.preferences.port() != port) {
-      this.preferences.port.set(port);
-      if (port !== 0) {
-        this.http.post('/api/scpiPort', port, { responseType: 'text' }).subscribe({
-          next: (x) => console.log(x),
-          error: (x) => console.error('Error posting port value', this.preferences.port(), x),
-        });
-      }
-    }
-  }
-
-  public onAddressBlur() {
-    this.setAddress(this.preferences.uncommittedAddress());
-  }
-
-  public onAddressEnter(event: Event) {
-    event.preventDefault();
-    this.setAddress(this.preferences.uncommittedAddress());
-  }
-
-  private setAddress(address: string) {
-    if (this.preferences.address() != address) {
-      this.preferences.address.set(address);
-      if (address !== '') {
-        this.http
-          .post('/api/scpiAddress', address, { responseType: 'text' })
-          .subscribe({
-            next: (x) => console.log(x),
-            error: (x) => console.error('Error posting address value', this.preferences.address(), x),
-          });
-      }
-    }
-  }
-
   public onTimeoutBlur() {
     this.setTimeout(this.preferences.uncommittedTimeoutSeconds());
   }

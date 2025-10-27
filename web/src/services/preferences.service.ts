@@ -26,11 +26,13 @@ export class PreferencesService {
 
   public uncommittedPort = signal(0);
   public port = signal(0);
+  public perClientPort = signal(0);
   public uncommittedAddress = signal('');
   public address = signal('');
+  public perClientAddress = signal('');
 
   constructor(
-    localStorageService: LocalStorageService,
+    private localStorageService: LocalStorageService,
     private http: HttpClient
   ) {
     localStorageService.setFromStorage('simulated', this.simulated);
@@ -42,7 +44,8 @@ export class PreferencesService {
     localStorageService.setFromStorage('preferShortScpi', this.preferShortScpi);
     localStorageService.setFromStorage('scrollToNewLogOutput', this.scrollToNewLogOutput);
     localStorageService.setFromStorage('operationMode', this.operationMode);
-
+    localStorageService.setFromStorage('perClientPort', this.port);
+    localStorageService.setFromStorage('perClientAddress', this.address);
 
     effect(() => localStorageService.setItem('simulated', this.simulated()));
     effect(() => localStorageService.setItem('autoSystErr', this.autoSystErr()));
@@ -52,20 +55,29 @@ export class PreferencesService {
     effect(() => localStorageService.setItem('preferShortScpi', this.preferShortScpi()));
     effect(() => localStorageService.setItem('scrollToNewLogOutput', this.scrollToNewLogOutput()));
     effect(() => localStorageService.setItem('operationMode', this.operationMode()));
-
-    this.loadServerPreferences();
+    effect(() => localStorageService.setItem('perClientPort', this.port()));
+    effect(() => localStorageService.setItem('perClientAddress', this.address()));
   }
 
-  private async loadServerPreferences() {
-    const port = await firstValueFrom(this.http.get('/api/scpiPort', { responseType: 'text' }));
-    this.uncommittedPort.set(+port);
-    this.port.set(+port);
+  public async loadServerPreferences(loadFromServer = false) {
+    if (loadFromServer) {
+      const port = await firstValueFrom(this.http.get('/api/scpiPort', { responseType: 'text' }));
+      this.uncommittedPort.set(+port);
+      this.port.set(+port);
 
-    const address = await firstValueFrom(
-      this.http.get('/api/scpiAddress', { responseType: 'text' }),
-    );
-    this.uncommittedAddress.set(address);
-    this.address.set(address);
+      const address = await firstValueFrom(
+        this.http.get('/api/scpiAddress', { responseType: 'text' }),
+      );
+      this.uncommittedAddress.set(address);
+      this.address.set(address);
+    } else {
+      this.localStorageService.setFromStorage('perClientAddress', this.address)
+      this.localStorageService.setFromStorage('perClientAddress', this.uncommittedAddress)
+      this.localStorageService.setFromStorage('perClientAddress', this.perClientAddress)
+      this.localStorageService.setFromStorage('perClientPort', this.port)
+      this.localStorageService.setFromStorage('perClientPort', this.uncommittedPort)
+      this.localStorageService.setFromStorage('perClientPort', this.perClientPort)
+    }
   }
 
   public async resetServerPreferences() {
@@ -85,4 +97,64 @@ export class PreferencesService {
     // Operation mode is skipped intentionally
   }
 
+  public onPortBlur(updateServer = false) {
+    this.setPort(this.uncommittedPort(), updateServer);
+  }
+
+  public onPortEnter(event: Event, updateServer = false) {
+    event.preventDefault();
+    this.setPort(this.uncommittedPort(), updateServer);
+  }
+
+  private setPort(port: number | null, updateServer: boolean) {
+    if (port === null) {
+      this.uncommittedPort.set(this.port());
+      return;
+    }
+
+    if (!Number.isInteger(port)) {
+      console.error('port must be an integer', port);
+      this.uncommittedPort.set(this.port());
+      return;
+    }
+
+    if (port < 1 || port > 65535) {
+      console.error('port must be between 1 and 65535', port);
+      this.uncommittedPort.set(this.port());
+      return;
+    }
+
+    if (this.port() !== port) {
+      this.port.set(port);
+      if (updateServer && port !== 0) {
+        this.http.post('/api/scpiPort', port, { responseType: 'text' }).subscribe({
+          next: (x) => console.log(x),
+          error: (x) => console.error('Error posting port value', this.port(), x),
+        });
+      }
+    }
+  }
+
+  public onAddressBlur(updateServer = false) {
+    this.setAddress(this.uncommittedAddress(), updateServer);
+  }
+
+  public onAddressEnter(event: Event, updateServer = false) {
+    event.preventDefault();
+    this.setAddress(this.uncommittedAddress(), updateServer);
+  }
+
+  private setAddress(address: string, updateServer: boolean) {
+    if (this.address() != address) {
+      this.address.set(address);
+      if (updateServer && address !== '') {
+        this.http
+          .post('/api/scpiAddress', address, { responseType: 'text' })
+          .subscribe({
+            next: (x) => console.log(x),
+            error: (x) => console.error('Error posting address value', this.address(), x),
+          });
+      }
+    }
+  }
 }

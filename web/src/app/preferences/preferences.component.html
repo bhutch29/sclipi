@@ -36,8 +36,8 @@
         matInput
         type="number"
         [(ngModel)]="preferences.uncommittedPort"
-        (blur)="onPortBlur()"
-        (keydown.enter)="onPortEnter($event)"
+        (blur)="preferences.onPortBlur(true)"
+        (keydown.enter)="preferences.onPortEnter($event, true)"
       />
     </mat-form-field>
     <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -46,8 +46,8 @@
         matInput
         type="text"
         [(ngModel)]="preferences.uncommittedAddress"
-        (blur)="onAddressBlur()"
-        (keydown.enter)="onAddressEnter($event)"
+        (blur)="preferences.onAddressBlur(true)"
+        (keydown.enter)="preferences.onAddressEnter($event, true)"
       />
     </mat-form-field>
     <div>

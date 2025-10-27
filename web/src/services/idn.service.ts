@@ -2,11 +2,12 @@ import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { computed, Injectable, Signal } from '@angular/core';
 import { IDN, ScpiResponse } from '../app/types';
 import { PreferencesService } from './preferences.service';
+import { ConnectionService } from './connection.service';
 
 @Injectable({providedIn: 'root'})
 export class IdnService {
   public idn = httpResource<ScpiResponse>(() => {
-    if (this.preferences.port() === 0 || this.preferences.address() === '') {
+    if (!this.connection.perClientConnected() || this.preferences.port() === 0 || this.preferences.address() === '') {
       return undefined;
     }
     return {
@@ -52,7 +53,8 @@ export class IdnService {
   public error = this.idn.error as Signal<HttpErrorResponse | undefined>;
 
   constructor(
-    private preferences: PreferencesService
+    private preferences: PreferencesService,
+    private connection: ConnectionService,
   ){
     setInterval(() => {
       if (!this.idn.hasValue() || this.idn.value().response === "") {

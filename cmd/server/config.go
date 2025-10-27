@@ -24,7 +24,7 @@ func loadConfig() (*Config, error) {
 	pflag.String("scpi-address", "localhost", "Default SCPI socket address")
 	pflag.String("script-path", "$HOME/.sclipi/scripts", "Script storage path")
 	pflag.String("preferences-file", "$HOME/.sclipi/preferences.json", "Preferences file path")
-	pflag.String("connection-mode", "per-client", "Connection mode (per-client or shared)")
+	pflag.String("connection-mode", "per-client", "Connection mode (per-client or server-default)")
 	pflag.Parse()
 
 	viper.BindPFlags(pflag.CommandLine)
@@ -55,13 +55,19 @@ func loadConfig() (*Config, error) {
 		log.Printf("Using config file: %s", viper.ConfigFileUsed())
 	}
 
+	connectionMode := viper.GetString("connection-mode")
+	defaultAddress := viper.GetString("scpi-address")
+	if connectionMode == "per-client" && !pflag.CommandLine.Changed("scpi-address") {
+		defaultAddress = ""
+	}
+
 	config := &Config{
 		ServerPort:               viper.GetInt("server-port"),
 		DefaultScpiSocketPort:    viper.GetInt("scpi-port"),
-		DefaultScpiSocketAddress: viper.GetString("scpi-address"),
+		DefaultScpiSocketAddress: defaultAddress,
 		ScriptStoragePath:        os.ExpandEnv(viper.GetString("script-path")),
 		PreferencesFilePath:      os.ExpandEnv(viper.GetString("preferences-file")),
-		ConnectionMode:           viper.GetString("connection-mode"),
+		ConnectionMode:           connectionMode,
 	}
 
 	log.Printf("Config: %+v", config)

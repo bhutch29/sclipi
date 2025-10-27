@@ -72,6 +72,7 @@ func main() {
 	http.HandleFunc("/scpi", handleScpiRequest)
 	http.HandleFunc("/commands", handleCommandsRequest)
 	http.HandleFunc("/preferences", handlePreferences)
+	http.HandleFunc("/isConnected", handleIsConnected)
 	http.HandleFunc("/dumpInstCache", handleDumpInstCache)
 
 	go func() {
@@ -300,6 +301,7 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling request", "route", "/scpi")
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
+	  slog.Error("Received request with unsupported method", "route", "/scpi", "method", r.Method)
 		fmt.Fprintln(w, "/scpi only supports POST")
 		return
 	}
@@ -441,6 +443,77 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	responseData, _ := json.Marshal(scpiResponse)
 	fmt.Fprintf(w, "%s\n", responseData)
+}
+
+func handleIsConnected(w http.ResponseWriter, r *http.Request) {
+	slog.Debug("Handling request", "route", "/isConnected")
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	  slog.Error("Received request with unsupported method", "route", "/isConnected", "method", r.Method)
+		fmt.Fprintln(w, "/isConnected only supports GET")
+		return
+	}
+
+	address := r.URL.Query().Get("address")
+	portString := r.URL.Query().Get("port")
+	timeoutSecondsString := r.URL.Query().Get("timeoutSeconds")
+	simulatedString := r.URL.Query().Get("simulated")
+
+	if address == "" {
+		w.WriteHeader(http.StatusBadRequest)
+    slog.Error("Missing required parameter: address", "route", "/isConnected")
+		fmt.Fprintln(w, "Missing required parameter: address")
+		return
+	}
+
+	if portString == "" {
+		w.WriteHeader(http.StatusBadRequest)
+    slog.Error("Missing required parameter: port", "route", "/isConnected")
+		fmt.Fprintln(w, "Missing required parameter: port")
+		return
+	}
+
+  port, err := strconv.Atoi(portString);
+  if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+    slog.Error("Required parameter port must be a number", "route", "/isConnected")
+		fmt.Fprintln(w, "Required parameter port must be a number")
+		return
+  }
+
+	timeoutSeconds := 10
+	if timeoutSecondsString != "" {
+		var err error
+		timeoutSeconds, err = strconv.Atoi(timeoutSecondsString)
+		if err != nil || timeoutSeconds < 0 {
+			w.WriteHeader(http.StatusBadRequest)
+      slog.Error("Parameter timeoutSeconds must be a positive number", "route", "/isConnected", "timeoutSeconds", timeoutSeconds)
+			fmt.Fprintln(w, "Parameter timeoutSeconds must be a positive number")
+			return
+		}
+	}
+
+  simulated := simulatedString == "true"
+	if simulated {
+		address = "simulated"
+	}
+
+	timeout := time.Duration(timeoutSeconds) * time.Second
+
+  executeError := executeWithRetry(address, port, timeout, func(inst utils.Instrument) error {
+    _, err := inst.Query("*IDN?")
+		return err
+	})
+
+	w.WriteHeader(http.StatusOK)
+
+	if executeError != nil {
+		slog.Error("Error sending test *IDN?", "route", "/isConnected", "error", executeError)
+	  fmt.Fprintln(w, "false")
+	} else {
+	  fmt.Fprintln(w, "true")
+	}
 }
 
 func handleDumpInstCache(w http.ResponseWriter, r *http.Request) {

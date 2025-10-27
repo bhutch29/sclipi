@@ -2,7 +2,10 @@
   <span>Sclipi Web</span>
   <mat-divider vertical></mat-divider>
   @if (idn.data(); as data) {
-    <span class="subtitle" [matTooltip]="idn.formatted()" matTooltipClass="tooltip" matTooltipPosition="right">{{data.model}} - {{data.serial}}</span>
+    <span class="subtitle">{{data.model}} - {{data.serial}}</span>
+    @if (connection.perClientConnected() && connectionMode() === 'per-client') {
+      <button matMiniFab matTooltip="Disconnect" (click)="connection.perClientDisconnect()"><mat-icon>link_off</mat-icon></button>
+    }
   }
   <span class="toolbar-spacer"></span>
 
@@ -11,7 +14,7 @@
     <mat-button-toggle value="scripted" matTooltip="Load/run predefined lists of commands" [disabled]="sending$ | async">Scripts</mat-button-toggle>
   </mat-button-toggle-group>
 
-  <span class="toolbar-spacer"></span>
+  <mat-divider vertical></mat-divider>
 
   <mat-button-toggle-group name="toolbar-buttons" [(ngModel)]="activeToolbarButtons" multiple hideMultipleSelectionIndicator>
     <mat-button-toggle value="idn" matTooltip="Info"><mat-icon>info</mat-icon></mat-button-toggle>
@@ -20,7 +23,34 @@
 </mat-toolbar>
 <div class="content">
   <div class="main">
-    @if (preferences.operationMode() === 'scripted') {
+    @if (!connection.perClientConnected() && connectionMode() === 'per-client') {
+      <div class="per-client-config">
+        <mat-form-field appearance="outline">
+          <mat-label>Instrument Address</mat-label>
+          <input
+            matInput
+            type="text"
+            [(ngModel)]="preferences.uncommittedAddress"
+            (blur)="preferences.onAddressBlur()"
+            (keydown.enter)="preferences.onAddressEnter($event)"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Instrument Port</mat-label>
+          <input
+            matInput
+            type="number"
+            [(ngModel)]="preferences.uncommittedPort"
+            (blur)="preferences.onPortBlur()"
+            (keydown.enter)="preferences.onPortEnter($event)"
+          />
+        </mat-form-field>
+        <button matFab extended (click)="connection.perClientConnect()"><mat-icon>link</mat-icon>Connect</button>
+        @if (connection.desiredPerClientConnected() && ! connection.perClientConnected()) {
+          Connection failed
+        }
+      </div>
+    } @else if (preferences.operationMode() === 'scripted') {
       <div class="script-header">
         <div class="script-inputs">
           <div class="script-load-buttons">
@@ -322,7 +352,7 @@
               @if (idn.error()) {
                 <span>IDN Error: {{ idn.error()?.error }}</span>
               }
-              <span>Connection failed. Check your Server Preferences</span>
+              <span>Instrument not connected</span>
             }
 
             <h2>Application Info</h2>

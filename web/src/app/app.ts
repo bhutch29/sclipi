@@ -782,7 +782,7 @@ export class App {
     const link = document.createElement('a');
 
     link.href = url;
-    link.download = `sclipi_web_log_${getTimestamp()}.txt`;
+    link.download = `scpir_web_log_${getTimestamp()}.txt`;
     link.click();
 
     window.URL.revokeObjectURL(url);
@@ -801,7 +801,7 @@ export class App {
     const link = document.createElement('a');
 
     link.href = url;
-    link.download = `sclipi_web_commands_${getTimestamp()}.txt`;
+    link.download = `scpir_web_commands_${getTimestamp()}.txt`;
     link.click();
 
     window.URL.revokeObjectURL(url);

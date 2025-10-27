@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-echo "Starting sclipi-server on port 8080..."
-./sclipi-server &
+echo "Starting scpir-server on port 8080..."
+./scpir-server &
 SERVER_PID=$!
 
 echo "Waiting for server to be ready..."

@@ -20,7 +20,7 @@ COPY internal/ ./internal/
 
 RUN apk add --no-cache git && \
     VERSION=$(git describe --always --long --dirty 2>/dev/null || echo "docker") && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o sclipi-server ./cmd/server
+    CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o scpir-server ./cmd/server
 
 FROM caddy:2-alpine
 
@@ -28,9 +28,9 @@ WORKDIR /app
 
 RUN apk add --no-cache tini
 
-COPY --from=go-builder /build/sclipi-server .
+COPY --from=go-builder /build/scpir-server .
 
-COPY --from=web-builder /build/web/dist/sclipi-web/browser /srv
+COPY --from=web-builder /build/web/dist/scpir-web/browser /srv
 
 COPY docker/Caddyfile /etc/caddy/Caddyfile
 

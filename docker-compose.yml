@@ -1,19 +1,19 @@
 services:
-  sclipi-server:
+  scpir-server:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    image: sclipi-server
+    image: scpir-server
     network_mode: "host"
     environment:
-      SCLIPI_SERVERPORT: 8080
-      SCLIPI_DEFAULTSCPISOCKETPORT: 5025
-      SCLIPI_DEFAULTSCPISOCKETADDRESS: "localhost"
-      SCLIPI_CONNECTIONMODE: "per-client"
-      SCLIPI_PREFERENCESFILEPATH: "/app/data/preferences.json"
+      SCPIR_SERVERPORT: 8080
+      SCPIR_DEFAULTSCPISOCKETPORT: 5025
+      SCPIR_DEFAULTSCPISOCKETADDRESS: "localhost"
+      SCPIR_CONNECTIONMODE: "per-client"
+      SCPIR_PREFERENCESFILEPATH: "/app/data/preferences.json"
     volumes:
-      - sclipi-data:/app/data
+      - scpir-data:/app/data
     restart: unless-stopped
 
 volumes:
-  sclipi-data:
+  scpir-data:

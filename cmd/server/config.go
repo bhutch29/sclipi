@@ -21,7 +21,7 @@ func loadConfig() (*Config, error) {
 	pflag.Int("server-port", 8080, "HTTP server port")
 	pflag.Int("scpi-port", 5025, "Default SCPI socket port")
 	pflag.String("scpi-address", "localhost", "Default SCPI socket address")
-	pflag.String("preferences-file", "$HOME/.sclipi/preferences.json", "Preferences file path")
+	pflag.String("preferences-file", "$HOME/.scpir/preferences.json", "Preferences file path")
 	pflag.String("connection-mode", "per-client", "Connection mode (per-client or server-default)")
 	pflag.Parse()
 
@@ -30,16 +30,16 @@ func loadConfig() (*Config, error) {
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(".")
-	viper.AddConfigPath("$HOME/.sclipi")
-	viper.AddConfigPath("/etc/sclipi")
+	viper.AddConfigPath("$HOME/.scpir")
+	viper.AddConfigPath("/etc/scpir")
 
 	viper.SetDefault("serverPort", 8080)
 	viper.SetDefault("defaultScpiSocketPort", 5025)
 	viper.SetDefault("defaultScpiSocketAddress", "localhost")
-	viper.SetDefault("preferencesFilePath", "$HOME/.sclipi/preferences.json")
+	viper.SetDefault("preferencesFilePath", "$HOME/.scpir/preferences.json")
 	viper.SetDefault("connectionMode", "per-client")
 
-	viper.SetEnvPrefix("SCLIPI")
+	viper.SetEnvPrefix("SCPIR")
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {

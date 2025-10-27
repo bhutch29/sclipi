@@ -1,30 +1,34 @@
 <mat-toolbar>
   <span>Sclipi Web</span>
-  <mat-divider vertical></mat-divider>
-  @if (idn.data(); as data) {
-    <span class="model-serial">{{data.model}} - {{data.serial}}</span>
+  @if (health.hasValue()) {
+    <mat-divider vertical></mat-divider>
+    @if (idn.data(); as data) {
+      <span class="model-serial">{{data.model}} - {{data.serial}}</span>
+    }
+    @if (connection.perClientConnected() && connectionMode() === 'per-client') {
+      <span class="address-info">{{preferences.perClientAddress()}}:{{preferences.perClientPort()}}</span>
+      <button matMiniFab matTooltip="Disconnect" (click)="connection.perClientDisconnect()"><mat-icon>link_off</mat-icon></button>
+    }
+    <span class="toolbar-spacer"></span>
+
+    <mat-button-toggle-group name="operation-mode-buttons" [(ngModel)]="preferences.operationMode">
+      <mat-button-toggle value="interactive" matTooltip="Manually input commands" [disabled]="sending$ | async">Interactive</mat-button-toggle>
+      <mat-button-toggle value="scripted" matTooltip="Load/run predefined lists of commands" [disabled]="sending$ | async">Scripts</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <mat-divider vertical></mat-divider>
+
+    <mat-button-toggle-group name="toolbar-buttons" [(ngModel)]="activeToolbarButtons" multiple hideMultipleSelectionIndicator>
+      <mat-button-toggle value="idn" matTooltip="Info"><mat-icon>info</mat-icon></mat-button-toggle>
+      <mat-button-toggle value="settings" matTooltip="Preferences"><mat-icon>settings</mat-icon></mat-button-toggle>
+    </mat-button-toggle-group>
   }
-  @if (connection.perClientConnected() && connectionMode() === 'per-client') {
-    <span class="address-info">{{preferences.perClientAddress()}}:{{preferences.perClientPort()}}</span>
-    <button matMiniFab matTooltip="Disconnect" (click)="connection.perClientDisconnect()"><mat-icon>link_off</mat-icon></button>
-  }
-  <span class="toolbar-spacer"></span>
-
-  <mat-button-toggle-group name="operation-mode-buttons" [(ngModel)]="preferences.operationMode">
-    <mat-button-toggle value="interactive" matTooltip="Manually input commands" [disabled]="sending$ | async">Interactive</mat-button-toggle>
-    <mat-button-toggle value="scripted" matTooltip="Load/run predefined lists of commands" [disabled]="sending$ | async">Scripts</mat-button-toggle>
-  </mat-button-toggle-group>
-
-  <mat-divider vertical></mat-divider>
-
-  <mat-button-toggle-group name="toolbar-buttons" [(ngModel)]="activeToolbarButtons" multiple hideMultipleSelectionIndicator>
-    <mat-button-toggle value="idn" matTooltip="Info"><mat-icon>info</mat-icon></mat-button-toggle>
-    <mat-button-toggle value="settings" matTooltip="Preferences"><mat-icon>settings</mat-icon></mat-button-toggle>
-  </mat-button-toggle-group>
 </mat-toolbar>
 <div class="content">
   <div class="main">
-    @if (!connection.perClientConnected() && connectionMode() === 'per-client') {
+    @if (!health.hasValue()) {
+      <div class="unhealthy">Connection to server failed.</div>
+    } @else if (!connection.perClientConnected() && connectionMode() === 'per-client') {
       <div class="per-client-config">
         <mat-form-field appearance="outline">
           <mat-label>Instrument Address</mat-label>
@@ -223,7 +227,7 @@
       </div>
     }
 
-    @if (log().length > 0 || forceShowLog()) {
+    @if (health.hasValue() && log().length > 0 || forceShowLog()) {
       <div class="log-section">
         <div #logContainer class="log" [class.wrap]="preferences.wrapLog()" (scroll)="onLogScroll()">
           @for (entry of log(); track entry.uniqueId; let i = $index) {
@@ -340,7 +344,7 @@
     }
   </div>
 
-  @if (activeToolbarButtons().length > 0) {
+  @if (health.hasValue() && activeToolbarButtons().length > 0) {
     <div class="right-panel">
       <div class="right-panel-background">
         <div class="right-panel-content">
@@ -364,15 +368,11 @@
             }
 
             <h2>Application Info</h2>
-            @if (health.hasValue()) {
-              @if (health.value(); as h) {
-                <div class="application-info">
-                  <b>Version:</b> {{h.version}}<br>
-                  <b>Connection Mode:</b> {{h.connectionMode}}<br>
-                </div>
-              } @else {
-                <div>Connection to server has been lost</div>
-              }
+            @if (health.hasValue() && health.value(); as h) {
+              <div class="application-info">
+                <b>Version:</b> {{h.version}}<br>
+                <b>Connection Mode:</b> {{h.connectionMode}}<br>
+              </div>
             }
           }
 
@@ -381,7 +381,7 @@
           }
 
           @if (activeToolbarButtons().includes('settings')) {
-            <app-preferences [connectionMode]="health.value()?.connectionMode"></app-preferences>
+            <app-preferences [connectionMode]="health.value().connectionMode"></app-preferences>
           }
         </div>
       </div>

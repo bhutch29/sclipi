@@ -13,7 +13,6 @@ type Config struct {
 	ServerPort               int
 	DefaultScpiSocketPort    int
 	DefaultScpiSocketAddress string
-	ScriptStoragePath        string
 	PreferencesFilePath      string
   ConnectionMode           string
 }
@@ -22,7 +21,6 @@ func loadConfig() (*Config, error) {
 	pflag.Int("server-port", 8080, "HTTP server port")
 	pflag.Int("scpi-port", 5025, "Default SCPI socket port")
 	pflag.String("scpi-address", "localhost", "Default SCPI socket address")
-	pflag.String("script-path", "$HOME/.sclipi/scripts", "Script storage path")
 	pflag.String("preferences-file", "$HOME/.sclipi/preferences.json", "Preferences file path")
 	pflag.String("connection-mode", "per-client", "Connection mode (per-client or server-default)")
 	pflag.Parse()
@@ -38,7 +36,6 @@ func loadConfig() (*Config, error) {
 	viper.SetDefault("serverPort", 8080)
 	viper.SetDefault("defaultScpiSocketPort", 5025)
 	viper.SetDefault("defaultScpiSocketAddress", "localhost")
-	viper.SetDefault("scriptStoragePath", "$HOME/.sclipi/scripts")
 	viper.SetDefault("preferencesFilePath", "$HOME/.sclipi/preferences.json")
 	viper.SetDefault("connectionMode", "per-client")
 
@@ -65,7 +62,6 @@ func loadConfig() (*Config, error) {
 		ServerPort:               viper.GetInt("server-port"),
 		DefaultScpiSocketPort:    viper.GetInt("scpi-port"),
 		DefaultScpiSocketAddress: defaultAddress,
-		ScriptStoragePath:        os.ExpandEnv(viper.GetString("script-path")),
 		PreferencesFilePath:      os.ExpandEnv(viper.GetString("preferences-file")),
 		ConnectionMode:           connectionMode,
 	}

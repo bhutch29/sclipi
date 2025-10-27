@@ -7,13 +7,10 @@ services:
     ports:
       - "8235:80"
     environment:
-      # Defaults
       SCLIPI_SERVERPORT: 8080
       SCLIPI_DEFAULTSCPISOCKETPORT: 5025
       SCLIPI_DEFAULTSCPISOCKETADDRESS: "localhost"
-      # Point sclipi to the volume added below
-      SCLIPI_SCRIPTSTORAGEPATH: "/app/data/scripts"
-      SCLIPI_HELPFILEPATH: "/app/data/help"
+      SCLIPI_CONNECTIONMODE: "per-client"
       SCLIPI_PREFERENCESFILEPATH: "/app/data/preferences.json"
     volumes:
       - sclipi-data:/app/data

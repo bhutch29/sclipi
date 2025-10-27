@@ -1,5 +1,8 @@
 <mat-toolbar>
-  <span matTooltip="Pronounced 'skipper'!">:SCPIr</span>
+  <div class="title" matTooltip="Pronounced 'skipper'!">
+    <img src="scpir-icon.png"/>
+    <span>:SCPIr</span>
+  </div>
   @if (health.hasValue()) {
     <mat-divider vertical></mat-divider>
     @if (idn.data(); as data) {

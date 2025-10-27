@@ -250,6 +250,16 @@ mat-hint {
 mat-toolbar {
   background-color: var(--mat-sys-on-secondary-fixed);
 
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    img {
+      height: 35px;
+    }
+  }
+
   mat-divider {
     height: 70%;
   }

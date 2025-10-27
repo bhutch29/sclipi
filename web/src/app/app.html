@@ -70,7 +70,7 @@
                 <mat-icon>numbers</mat-icon>
                 <span>{{script().length}} {{script().length === 1 ? 'command' : 'commands'}}</span>
               </div>
-              <div matTooltip="Origin of loaded script">
+              <div>
                 <mat-icon>{{scriptSource() === 'file' ? 'article' : 'content_paste'}}</mat-icon>
                 <span>{{scriptSource() === 'file' ? scriptFileName() : 'clipboard'}}</span>
               </div>
@@ -293,6 +293,7 @@
           <button matMiniFab matTooltip="Scroll to bottom" matTooltipPosition="right" (click)="scrollToBottom()" [disabled]="isScrolledToBottom()">
             <mat-icon>vertical_align_bottom</mat-icon>
           </button>
+          <mat-divider></mat-divider>
           <button matMiniFab matTooltip="Select previous" matTooltipPosition="right"
             [disabled]="log().length === 0 || (selectedLogIndices().length > 0 && selectedLogIndices()[0] === 0)"
             (click)="previousLogEntry()">

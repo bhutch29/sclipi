@@ -328,8 +328,9 @@ func handleScpiRequest(w http.ResponseWriter, r *http.Request) {
 	simulatedString := r.URL.Query().Get("simulated")
 	autoSystErrorString := r.URL.Query().Get("autoSystErr")
 	timeoutSecondsString := r.URL.Query().Get("timeoutSeconds")
+	scriptSource := r.URL.Query().Get("scriptSource")
 
-	slog.Debug("Request info", "route", "/scpi", "scpi", scpi, "address", address, "port", portString, "simulated", simulatedString, "autoSystErr", autoSystErrorString, "timeoutSeconds", timeoutSecondsString)
+	slog.Debug("Request info", "route", "/scpi", "scpi", scpi, "address", address, "port", portString, "simulated", simulatedString, "autoSystErr", autoSystErrorString, "timeoutSeconds", timeoutSecondsString, "scriptSource", scriptSource)
 
 	if address == "" {
 		address = preferences.ScpiAddress

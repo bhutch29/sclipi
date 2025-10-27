@@ -544,12 +544,14 @@ export class App {
         uniqueId: crypto.randomUUID(),
       },
     ]);
+
     const params = {
       simulated: this.preferences.simulated(),
       autoSystErr: this.preferences.autoSystErr(),
       timeoutSeconds: this.preferences.timeoutSeconds(),
       port: this.preferences.port(),
       address: this.preferences.address(),
+      scriptSource: this.scriptRunning() && this.scriptSource() === 'file' ? this.scriptFileName() : this.scriptRunning() ? 'clipboard' : '',
     };
 
     return new Promise<void>((resolve) => {

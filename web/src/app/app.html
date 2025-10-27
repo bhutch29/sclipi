@@ -48,7 +48,10 @@
         </mat-form-field>
         <button matFab extended (click)="connection.perClientConnect()"><mat-icon>link</mat-icon>Connect</button>
         @if (connection.desiredPerClientConnected() && ! connection.perClientConnected()) {
-          Connection failed
+          <div class="connection-failed">
+            <div><span class="error">Connection failed</span> to {{preferences.perClientAddress()}}:{{preferences.perClientPort()}}</div>
+            <div>Check the address and try again</div>
+          </div>
         }
       </div>
     } @else if (preferences.operationMode() === 'scripted') {

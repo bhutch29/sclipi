@@ -267,6 +267,14 @@ mat-toolbar {
 .per-client-config {
   display: flex;
   gap: 8px;
+
+  .connection-failed {
+    margin-top: 9px;
+
+    .error {
+      color: var(--mat-sys-error);
+    }
+  }
 }
 
 .script-header {

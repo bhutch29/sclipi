@@ -4,8 +4,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile
     image: sclipi-server
-    ports:
-      - "8235:80"
+    network_mode: "host"
     environment:
       SCLIPI_SERVERPORT: 8080
       SCLIPI_DEFAULTSCPISOCKETPORT: 5025

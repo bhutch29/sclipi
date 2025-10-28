@@ -10,6 +10,8 @@ RUN npm run build
 
 FROM golang:1.24-alpine AS go-builder
 
+ARG VERSION=docker
+
 WORKDIR /build
 
 COPY go.mod go.sum ./
@@ -18,9 +20,7 @@ RUN go mod download
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 
-RUN apk add --no-cache git && \
-    VERSION=$(git describe --always --long --dirty 2>/dev/null || echo "docker") && \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o scpir-server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.version=${VERSION}" -o scpir-server ./cmd/server
 
 FROM caddy:2-alpine
 

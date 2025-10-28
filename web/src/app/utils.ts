@@ -57,13 +57,13 @@ export function findCardinalNode(input: ScpiNode[]): ScpiNode | undefined {
   return undefined;
 }
 
-export async function getClipboardText(): Promise<string> {
+export async function getClipboardText(): Promise<string | undefined> {
   try {
     const text = await navigator.clipboard.readText();
     return text;
   } catch (err) {
     console.error(err);
-    return ''
+    return undefined;
   }
 }
 

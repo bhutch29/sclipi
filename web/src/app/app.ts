@@ -826,20 +826,20 @@ export class App {
   }
 
   public async selectScriptFromClipboard(): Promise<void> {
-    try {
-      const text = await getClipboardText();
-      const split = text.trim().split(/\r?\n/);
-      this.snackBar.open(
-        `Pasted ${split.length} ${split.length === 1 ? 'command' : 'commands'} from clipboard`,
-        'Close',
-        { duration: 2000 },
-      );
-      this.script.set(split);
-      this.scriptSource.set('clipboard');
-    } catch (err) {
-      this.snackBar.open(`Failed to read clipboard: ${err}`, 'Close', { duration: 5000 });
+    const text = await getClipboardText();
+    if (!text) {
+      this.snackBar.open(`Failed to read from clipboard`, 'Close', { duration: 5000 });
       this.script.set([]);
+      return;
     }
+    const split = text.trim().split(/\r?\n/);
+    this.snackBar.open(
+      `Pasted ${split.length} ${split.length === 1 ? 'command' : 'commands'} from clipboard`,
+      'Close',
+      { duration: 2000 },
+    );
+    this.script.set(split);
+    this.scriptSource.set('clipboard');
   }
 
   public async selectScriptFromFile(): Promise<void> {

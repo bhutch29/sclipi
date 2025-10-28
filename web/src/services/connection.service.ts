@@ -2,12 +2,14 @@ import { computed, effect, Injectable, signal } from '@angular/core';
 import { LocalStorageService } from './localStorage.service';
 import { httpResource } from '@angular/common/http';
 import { PreferencesService } from './preferences.service';
+import { toObservable } from '@angular/core/rxjs-interop';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ConnectionService {
   public desiredPerClientConnected = signal(false);
+  public desiredPerClientConnected$ = toObservable(this.desiredPerClientConnected);
 
   public perClientConnected = computed(() => {
     return this.desiredPerClientConnected() && this.backendConfirmsConnected.hasValue() && this.backendConfirmsConnected.value();

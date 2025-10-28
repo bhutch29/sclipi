@@ -6,6 +6,7 @@ import {
   effect,
   ElementRef,
   HostListener,
+  inject,
   QueryList,
   Renderer2,
   Signal,
@@ -24,7 +25,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { BehaviorSubject, combineLatest, delay, firstValueFrom, map } from 'rxjs';
+import { BehaviorSubject, combineLatest, delay, distinctUntilChanged, firstValueFrom, map, switchMap, timer } from 'rxjs';
 import { HistoryService } from '../services/history.service';
 import { IdnService } from '../services/idn.service';
 import { LocalStorageService } from '../services/localStorage.service';
@@ -76,6 +77,8 @@ import { ConnectionService } from '../services/connection.service';
   ],
 })
 export class App {
+  public connection = inject(ConnectionService);
+
   public inputText = signal('');
   public scriptedLog: WritableSignal<LogEntry[]> = signal([]);
   public interactiveLog: WritableSignal<LogEntry[]> = signal([]);
@@ -312,6 +315,17 @@ export class App {
     ),
   ]).pipe(map(([sending, sendingDelayed]) => sending === 'start' && sendingDelayed === 'start'));
 
+  public showConnectionError$ = this.connection.desiredPerClientConnected$.pipe(
+    switchMap(desired =>
+      desired
+        ? timer(1000).pipe(
+            map(() => !this.connection.perClientConnected()),
+            distinctUntilChanged()
+          )
+        : [false]
+    )
+  );
+
   public health = httpResource<HealthResponse>(() => '/api/health');
 
   public commands = httpResource<Commands>(() => {
@@ -338,7 +352,6 @@ export class App {
     private renderer: Renderer2,
     public preferences: PreferencesService,
     public idn: IdnService,
-    public connection: ConnectionService,
     public history: HistoryService,
     private snackBar: MatSnackBar,
     localStorageService: LocalStorageService,

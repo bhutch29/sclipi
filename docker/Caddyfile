@@ -1,5 +1,8 @@
 {
-    admin localhost:2020
+	admin localhost:2020
+	servers {
+		trusted_proxies static private_ranges
+	}
 }
 
 :8281 {

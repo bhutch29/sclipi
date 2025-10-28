@@ -1,5 +1,5 @@
 services:
-  scpir-server:
+  scpir:
     build:
       context: .
       dockerfile: docker/Dockerfile

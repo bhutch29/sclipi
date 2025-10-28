@@ -73,8 +73,7 @@ clean:
     rm -rf web/dist/
 
 build-docker:
-    docker build -f docker/Dockerfile -t scpir-server .
+    docker build -f docker/Dockerfile -t scpir .
 
 run-docker:
-    # TODO: needs to be networked with target scpi instrument
-    docker run -p 80:8235 scpir-server
+    docker run --network host scpir

@@ -1,22 +1,24 @@
 #!/bin/sh
 set -e
 
-echo "Starting scpir-server on port 8080..."
+echo "Starting scpir-server and Caddy..."
 ./scpir-server &
 SERVER_PID=$!
 
-echo "Waiting for server to be ready..."
-for i in $(seq 1 30); do
-	if wget -q -O /dev/null http://localhost:8080/health 2>/dev/null; then
-		echo "Server is ready!"
-		break
-	fi
-	if [ $i -eq 30 ]; then
-		echo "Server failed to start"
-		exit 1
-	fi
-	sleep 1
-done
+caddy run --config /etc/caddy/Caddyfile --adapter caddyfile &
+CADDY_PID=$!
 
-echo "Starting Caddy..."
-exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+echo "Monitoring processes"
+while true; do
+    if ! kill -0 $SERVER_PID 2>/dev/null; then
+        echo "scpir-server exited, killing Caddy and quitting"
+        kill $CADDY_PID 2>/dev/null || true
+        exit 1
+    fi
+    if ! kill -0 $CADDY_PID 2>/dev/null; then
+        echo "Caddy exited, killing scpir-server and quitting"
+        kill $SERVER_PID 2>/dev/null || true
+        exit 1
+    fi
+    sleep 1
+done

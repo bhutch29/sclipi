@@ -830,7 +830,7 @@ export class App {
       const text = await getClipboardText();
       const split = text.trim().split(/\r?\n/);
       this.snackBar.open(
-        `Copied ${split.length} ${split.length === 1 ? 'command' : 'commands'} from clipboard`,
+        `Pasted ${split.length} ${split.length === 1 ? 'command' : 'commands'} from clipboard`,
         'Close',
         { duration: 2000 },
       );

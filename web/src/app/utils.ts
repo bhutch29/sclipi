@@ -62,6 +62,7 @@ export async function getClipboardText(): Promise<string> {
     const text = await navigator.clipboard.readText();
     return text;
   } catch (err) {
+    console.error(err);
     return ''
   }
 }

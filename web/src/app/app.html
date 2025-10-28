@@ -33,7 +33,7 @@
       <div class="unhealthy">Connection to server failed.</div>
     } @else if (!connection.perClientConnected() && connectionMode() === 'per-client') {
       <div class="per-client-config">
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="instrument-address">
           <mat-label>Instrument Address</mat-label>
           <input
             matInput
@@ -43,7 +43,7 @@
             (keydown.enter)="preferences.onAddressEnter($event)"
           />
         </mat-form-field>
-        <mat-form-field appearance="outline">
+        <mat-form-field appearance="outline" class="instrument-port">
           <mat-label>Instrument Port</mat-label>
           <input
             matInput

@@ -278,6 +278,14 @@ mat-toolbar {
   display: flex;
   gap: 8px;
 
+  .instrument-address {
+    width: 350px;
+  }
+
+  .instrument-port {
+    width: 125px;
+  }
+
   .connection-failed {
     margin-top: 9px;
 

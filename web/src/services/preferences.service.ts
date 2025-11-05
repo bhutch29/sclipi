@@ -44,8 +44,6 @@ export class PreferencesService {
     localStorageService.setFromStorage('preferShortScpi', this.preferShortScpi);
     localStorageService.setFromStorage('scrollToNewLogOutput', this.scrollToNewLogOutput);
     localStorageService.setFromStorage('operationMode', this.operationMode);
-    localStorageService.setFromStorage('perClientPort', this.port);
-    localStorageService.setFromStorage('perClientAddress', this.address);
 
     effect(() => localStorageService.setItem('simulated', this.simulated()));
     effect(() => localStorageService.setItem('autoSystErr', this.autoSystErr()));
@@ -57,6 +55,22 @@ export class PreferencesService {
     effect(() => localStorageService.setItem('operationMode', this.operationMode()));
     effect(() => localStorageService.setItem('perClientPort', this.port()));
     effect(() => localStorageService.setItem('perClientAddress', this.address()));
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const portParam = urlParams.get('port');
+    const addressParam = urlParams.get('address');
+
+    if (portParam && Number.isInteger(+portParam) && +portParam >= 1 && +portParam <= 65535) {
+      this.port.set(+portParam);
+    } else {
+      localStorageService.setFromStorage('perClientPort', this.port);
+    }
+
+    if (addressParam) {
+      this.address.set(addressParam);
+    } else {
+      localStorageService.setFromStorage('perClientAddress', this.address);
+    }
   }
 
   public async loadServerPreferences(loadFromServer = false) {

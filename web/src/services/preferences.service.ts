@@ -53,8 +53,6 @@ export class PreferencesService {
     effect(() => localStorageService.setItem('preferShortScpi', this.preferShortScpi()));
     effect(() => localStorageService.setItem('scrollToNewLogOutput', this.scrollToNewLogOutput()));
     effect(() => localStorageService.setItem('operationMode', this.operationMode()));
-    effect(() => localStorageService.setItem('perClientPort', this.port()));
-    effect(() => localStorageService.setItem('perClientAddress', this.address()));
 
     const urlParams = new URLSearchParams(window.location.search);
     const portParam = urlParams.get('port');
@@ -64,12 +62,14 @@ export class PreferencesService {
       this.port.set(+portParam);
     } else {
       localStorageService.setFromStorage('perClientPort', this.port);
+      effect(() => localStorageService.setItem('perClientPort', this.port()));
     }
 
     if (addressParam) {
       this.address.set(addressParam);
     } else {
       localStorageService.setFromStorage('perClientAddress', this.address);
+      effect(() => localStorageService.setItem('perClientAddress', this.address()));
     }
   }
 

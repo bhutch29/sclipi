@@ -1,10 +1,11 @@
 # Overview
+**SCPI** is a standard syntax for remotely controlling test and measurement devices.
+This repository contains 2 SCPI clients: a CLI and a web UI.
 
-**Sclipi** is a command line tool for sending **SCPI** commands. **SCPI** is a standard syntax for remotely controlling
-test and measurement devices.
+**Sclipi** is a command line tool for sending **SCPI** commands.
+**Scpir** is a web ui for sending **SCPI** commands.
 
-**Sclipi** features:
-
+Features:
 -   Auto-completion support!
 -   History support (Up key cycles through previous commands)
 -   Interactive and non-interactive operation
@@ -13,7 +14,7 @@ test and measurement devices.
 -   Copying response to clipboard
 -   Copying entire session to clipboard
 
-# Usage
+# Sclipi
 
 ## Interactive-Mode
 
@@ -59,3 +60,32 @@ SCPI commands. The file must be in the `:SYSTem:HELP:HEADers?` format.
 
 Simulation mode can be triggered two ways: -The `-s|--simulate` argument -Typing `simulated` into the `-a|--address`
 argument or the IP Address interactive prompt
+
+# Scpir
+
+## Running Scpir using Docker
+
+Docker images are available at ghcr.io/bhutch29/scpir:master. See the provided `docker-compose.yml` file for a reference on how to set environment variables, etc.
+
+## Running Scpir for development
+
+Start the backend:
+```bash
+just run-server
+```
+
+Start the frontend:
+```bash
+just serve-web
+```
+
+The web interface will be available at `http://localhost:4200`
+
+## Query Parameters
+
+You can pre-configure the connection by passing query parameters in the URL:
+
+-   `?address=<ip-address|hostname>`: Set the instrument address
+-   `?port=<port>`: Set the SCPI port (default: 5025)
+
+Example: `http://localhost:8080?address=192.168.1.100&port=5025`

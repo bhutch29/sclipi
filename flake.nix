@@ -19,7 +19,7 @@
             pname = "sclipi";
             version = "0.4.0";
             src = ./.;
-            vendorHash = "sha256-8e2Ae3dqnhkl4fMPm9lJn7gDyTTnQGR7eXJn4YyxcDs=";
+            vendorHash = "sha256-IsCqM2mZtGYG3IOCF9Ep9zDqFFqxwuiwzfGXb+HsOuU=";
             meta = {
               description = "SCPI CLI";
             };

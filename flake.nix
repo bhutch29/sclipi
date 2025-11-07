@@ -20,6 +20,10 @@
             version = "0.4.0";
             src = ./.;
             vendorHash = "sha256-IsCqM2mZtGYG3IOCF9Ep9zDqFFqxwuiwzfGXb+HsOuU=";
+            subPackages = [ "cmd/cli" ];
+            postInstall = ''
+              mv $out/bin/cli $out/bin/sclipi
+            '';
             meta = {
               description = "SCPI CLI";
             };

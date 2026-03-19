@@ -194,7 +194,7 @@ func (sm *scpiManager) completer(d prompt.Document) []prompt.Suggest {
 
 func (sm *scpiManager) getTree(i utils.Instrument) {
 	if len(sm.colonTree.Children) == 0 {
-		colonTree, starTree, err := i.GetSupportedCommandsTree()
+		starTree, colonTree, err := i.GetSupportedCommandsTree()
 		if err != nil {
 			log.Fatal(err)
 		} else {

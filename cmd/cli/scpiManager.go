@@ -72,7 +72,7 @@ func (sm *scpiManager) handleDashCommands(s string) {
 	} else if strings.HasPrefix(s, "-save_script") {
 		sm.saveCommandsToFile(strings.TrimPrefix(s, "-save_script"))
 	} else if strings.HasPrefix(s, "-run_script") {
-		sm.runScript(strings.TrimPrefix(s, "-run_script"))
+		sm.runScript(strings.TrimPrefix(s, "-run_script"), 0)
 	} else if strings.HasPrefix(s, "-set_timeout") {
 		timeout, err := strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(s, "-set_timeout")))
 		if err != nil {
@@ -274,7 +274,7 @@ func (sm *scpiManager) getNodeChildByContent(parent utils.ScpiNode, input string
 	return false, utils.ScpiNode{}
 }
 
-func (sm *scpiManager) runScript(file string) {
+func (sm *scpiManager) runScript(file string, delay time.Duration) {
 	file = strings.TrimSpace(file)
 	if file == "" {
 		file = "ScpiCommands.txt"
@@ -287,7 +287,10 @@ func (sm *scpiManager) runScript(file string) {
 			fmt.Printf("Could not run script file with name '%s'. Check to make sure it exists\n", file)
 		}
 	}
-	for _, line := range lines {
+	for i, line := range lines {
+		if i > 0 && delay > 0 {
+			time.Sleep(delay)
+		}
 		fmt.Println("> " + line)
 		sm.handleScpi(line)
 	}

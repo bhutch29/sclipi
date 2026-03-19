@@ -22,7 +22,7 @@ func runCommand(command string, ip string, port string, timeout time.Duration) {
 	sm.handleScpi(command)
 }
 
-func runScriptFile(file string, ip string, port string, timeout time.Duration) {
+func runScriptFile(file string, ip string, port string, timeout time.Duration, delay time.Duration) {
 	if ip == "" {
 		log.Fatal("Error: Address flag must be set when using File flag")
 	}
@@ -35,6 +35,6 @@ func runScriptFile(file string, ip string, port string, timeout time.Duration) {
 	defer inst.Close()
 
 	sm := newScpiManager(inst)
-	sm.runScript(file)
+	sm.runScript(file, delay)
 }
 

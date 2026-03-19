@@ -18,6 +18,7 @@ type arguments struct {
 	Address           *string
 	Port              *string
 	Timeout			  *int
+	Delay             *int
 	Command           *string
 	ScriptFile        *string
 	Quiet             *bool
@@ -50,6 +51,9 @@ Arguments allow sending single commands or scripts from files non-interactively.
 		Help: "A single SCPI command to send non-interactively. Must set address if using this feature"})
 	args.ScriptFile = parser.String("f", "file", &argparse.Options{
 		Help: "The path to a newline-delimited list of commands to be run non-interactively. Must set address if using this feature"})
+	args.Delay = parser.Int("d", "delay", &argparse.Options{
+		Default: 0,
+		Help:    "Delay in milliseconds between each command when running from a file"})
 	args.Quiet = parser.Flag("q", "quiet", &argparse.Options{
 		Help: "Suppresses unnecessary output"})
 	args.Simulate = parser.Flag("s", "simulate", &argparse.Options{
@@ -103,7 +107,7 @@ Arguments allow sending single commands or scripts from files non-interactively.
 	}
 
 	if *args.ScriptFile != "" {
-		runScriptFile(*args.ScriptFile, *args.Address, *args.Port, time.Duration(*args.Timeout) * time.Second)
+		runScriptFile(*args.ScriptFile, *args.Address, *args.Port, time.Duration(*args.Timeout)*time.Second, time.Duration(*args.Delay)*time.Millisecond)
 		os.Exit(0)
 	}
 

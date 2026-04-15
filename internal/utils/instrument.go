@@ -194,10 +194,6 @@ func (i *scpiInstrument) parseBlockInfo(blockInfo string) (int, error) {
 		return -1, err
 	}
 
-	if len(characters[1:]) != numChars {
-		return -1, fmt.Errorf("SCPI block info malformed: %s", blockInfo)
-	}
-
 	resultString := ""
 	for _, char := range characters[1 : numChars+1] {
 		resultString += char
